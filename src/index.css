@@ -1,0 +1,555 @@
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800;900&display=swap');
+@import "tailwindcss";
+
+/* =============================================
+   SPL AUCTION PLATFORM — PROFESSIONAL FOOTBALL
+   BROADCAST DESIGN SYSTEM
+   ============================================= */
+
+@layer base {
+  :root {
+    /* ---- Core Dark Palette ---- */
+    --spl-black:    #070A0F;
+    --spl-navy:     #0C1220;
+    --spl-panel:    #111827;
+    --spl-elevated: #1A2233;
+    --spl-surface:  #202D42;
+
+    /* ---- SPL Brand Colors ---- */
+    --spl-blue:     #1A56DB;
+    --spl-blue-light: #3B82F6;
+    --spl-green:    #16A34A;
+    --spl-green-light: #22C55E;
+    --spl-orange:   #EA580C;
+    --spl-orange-light: #F97316;
+    --spl-gold:     #D4A017;
+    --spl-gold-light: #F59E0B;
+    --spl-red:      #DC2626;
+    --spl-red-light: #EF4444;
+
+    /* ---- Text ---- */
+    --text-primary:  #F0F4FF;
+    --text-secondary:#8B96A8;
+    --text-muted:    #4B5563;
+
+    /* ---- Borders ---- */
+    --border-subtle:  rgba(255, 255, 255, 0.06);
+    --border-default: rgba(255, 255, 255, 0.10);
+    --border-strong:  rgba(255, 255, 255, 0.18);
+
+    /* ---- Fonts ---- */
+    --font-broadcast: 'Bebas Neue', 'Arial Narrow', 'Impact', sans-serif;
+    --font-display:   'Oswald', 'Arial Narrow', system-ui, sans-serif;
+    --font-body:      'Inter', system-ui, -apple-system, sans-serif;
+  }
+
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body {
+    background-color: var(--spl-black);
+    color: var(--text-primary);
+    font-family: var(--font-body);
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Thin, professional scrollbar */
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: var(--spl-black); }
+  ::-webkit-scrollbar-thumb { background: var(--spl-elevated); border-radius: 2px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--spl-blue); }
+
+  ::selection {
+    background: rgba(26, 86, 219, 0.35);
+    color: #fff;
+  }
+}
+
+/* =============================================
+   TYPOGRAPHY SYSTEM
+   ============================================= */
+
+.font-broadcast {
+  font-family: var(--font-broadcast);
+  letter-spacing: 0.02em;
+  line-height: 1;
+}
+
+.font-display {
+  font-family: var(--font-display);
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+/* Broadcast-grade titles (projector player names) */
+.text-broadcast-hero {
+  font-family: var(--font-broadcast);
+  line-height: 0.9;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+
+/* Compact bold labels */
+.text-label-sm {
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--text-secondary);
+}
+
+/* =============================================
+   BUTTON SYSTEM
+   ============================================= */
+
+.btn-primary {
+  background: var(--spl-blue);
+  color: #fff;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 20px;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.btn-primary:hover { background: var(--spl-blue-light); }
+.btn-primary:active { transform: scale(0.97); }
+
+.btn-sold {
+  background: var(--spl-green);
+  color: #fff;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 20px;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.btn-sold:hover { background: var(--spl-green-light); }
+.btn-sold:active { transform: scale(0.97); }
+
+.btn-danger {
+  background: rgba(220, 38, 38, 0.12);
+  color: #f87171;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border: 1px solid rgba(220, 38, 38, 0.3);
+  border-radius: 6px;
+  padding: 9px 16px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.btn-danger:hover { background: rgba(220, 38, 38, 0.22); color: #fff; }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border: 1px solid var(--border-default);
+  border-radius: 6px;
+  padding: 9px 16px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.btn-ghost:hover { background: var(--spl-elevated); color: var(--text-primary); border-color: var(--border-strong); }
+
+.btn-auction {
+  background: var(--spl-orange);
+  color: #fff;
+  font-family: var(--font-broadcast);
+  font-size: 20px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border: none;
+  border-radius: 6px;
+  padding: 14px 28px;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+.btn-auction:hover { background: var(--spl-orange-light); }
+.btn-auction:active { transform: scale(0.97); }
+.btn-auction:disabled { background: var(--spl-elevated); color: var(--text-muted); cursor: not-allowed; }
+
+/* =============================================
+   INPUT SYSTEM
+   ============================================= */
+
+.spl-input {
+  background: var(--spl-black);
+  border: 1px solid var(--border-default);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 14px;
+  padding: 10px 14px;
+  outline: none;
+  width: 100%;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.spl-input:focus {
+  border-color: var(--spl-blue);
+  box-shadow: 0 0 0 2px rgba(26, 86, 219, 0.15);
+}
+.spl-input::placeholder { color: var(--text-muted); }
+
+/* legacy alias */
+.input-field {
+  background: var(--spl-black);
+  border: 1px solid var(--border-default);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 14px;
+  outline: none;
+  width: 100%;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  padding: 10px 14px;
+}
+.input-field:focus {
+  border-color: var(--spl-blue);
+  box-shadow: 0 0 0 2px rgba(26, 86, 219, 0.15);
+}
+.input-field::placeholder { color: var(--text-muted); }
+
+/* =============================================
+   BADGE SYSTEM
+   ============================================= */
+
+.badge-sold {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: 4px;
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  background: rgba(22, 163, 74, 0.15);
+  color: #4ade80;
+  border: 1px solid rgba(22, 163, 74, 0.3);
+}
+
+.badge-unsold {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: 4px;
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  background: rgba(220, 38, 38, 0.12);
+  color: #f87171;
+  border: 1px solid rgba(220, 38, 38, 0.25);
+}
+
+.badge-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  background: rgba(234, 88, 12, 0.15);
+  color: var(--spl-orange-light);
+  border: 1px solid rgba(234, 88, 12, 0.3);
+}
+
+.badge-upcoming {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: 4px;
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  background: rgba(26, 86, 219, 0.12);
+  color: var(--spl-blue-light);
+  border: 1px solid rgba(26, 86, 219, 0.25);
+}
+
+/* =============================================
+   PANEL / CARD SYSTEM
+   ============================================= */
+
+.spl-panel {
+  background: var(--spl-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+}
+
+.spl-panel-elevated {
+  background: var(--spl-elevated);
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
+}
+
+/* =============================================
+   PROJECTOR ANIMATIONS
+   ============================================= */
+
+/* Player name stamps in from right */
+@keyframes broadcast-in {
+  0%   { opacity: 0; transform: translateX(60px) skewX(-4deg); }
+  100% { opacity: 1; transform: translateX(0) skewX(0); }
+}
+
+/* Dramatic upward reveal */
+@keyframes slide-up-in {
+  0%   { opacity: 0; transform: translateY(40px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+/* Number flash when bid updates */
+@keyframes bid-flash {
+  0%   { transform: scale(1);    color: #F0F4FF; }
+  30%  { transform: scale(1.25); color: #F97316; }
+  60%  { transform: scale(1.1);  color: #FBBF24; }
+  100% { transform: scale(1);    color: #F97316; }
+}
+
+/* SOLD stamp — big punch */
+@keyframes sold-stamp {
+  0%   { opacity: 0; transform: scale(2.5) rotate(-4deg); }
+  50%  { opacity: 1; transform: scale(0.92) rotate(1deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+
+/* Team color flood */
+@keyframes team-flood {
+  0%   { opacity: 0; transform: scaleX(0); transform-origin: left; }
+  100% { opacity: 1; transform: scaleX(1); }
+}
+
+/* Pulse LED dot */
+@keyframes led-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.3; }
+}
+
+/* Scan line sweep (broadcast feel) */
+@keyframes scan-sweep {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(100vw); }
+}
+
+/* Subtle pitch geometry animation */
+@keyframes pitch-fade {
+  0%, 100% { opacity: 0.04; }
+  50%       { opacity: 0.08; }
+}
+
+/* Player image entry */
+@keyframes player-enter {
+  0%   { opacity: 0; transform: translateY(60px) scale(0.92); }
+  60%  { transform: translateY(-8px) scale(1.02); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Flicker effect on projector */
+@keyframes flicker {
+  0%, 98%, 100% { opacity: 1; }
+  99%            { opacity: 0.95; }
+}
+
+.animate-broadcast-in {
+  animation: broadcast-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-slide-up {
+  animation: slide-up-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-bid-flash {
+  animation: bid-flash 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-sold-stamp {
+  animation: sold-stamp 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.animate-led-pulse {
+  animation: led-pulse 1.4s ease-in-out infinite;
+}
+
+.animate-scan {
+  animation: scan-sweep 3s linear infinite;
+}
+
+.animate-pitch-fade {
+  animation: pitch-fade 4s ease-in-out infinite;
+}
+
+.animate-player-enter {
+  animation: player-enter 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* =============================================
+   BROADCAST SCREEN UTILITIES
+   ============================================= */
+
+/* Full-screen projector — kill all browser chrome */
+.projector-screen {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  cursor: none;
+}
+.projector-screen::-webkit-scrollbar { display: none; }
+
+/* Pitch geometry background */
+.pitch-bg {
+  background-image:
+    /* Penalty area lines */
+    linear-gradient(to right, rgba(255,255,255,0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255,255,255,0.04) 1px, transparent 1px);
+  background-size: 80px 80px;
+}
+
+/* Stadium vignette */
+.stadium-vignette {
+  background: radial-gradient(ellipse at 50% 50%, transparent 20%, rgba(0,0,0,0.8) 100%);
+}
+
+/* Corner bracket decorations */
+.corner-bracket::before,
+.corner-bracket::after {
+  content: '';
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  border-color: rgba(255,255,255,0.15);
+  border-style: solid;
+}
+.corner-bracket::before {
+  top: 12px; left: 12px;
+  border-width: 2px 0 0 2px;
+}
+.corner-bracket::after {
+  bottom: 12px; right: 12px;
+  border-width: 0 2px 2px 0;
+}
+
+/* Diagonal accent stripe used in admin player cards */
+.diagonal-accent {
+  clip-path: polygon(0 0, 100% 0, 85% 100%, 0 100%);
+}
+
+/* Strong number display for bids */
+.bid-number {
+  font-family: var(--font-broadcast);
+  line-height: 1;
+  letter-spacing: -0.01em;
+}
+
+/* Team color swatch */
+.team-swatch {
+  width: 4px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+/* =============================================
+   ADMIN LAYOUT UTILITIES
+   ============================================= */
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 6px;
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  border: 1px solid transparent;
+  text-decoration: none;
+  position: relative;
+}
+.nav-item:hover {
+  background: var(--spl-elevated);
+  color: var(--text-primary);
+}
+.nav-item.active {
+  background: rgba(26, 86, 219, 0.12);
+  color: var(--spl-blue-light);
+  border-color: rgba(26, 86, 219, 0.25);
+}
+.nav-item.auction-item {
+  color: var(--spl-orange-light);
+}
+.nav-item.auction-item.active {
+  background: rgba(234, 88, 12, 0.12);
+  color: var(--spl-orange-light);
+  border-color: rgba(234, 88, 12, 0.3);
+}
+
+/* =============================================
+   POSITION COLOR MAP (used in player cards)
+   ============================================= */
+
+.pos-gk { color: #F59E0B; }
+.pos-def { color: #3B82F6; }
+.pos-mid { color: #22C55E; }
+.pos-fwd { color: #EF4444; }
+
+.pos-bg-gk { background: rgba(245, 158, 11, 0.15); border-color: rgba(245, 158, 11, 0.3); }
+.pos-bg-def { background: rgba(59, 130, 246, 0.15); border-color: rgba(59, 130, 246, 0.3); }
+.pos-bg-mid { background: rgba(34, 197, 94, 0.15); border-color: rgba(34, 197, 94, 0.3); }
+.pos-bg-fwd { background: rgba(239, 68, 68, 0.15); border-color: rgba(239, 68, 68, 0.3); }
