@@ -41,7 +41,7 @@ export const EFootballCard = ({
   };
   const scale = scaleMap[size] || scaleMap.md;
   const cardWidth = 320 * scale;
-  const cardHeight = 480 * scale;
+  const cardHeight = 440 * scale;
 
   // Theme configuration matching EA FC 24 reference cards
   const themeConfig = {
@@ -93,13 +93,11 @@ export const EFootballCard = ({
       style={{
         width: cardWidth,
         height: cardHeight,
-        filter: highlight
-          ? `drop-shadow(0 0 35px ${cfg.glow}) drop-shadow(0 20px 40px rgba(0,0,0,0.95))`
-          : 'drop-shadow(0 15px 30px rgba(0,0,0,0.85))',
+        filter: 'drop-shadow(0 4px 8px rgba(0, 0, 0, 0.95)) drop-shadow(0 1px 3px rgba(0, 0, 0, 0.85))',
       }}
     >
       <svg
-        viewBox="0 0 320 480"
+        viewBox="0 0 320 440"
         width={cardWidth}
         height={cardHeight}
         className="w-full h-full overflow-visible"
@@ -108,26 +106,26 @@ export const EFootballCard = ({
           {/* EA FC Authentic Curved Shield Path Geometry */}
           <path
             id={`card-shape-${idSuffix}`}
-            d="M 32 14 Q 160 0 288 14 C 304 16 312 26 312 42 L 312 372 C 312 422 200 466 160 474 C 120 466 8 422 8 372 L 8 42 C 8 26 16 16 32 14 Z"
+            d="M 32 14 Q 160 0 288 14 C 304 16 312 26 312 42 L 312 336 C 312 386 200 426 160 434 C 120 426 8 386 8 336 L 8 42 C 8 26 16 16 32 14 Z"
           />
 
-          {/* Photo Clip Area (Clipped above name ribbon at y=360) */}
+          {/* Photo Clip Area (Clipped above name ribbon at y=330) */}
           <clipPath id={`photo-area-clip-${idSuffix}`}>
-            <rect x="0" y="0" width="320" height="360" />
+            <rect x="0" y="0" width="320" height="330" />
           </clipPath>
 
           {/* Linear Gradient for Photo Alpha Mask (Increased Fade Opacity) */}
           <linearGradient id={`photo-alpha-grad-${idSuffix}`} x1="0%" y1="0%" x2="0%" y2="100%">
             <stop offset="0%" stopColor="#ffffff" stopOpacity="1" />
-            <stop offset="35%" stopColor="#ffffff" stopOpacity="1" />
-            <stop offset="68%" stopColor="#ffffff" stopOpacity="0.3" />
-            <stop offset="90%" stopColor="#ffffff" stopOpacity="0" />
+            <stop offset="40%" stopColor="#ffffff" stopOpacity="1" />
+            <stop offset="70%" stopColor="#ffffff" stopOpacity="0.3" />
+            <stop offset="92%" stopColor="#ffffff" stopOpacity="0" />
             <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
           </linearGradient>
 
           {/* SVG Alpha Mask applied directly to the player photo element */}
-          <mask id={`photo-alpha-mask-${idSuffix}`} maskUnits="userSpaceOnUse" x="0" y="0" width="320" height="360">
-            <rect x="0" y="0" width="320" height="360" fill={`url(#photo-alpha-grad-${idSuffix})`} />
+          <mask id={`photo-alpha-mask-${idSuffix}`} maskUnits="userSpaceOnUse" x="0" y="0" width="320" height="330">
+            <rect x="0" y="0" width="320" height="330" fill={`url(#photo-alpha-grad-${idSuffix})`} />
           </mask>
 
           {/* Card Metallic Linear Gradient */}
@@ -198,9 +196,9 @@ export const EFootballCard = ({
                   <image
                     href={heroImage}
                     x={160 - (130 * photoScale)}
-                    y={190 - (145 * photoScale)}
+                    y={170 - (135 * photoScale)}
                     width={260 * photoScale}
-                    height={290 * photoScale}
+                    height={280 * photoScale}
                     preserveAspectRatio="xMidYMax meet"
                     onError={(e) => {
                       e.target.setAttribute('href', createRealisticPlayerPortrait(player.name, player.position));
@@ -210,9 +208,9 @@ export const EFootballCard = ({
                   <image
                     href={createRealisticPlayerPortrait(player.name, player.position)}
                     x={160 - (120 * photoScale)}
-                    y={195 - (135 * photoScale)}
+                    y={175 - (125 * photoScale)}
                     width={240 * photoScale}
-                    height={270 * photoScale}
+                    height={260 * photoScale}
                     preserveAspectRatio="xMidYMax meet"
                   />
                 )}
@@ -220,58 +218,30 @@ export const EFootballCard = ({
             </g>
           </g>
 
-          {/* TOP LEFT: OVR RATING & POSITION HEADER */}
+          {/* TOP LEFT: POSITION HEADER */}
           <g transform="translate(32, 42)">
             <text
               x="0"
               y="32"
               fontFamily="var(--font-broadcast), 'Bebas Neue', Impact, sans-serif"
-              fontSize="48"
+              fontSize="38"
               fontWeight="900"
               fill={cfg.textDark}
-              letterSpacing="-1"
+              letterSpacing="2"
               filter="drop-shadow(0 1px 2px rgba(255,255,255,0.4))"
-            >
-              {ovr}
-            </text>
-
-            <text
-              x="0"
-              y="56"
-              fontFamily="var(--font-display), 'Oswald', sans-serif"
-              fontSize="18"
-              fontWeight="800"
-              fill={cfg.textDark}
-              letterSpacing="1"
             >
               {position}
             </text>
           </g>
 
-          {/* TOP RIGHT: PLAYER NUMBER (#20) */}
-          <g transform="translate(288, 42)">
-            <text
-              x="0"
-              y="36"
-              fontFamily="var(--font-broadcast), 'Bebas Neue', Impact, sans-serif"
-              fontSize="32"
-              fontWeight="900"
-              fill={cfg.textDark}
-              textAnchor="end"
-              letterSpacing="0"
-              filter="drop-shadow(0 1px 2px rgba(255,255,255,0.4))"
-            >
-              #{player.number || player.lotNumber || player.id || '10'}
-            </text>
-          </g>
 
           {/* PLAYER NAME BANNER (DYNAMIC FONT SIZING & PERFECTLY CENTERED) */}
-          <g transform="translate(160, 375)">
+          <g transform="translate(160, 342)">
             <text
               x="0"
               y="0"
               fontFamily="var(--font-broadcast), 'Bebas Neue', Impact, sans-serif"
-              fontSize={(player.name || 'PLAYER').length > 14 ? '26' : (player.name || 'PLAYER').length > 10 ? '32' : '40'}
+              fontSize={(player.name || 'PLAYER').length > 14 ? '32' : (player.name || 'PLAYER').length > 10 ? '38' : '48'}
               fontWeight="900"
               fill={cfg.textDark}
               textAnchor="middle"
@@ -283,21 +253,42 @@ export const EFootballCard = ({
           </g>
 
           {/* BOTTOM BADGES (INDIA FLAG + SPL LEAGUE CREST) */}
-          <g transform="translate(160, 428)">
-            {/* High Quality Indian Tricolor Vector Flag with Ashoka Chakra */}
-            <g transform="translate(-24, -8)">
-              <rect x="0" y="0" width="24" height="15" rx="2" fill="#FF9933" />
-              <rect x="0" y="5" width="24" height="5" fill="#FFFFFF" />
-              <rect x="0" y="10" width="24" height="5" fill="#138808" />
-              {/* Ashoka Chakra Center Wheel */}
-              <circle cx="12" cy="7.5" r="2.2" fill="none" stroke="#000080" strokeWidth="0.6" />
-              <circle cx="12" cy="7.5" r="0.7" fill="#000080" />
+          <g transform="translate(160, 388)">
+            {/* Indian Flag Asset */}
+            <g transform="translate(-46, -18)">
+              <image
+                href="/assets/flag.png"
+                x="0"
+                y="0"
+                width="38"
+                height="36"
+                preserveAspectRatio="xMidYMid meet"
+                filter="drop-shadow(0 2px 4px rgba(0,0,0,0.4))"
+              />
             </g>
 
-            {/* SPL Shield Crest Badge */}
-            <g transform="translate(10, -8)">
-              <path d="M 0,0 L 15,0 L 15,10 Q 7.5,16 0,10 Z" fill={cfg.textDark} stroke={cfg.border1} strokeWidth="1" />
-              <text x="7.5" y="8" fontFamily="var(--font-display)" fontSize="7" fontWeight="900" fill="#ffffff" textAnchor="middle">
+            {/* SPL Official League Logo Badge */}
+            <g transform="translate(8, -18)">
+              <image
+                href="/assets/logo.png"
+                x="0"
+                y="0"
+                width="38"
+                height="36"
+                preserveAspectRatio="xMidYMid meet"
+                filter="drop-shadow(0 2px 4px rgba(0,0,0,0.4))"
+              />
+              <text
+                x="19"
+                y="21"
+                fontFamily="system-ui, -apple-system, sans-serif"
+                fontSize="7.5"
+                fontWeight="900"
+                fill="#FFFFFF"
+                textAnchor="middle"
+                letterSpacing="0.06em"
+                filter="drop-shadow(0 1px 2px rgba(0,0,0,0.9))"
+              >
                 SPL
               </text>
             </g>
@@ -307,7 +298,7 @@ export const EFootballCard = ({
 
         {/* STATUS STAMP OVERLAY (SOLD / UNSOLD) */}
         {status && (
-          <g transform="translate(160, 240)">
+          <g transform="translate(160, 215)">
             <rect
               x="-110"
               y="-35"
