@@ -3,13 +3,11 @@ import { useTournament } from '../../context/TournamentContext';
 import { useAuction } from '../../context/AuctionContext';
 import { storageService } from '../../services/storageService';
 import { formatCurrency } from '../../utils/currency';
-import { EFootballCard } from '../../components/common/EFootballCard';
 import {
   Tv, Monitor, Eye, EyeOff, LayoutGrid, Users, CheckCircle2,
   Zap, RefreshCw, Volume2, Shield, Radio, Sparkles, MessageSquare,
   DollarSign, Sliders, Play, RotateCcw, AlertTriangle, Image as ImageIcon
 } from 'lucide-react';
-import { STADIUM_IMAGES, getRandomStadiumImage } from '../../components/projector/StadiumBackground';
 
 export const ProjectorControl = () => {
   const { tournament, teams, players, history } = useTournament();
@@ -18,7 +16,6 @@ export const ProjectorControl = () => {
   // Load live projector settings from storage
   const [settings, setSettings] = useState(() => storageService.getProjectorSettings());
   const [flashSaved, setFlashSaved] = useState(false);
-  const [previewBgImg, setPreviewBgImg] = useState(() => getRandomStadiumImage());
 
   // Sync state to storageService on change
   const updateSettings = (newPartial) => {
@@ -50,9 +47,6 @@ export const ProjectorControl = () => {
     window.open('/projector', '_blank', 'width=1280,height=720,toolbar=no,menubar=no');
   };
 
-  const selectedTeam = teams.find(t => t.id === settings.selectedTeamId) || teams[0];
-  const soldPlayers = players.filter(p => p.status === 'SOLD');
-  const unsoldPlayers = players.filter(p => p.status === 'UNSOLD' || p.status === 'UPCOMING');
 
   return (
     <div style={{ padding: '32px 40px', maxWidth: 1600, margin: '0 auto', color: '#fff' }}>
@@ -328,192 +322,9 @@ export const ProjectorControl = () => {
             </div>
           </div>
 
-          {/* PREVIEW CONTAINER (SIMULATED PROJECTOR DISPLAY) */}
-          <div style={{
-            width: '100%',
-            height: 520,
-            background: '#020617',
-            border: '2px solid var(--spl-blue)',
-            borderRadius: 12,
-            position: 'relative',
-            overflow: 'hidden',
-            boxShadow: '0 10px 40px rgba(0,0,0,0.8)',
-            display: 'flex',
-            flexDirection: 'column',
-            justify: 'space-between',
-            padding: 20
-          }}>
-            {/* Background Stadium Photo */}
-            <div style={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none' }}>
-              <img 
-                src={previewBgImg} 
-                alt="Stadium Arena" 
-                style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(0.65) contrast(1.15)' }} 
-              />
-              <div style={{
-                position: 'absolute', inset: 0,
-                background: settings.screenTheme === 'GOLD' ? 'linear-gradient(180deg, rgba(8,7,5,0.7) 0%, rgba(29,20,5,0.92) 100%)'
-                          : settings.screenTheme === 'NEON' ? 'linear-gradient(180deg, rgba(4,8,6,0.7) 0%, rgba(9,32,17,0.92) 100%)'
-                          : settings.screenTheme === 'CYBER' ? 'linear-gradient(180deg, rgba(7,3,4,0.7) 0%, rgba(36,8,9,0.92) 100%)'
-                          : 'linear-gradient(180deg, rgba(2,6,23,0.6) 0%, rgba(2,6,23,0.92) 100%)'
-              }} />
-            </div>
-
-            {/* PREVIEW TOP BAR */}
-            <div style={{ position: 'relative', zIndex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: 12 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <span style={{ fontFamily: 'var(--font-broadcast)', fontSize: 18, color: '#fff', letterSpacing: '0.04em' }}>
-                  {tournament?.name || 'SUPER PREMIER LEAGUE'}
-                </span>
-                <span style={{ fontSize: 9, fontWeight: 800, padding: '2px 8px', borderRadius: 4, background: 'rgba(26,86,219,0.3)', border: '1px solid rgba(26,86,219,0.5)', color: 'var(--spl-blue-light)' }}>
-                  {settings.mode}
-                </span>
-              </div>
-              {settings.showManagerBalance && (
-                <div style={{ fontFamily: 'var(--font-display)', fontSize: 11, color: 'var(--spl-gold-light)', fontWeight: 700 }}>
-                  {teams.length} CLUBS REGISTERED
-                </div>
-              )}
-            </div>
-
-            {/* PREVIEW BODY BASED ON SELECTED MODE */}
-            <div style={{ position: 'relative', zIndex: 1, flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px 0', overflow: 'hidden' }}>
-
-              {/* MODE 1: CLUBS & MANAGERS OVERVIEW */}
-              {settings.mode === 'CLUBS_OVERVIEW' && (
-                <div style={{ width: '100%', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 12 }}>
-                  {teams.map(t => {
-                    const squadCount = players.filter(p => p.teamId === t.id).length;
-                    return (
-                      <div key={t.id} style={{ background: 'rgba(15,23,42,0.8)', border: `1px solid ${t.primaryColor}50`, borderRadius: 8, padding: 12, textAlign: 'center' }}>
-                        {settings.showTeamLogos && t.logoUrl && (
-                          <img src={t.logoUrl} alt={t.name} style={{ width: 36, height: 36, objectFit: 'contain', margin: '0 auto 6px' }} />
-                        )}
-                        <div style={{ fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: 800, color: '#fff' }}>
-                          {t.name}
-                        </div>
-                        {settings.showManagerBalance && (
-                          <>
-                            <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 2 }}>
-                              Mgr: {t.managerName}
-                            </div>
-                            <div style={{ fontFamily: 'var(--font-broadcast)', fontSize: 15, color: 'var(--spl-gold-light)', marginTop: 4 }}>
-                              {formatCurrency(t.currentBalance)}
-                            </div>
-                          </>
-                        )}
-                        {settings.showSquadSummary && (
-                          <div style={{ fontSize: 9, fontWeight: 700, color: 'var(--spl-blue-light)', marginTop: 4 }}>
-                            {squadCount} Players Acquired
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-
-              {/* MODE 2: SQUAD SHOWCASE */}
-              {settings.mode === 'SQUAD_SHOWCASE' && (
-                <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                  <div style={{ fontFamily: 'var(--font-broadcast)', fontSize: 22, color: selectedTeam.primaryColor || '#fff', textTransform: 'uppercase', marginBottom: 4 }}>
-                    {selectedTeam.name} SQUAD
-                  </div>
-                  {settings.showManagerBalance && (
-                    <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 12 }}>
-                      Manager: {selectedTeam.managerName} • Budget: {formatCurrency(selectedTeam.currentBalance)}
-                    </div>
-                  )}
-                  <div style={{ display: 'flex', gap: 12, overflowX: 'auto', maxWidth: '100%', padding: '8px 0' }}>
-                    {players.filter(p => p.teamId === selectedTeam.id).map(p => (
-                      <EFootballCard key={p.id} player={p} size="sm" />
-                    ))}
-                    {players.filter(p => p.teamId === selectedTeam.id).length === 0 && (
-                      <div style={{ color: 'var(--text-muted)', fontSize: 12, padding: 30 }}>No players signed yet in this squad</div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* MODE 3: SOLD PLAYERS GALLERY */}
-              {settings.mode === 'SOLD_SHOWCASE' && (
-                <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
-                  <div style={{ fontFamily: 'var(--font-broadcast)', fontSize: 18, color: '#22C55E', textTransform: 'uppercase', marginBottom: 10 }}>
-                    COMPLETED SIGNINGS ({soldPlayers.length})
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: 10, overflowY: 'auto', maxHeight: 340 }}>
-                    {soldPlayers.map(p => {
-                      const t = teams.find(team => team.id === p.teamId);
-                      return (
-                        <div key={p.id} style={{ background: 'rgba(15,23,42,0.8)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: 8, padding: 8, textAlign: 'center' }}>
-                          <img src={p.photoUrl || p.presentationPng} alt={p.name} style={{ width: 44, height: 44, borderRadius: '50%', objectFit: 'cover', margin: '0 auto 4px' }} />
-                          <div style={{ fontFamily: 'var(--font-display)', fontSize: 11, fontWeight: 700, color: '#fff' }}>{p.name}</div>
-                          {settings.showSoldBadge && <div style={{ fontSize: 9, fontWeight: 800, color: '#22C55E' }}>SOLD to {t?.shortName || t?.name}</div>}
-                          <div style={{ fontFamily: 'var(--font-broadcast)', fontSize: 13, color: 'var(--spl-gold-light)', marginTop: 2 }}>{formatCurrency(p.soldPrice)}</div>
-                        </div>
-                      );
-                    })}
-                    {soldPlayers.length === 0 && (
-                      <div style={{ gridColumn: '1 / -1', color: 'var(--text-muted)', textAlign: 'center', padding: 40, fontSize: 12 }}>No players sold yet</div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* MODE 4: UNSOLD / POOL PLAYERS */}
-              {settings.mode === 'UNSOLD_SHOWCASE' && (
-                <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
-                  <div style={{ fontFamily: 'var(--font-broadcast)', fontSize: 18, color: 'var(--spl-blue-light)', textTransform: 'uppercase', marginBottom: 10 }}>
-                    AVAILABLE AUCTION POOL ({unsoldPlayers.length})
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: 10, overflowY: 'auto', maxHeight: 340 }}>
-                    {unsoldPlayers.map(p => (
-                      <div key={p.id} style={{ background: 'rgba(15,23,42,0.8)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: 8, textAlign: 'center' }}>
-                        <div style={{ fontFamily: 'var(--font-display)', fontSize: 11, fontWeight: 700, color: '#fff' }}>{p.name}</div>
-                        <div style={{ fontSize: 9, color: 'var(--spl-orange)', fontWeight: 800 }}>{p.position} • OVR {p.overallRating}</div>
-                        {settings.showBasePrice && <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 2 }}>Base: {formatCurrency(p.basePrice)}</div>}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* MODE 5: AUTO LIVE AUCTION MODE */}
-              {settings.mode === 'AUTO' && (
-                <div style={{ textAlign: 'center', padding: 20 }}>
-                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '6px 14px', borderRadius: 20, background: 'rgba(234,88,12,0.2)', border: '1px solid rgba(234,88,12,0.4)', color: 'var(--spl-orange)', fontFamily: 'var(--font-display)', fontSize: 11, fontWeight: 800, letterSpacing: '0.1em', marginBottom: 12 }}>
-                    <Radio size={12} className="animate-pulse" /> LIVE AUCTION STAGE SYNC
-                  </div>
-                  <h3 style={{ fontFamily: 'var(--font-broadcast)', fontSize: 24, color: '#fff', textTransform: 'uppercase' }}>
-                    Stage: {auctionState?.stage || 'IDLE'}
-                  </h3>
-                  <p style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: 'var(--text-muted)', maxWidth: 360, margin: '6px auto 0' }}>
-                    Projector screen will automatically transition dramatically when players are introduced, bids are placed, or deals are signed!
-                  </p>
-                </div>
-              )}
-            </div>
-
-            {/* PREVIEW BOTTOM TICKER */}
-            {settings.showLiveTicker && (
-              <div style={{
-                background: 'rgba(0,0,0,0.7)',
-                borderTop: '1px solid rgba(255,255,255,0.1)',
-                padding: '6px 12px',
-                borderRadius: 6,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 10,
-                overflow: 'hidden'
-              }}>
-                <span style={{ fontSize: 9, fontWeight: 800, padding: '2px 6px', background: 'var(--spl-orange)', color: '#fff', borderRadius: 3, letterSpacing: '0.1em' }}>
-                  TICKER
-                </span>
-                <span style={{ fontFamily: 'var(--font-display)', fontSize: 11, color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  {settings.customTickerText}
-                </span>
-              </div>
-            )}
+          {/* LIVE IFRAME PROJECTOR PREVIEW */}
+          <div style={{ width: '100%', aspectRatio: '16/9', background: '#020617', border: '2px solid var(--spl-blue)', borderRadius: 12, position: 'relative', overflow: 'hidden', boxShadow: '0 10px 40px rgba(0,0,0,0.8)' }}>
+            <iframe src="/projector" title="Live Projector Preview" style={{ width: '400%', height: '400%', position: 'absolute', top: 0, left: 0, border: 'none', transform: 'scale(0.25)', transformOrigin: 'top left', pointerEvents: 'auto' }} />
           </div>
         </div>
       </div>

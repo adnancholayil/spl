@@ -92,6 +92,50 @@ class SoundEngine {
     osc.stop(this.ctx.currentTime + 0.1);
   }
 
+  playRevealSound() {
+    if (!this.enabled) return;
+    this.init();
+    if (!this.ctx) return;
+
+    try {
+      // 1. Low suspense drum/riser swell
+      const osc1 = this.ctx.createOscillator();
+      const gain1 = this.ctx.createGain();
+      osc1.type = 'triangle';
+      osc1.frequency.setValueAtTime(110, this.ctx.currentTime);
+      osc1.frequency.exponentialRampToValueAtTime(320, this.ctx.currentTime + 1.1);
+
+      gain1.gain.setValueAtTime(0.01, this.ctx.currentTime);
+      gain1.gain.linearRampToValueAtTime(this.volume * 0.25, this.ctx.currentTime + 0.9);
+      gain1.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 1.25);
+
+      osc1.connect(gain1);
+      gain1.connect(this.ctx.destination);
+      osc1.start();
+      osc1.stop(this.ctx.currentTime + 1.25);
+
+      // 2. High energetic reveal chime chords at 1.15s
+      const chimeNotes = [523.25, 659.25, 783.99, 1046.50]; // C Major Chord
+      chimeNotes.forEach((freq, i) => {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, this.ctx.currentTime + 1.15 + i * 0.03);
+
+        gain.gain.setValueAtTime(0, this.ctx.currentTime + 1.15 + i * 0.03);
+        gain.gain.linearRampToValueAtTime(this.volume * 0.28, this.ctx.currentTime + 1.15 + i * 0.03 + 0.04);
+        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 1.15 + i * 0.03 + 0.7);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(this.ctx.currentTime + 1.15 + i * 0.03);
+        osc.stop(this.ctx.currentTime + 1.15 + i * 0.03 + 0.75);
+      });
+    } catch {
+      // Ignore audio context errors gracefully
+    }
+  }
+
   playSoldFanfare() {
     if (!this.enabled) return;
     this.init();

@@ -436,6 +436,84 @@
   animation: player-enter 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+/* ---- Card Reveal Animations ---- */
+
+/* Mystery card slow hover float */
+@keyframes mystery-float {
+  0%, 100% { transform: translateY(0px) rotateZ(-0.5deg); }
+  50%       { transform: translateY(-14px) rotateZ(0.5deg); }
+}
+
+/* Card slam — uses perspective() in transform so it works as a standalone CSS animation */
+@keyframes card-slam {
+  0%   { opacity: 0; transform: perspective(900px) rotateY(-88deg) scale(0.55); }
+  50%  { opacity: 1; transform: perspective(900px) rotateY(6deg) scale(1.07); }
+  72%  { transform: perspective(900px) rotateY(-2deg) scale(0.98); }
+  100% { opacity: 1; transform: perspective(900px) rotateY(0deg) scale(1); }
+}
+
+/* Shimmer glare sweep — uses translateX so 'left' property is not needed */
+@keyframes shimmer-sweep {
+  0%   { transform: translateX(-160%); opacity: 0; }
+  15%  { opacity: 1; }
+  85%  { opacity: 1; }
+  100% { transform: translateX(280%); opacity: 0; }
+}
+
+/* Particle burst ring expanding out */
+@keyframes burst-ring {
+  0%   { transform: scale(0.3); opacity: 0.9; }
+  100% { transform: scale(2.5); opacity: 0; }
+}
+
+/* Energy pulse ring */
+@keyframes energy-ring {
+  0%   { transform: scale(0.8); opacity: 0.7; }
+  100% { transform: scale(1.8); opacity: 0; }
+}
+
+/* Spotlight cone reveal */
+@keyframes spotlight-reveal {
+  0%   { opacity: 0; transform: scaleY(0.2); }
+  100% { opacity: 1; transform: scaleY(1); }
+}
+
+/* Info bar slides up from bottom */
+@keyframes info-slide-up {
+  0%   { opacity: 0; transform: translateY(24px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+/* Slow reveal card float once shown */
+@keyframes reveal-float {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-10px); }
+}
+
+/* Subtle diagonal gloss sweep — stays inside card boundaries */
+@keyframes gloss-sweep {
+  0%        { transform: translateX(-180%); opacity: 0; }
+  10%       { opacity: 1; }
+  90%       { opacity: 1; }
+  100%      { transform: translateX(280%); opacity: 0; }
+}
+
+.animate-mystery-float {
+  animation: mystery-float 3.2s ease-in-out infinite;
+}
+.animate-card-slam {
+  animation: card-slam 0.75s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+.animate-shimmer-sweep {
+  animation: shimmer-sweep 0.8s ease-in-out forwards;
+}
+.animate-burst-ring {
+  animation: burst-ring 0.7s ease-out forwards;
+}
+.animate-reveal-float {
+  animation: reveal-float 4s ease-in-out infinite;
+}
+
 /* =============================================
    BROADCAST SCREEN UTILITIES
    ============================================= */

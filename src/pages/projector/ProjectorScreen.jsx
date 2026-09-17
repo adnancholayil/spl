@@ -32,6 +32,38 @@ export const ProjectorScreen = () => {
   const winningTeam  = leadingTeam;
   const stage        = auctionState?.stage || 'IDLE';
 
+  const mode = projectorSettings.mode || 'AUTO';
+
+  const handleScroll = (e) => {
+    if (e.target.dataset.ignoreScroll === "true") return;
+    const channel = new BroadcastChannel('spl_projector_scroll');
+    channel.postMessage({
+      mode: mode,
+      scrollTop: e.target.scrollTop,
+      scrollLeft: e.target.scrollLeft
+    });
+    channel.close();
+  };
+
+  useEffect(() => {
+    const channel = new BroadcastChannel('spl_projector_scroll');
+    channel.onmessage = (e) => {
+      if (e.data.mode === mode) {
+        const container = document.getElementById(`scroll-container-${mode}`);
+        if (container) {
+          container.dataset.ignoreScroll = "true";
+          container.scrollTop = e.data.scrollTop;
+          container.scrollLeft = e.data.scrollLeft;
+          clearTimeout(container.scrollTimeout);
+          container.scrollTimeout = setTimeout(() => {
+            container.dataset.ignoreScroll = "false";
+          }, 50);
+        }
+      }
+    };
+    return () => channel.close();
+  }, [mode]);
+
   // Mouse hide effect
   useEffect(() => {
     let timer;
@@ -57,7 +89,6 @@ export const ProjectorScreen = () => {
     return () => window.removeEventListener('keydown', onKey);
   }, [toggleFullscreen]);
 
-  const mode = projectorSettings.mode || 'AUTO';
   const selectedTeam = teams?.find(t => t.id === projectorSettings.selectedTeamId) || teams[0];
   const soldPlayers = players?.filter(p => p.status === 'SOLD') || [];
   const unsoldPlayers = players?.filter(p => p.status === 'UNSOLD' || p.status === 'UPCOMING') || [];
@@ -73,6 +104,13 @@ export const ProjectorScreen = () => {
                 : projectorSettings.screenTheme === 'NEON' ? 'linear-gradient(135deg, rgba(3,8,5,0.85) 0%, rgba(6,28,15,0.9) 100%)'
                 : projectorSettings.screenTheme === 'CYBER' ? 'linear-gradient(135deg, rgba(6,2,3,0.85) 0%, rgba(32,5,7,0.9) 100%)'
                 : 'linear-gradient(135deg, rgba(10,10,10,0.85) 0%, rgba(0,0,0,0.95) 100%)';
+
+  const getAmbientColor = () => {
+    if (stage === 'BIDDING') return leadingTeam?.primaryColor || '#ea580c';
+    if (stage === 'SOLD' || stage === 'SIGNING') return winningTeam?.primaryColor || '#22c55e';
+    if (stage === 'UNSOLD') return '#ef4444';
+    return '#0ea5e9'; // Default for INTRO and IDLE
+  };
 
   return (
     <div
@@ -102,38 +140,40 @@ export const ProjectorScreen = () => {
       {/* RENDER CONTENT BASED ON MODE */}
       <div className="flex-1 w-full h-full relative overflow-hidden">
         {mode === 'AUTO' && (
-          <AnimatePresence mode="wait">
-            {stage === 'IDLE' && (
-              <motion.div key="idle" className="w-full h-full" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                <PlayerCardShowcase stage="IDLE" tournament={tournament} teams={teams} settings={projectorSettings} />
-              </motion.div>
-            )}
-            {stage === 'INTRO' && activePlayer && (
-              <motion.div key={`intro-${activePlayer.id}`} className="w-full h-full" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                <PlayerCardShowcase stage="INTRO" player={activePlayer} tournament={tournament} settings={projectorSettings} />
-              </motion.div>
-            )}
-            {stage === 'BIDDING' && activePlayer && (
-              <motion.div key="bidding" className="w-full h-full" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                <PlayerCardShowcase stage="BIDDING" player={activePlayer} tournament={tournament} teams={teams} currentBid={auctionState?.currentBid} leadingTeam={leadingTeam} bidHistory={auctionState?.bidHistory} settings={projectorSettings} />
-              </motion.div>
-            )}
-            {stage === 'SOLD' && activePlayer && (
-              <motion.div key="sold" className="w-full h-full" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                <PlayerCardShowcase stage="SOLD" player={activePlayer} tournament={tournament} winningTeam={winningTeam} finalPrice={auctionState?.currentBid} settings={projectorSettings} />
-              </motion.div>
-            )}
-            {stage === 'SIGNING' && activePlayer && (
-              <motion.div key="signing" className="w-full h-full" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                <PlayerCardShowcase stage="SIGNING" player={activePlayer} tournament={tournament} winningTeam={winningTeam} finalPrice={auctionState?.currentBid} settings={projectorSettings} />
-              </motion.div>
-            )}
-            {stage === 'UNSOLD' && activePlayer && (
-              <motion.div key="unsold" className="w-full h-full" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                <PlayerCardShowcase stage="UNSOLD" player={activePlayer} tournament={tournament} settings={projectorSettings} />
-              </motion.div>
-            )}
-          </AnimatePresence>
+          <StadiumBackground ambientColor={getAmbientColor()}>
+            <AnimatePresence mode="wait">
+              {stage === 'IDLE' && (
+                <motion.div key="idle" className="w-full h-full absolute inset-0" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                  <PlayerCardShowcase stage="IDLE" tournament={tournament} teams={teams} settings={projectorSettings} />
+                </motion.div>
+              )}
+              {stage === 'INTRO' && activePlayer && (
+                <motion.div key={`intro-${activePlayer.id}`} className="w-full h-full absolute inset-0" initial={{ x: -1000, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: 1000, opacity: 0 }} transition={{ type: 'spring', stiffness: 150, damping: 20 }}>
+                  <PlayerCardShowcase stage="INTRO" player={activePlayer} tournament={tournament} settings={projectorSettings} />
+                </motion.div>
+              )}
+              {stage === 'BIDDING' && activePlayer && (
+                <motion.div key={`bidding-${activePlayer.id}`} className="w-full h-full absolute inset-0" initial={{ x: -1000, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: 1000, opacity: 0 }} transition={{ type: 'spring', stiffness: 150, damping: 20 }}>
+                  <PlayerCardShowcase stage="BIDDING" player={activePlayer} tournament={tournament} teams={teams} currentBid={auctionState?.currentBid} leadingTeam={leadingTeam} bidHistory={auctionState?.bidHistory} settings={projectorSettings} />
+                </motion.div>
+              )}
+              {stage === 'SOLD' && activePlayer && (
+                <motion.div key={`sold-${activePlayer.id}`} className="w-full h-full absolute inset-0" initial={{ x: -1000, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: 1000, opacity: 0 }} transition={{ type: 'spring', stiffness: 150, damping: 20 }}>
+                  <PlayerCardShowcase stage="SOLD" player={activePlayer} tournament={tournament} winningTeam={winningTeam} finalPrice={auctionState?.currentBid} settings={projectorSettings} />
+                </motion.div>
+              )}
+              {stage === 'SIGNING' && activePlayer && (
+                <motion.div key={`signing-${activePlayer.id}`} className="w-full h-full absolute inset-0" initial={{ x: -1000, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: 1000, opacity: 0 }} transition={{ type: 'spring', stiffness: 150, damping: 20 }}>
+                  <PlayerCardShowcase stage="SIGNING" player={activePlayer} tournament={tournament} winningTeam={winningTeam} finalPrice={auctionState?.currentBid} settings={projectorSettings} />
+                </motion.div>
+              )}
+              {stage === 'UNSOLD' && activePlayer && (
+                <motion.div key={`unsold-${activePlayer.id}`} className="w-full h-full absolute inset-0" initial={{ x: -1000, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: 1000, opacity: 0 }} transition={{ type: 'spring', stiffness: 150, damping: 20 }}>
+                  <PlayerCardShowcase stage="UNSOLD" player={activePlayer} tournament={tournament} settings={projectorSettings} />
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </StadiumBackground>
         )}
 
         {/* CUSTOM MODE: CLUBS OVERVIEW & MANAGER BALANCES */}
@@ -234,7 +274,7 @@ export const ProjectorScreen = () => {
               )}
             </div>
 
-            <div className="my-auto flex gap-6 overflow-x-auto justify-center py-4">
+            <div id={`scroll-container-${mode}`} onScroll={handleScroll} className="my-auto flex gap-6 overflow-x-auto justify-center py-4">
               {players.filter(p => p.teamId === selectedTeam.id).map(p => (
                 <EFootballCard key={p.id} player={p} size="lg" />
               ))}
@@ -262,7 +302,7 @@ export const ProjectorScreen = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-4 gap-6 my-auto overflow-y-auto max-h-[70vh] p-2">
+            <div id={`scroll-container-${mode}`} onScroll={handleScroll} className="grid grid-cols-4 gap-6 my-auto overflow-y-auto max-h-[70vh] p-2">
               {soldPlayers.map(p => {
                 const team = teams.find(t => t.id === p.teamId);
                 return (
@@ -290,32 +330,12 @@ export const ProjectorScreen = () => {
 
         {/* CUSTOM MODE: UNSOLD / AVAILABLE POOL */}
         {mode === 'UNSOLD_SHOWCASE' && (
-          <div className="w-full h-full p-12 flex flex-col justify-between">
-            <div className="flex items-center justify-between border-b border-white/10 pb-6">
-              <div>
-                <div style={{ fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: 800, color: 'var(--spl-blue-light)', letterSpacing: '0.3em' }}>
-                  AUCTION PLAYERS POOL
-                </div>
-                <h1 style={{ fontFamily: 'var(--font-broadcast)', fontSize: 44, color: '#fff', textTransform: 'uppercase' }}>
-                  Available Players ({unsoldPlayers.length})
-                </h1>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-5 gap-4 my-auto overflow-y-auto max-h-[70vh] p-2">
+          <div className="w-full h-full p-12 flex flex-col justify-center">
+            <div id={`scroll-container-${mode}`} onScroll={handleScroll} className="flex flex-wrap justify-center gap-6 overflow-y-auto w-full p-4">
               {unsoldPlayers.map(p => (
-                <div key={p.id} style={{ background: 'rgba(15,23,42,0.85)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 10, padding: 14, textAlign: 'center' }}>
-                  <div style={{ fontFamily: 'var(--font-broadcast)', fontSize: 16, color: '#fff' }}>{p.name}</div>
-                  <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--spl-orange)', marginTop: 2 }}>{p.position} • OVR {p.overallRating}</div>
-                  {projectorSettings.showBasePrice && (
-                    <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>
-                      Base: <strong style={{ color: 'var(--spl-gold-light)' }}>{formatCurrency(p.basePrice)}</strong>
-                    </div>
-                  )}
-                </div>
+                <EFootballCard key={p.id} player={p} size="md" />
               ))}
             </div>
-            <div />
           </div>
         )}
       </div>

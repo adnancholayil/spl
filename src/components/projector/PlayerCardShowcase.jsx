@@ -1,15 +1,17 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatCurrency } from '../../utils/currency';
 import { EFootballCard } from '../common/EFootballCard';
 import { StadiumBackground } from './StadiumBackground';
 import { SPLLogo } from '../common/SPLLogo';
+import { soundEngine } from '../../services/soundService';
 import { Trophy, Shield, TrendingUp, Clock, Award, Users, Flame } from 'lucide-react';
 
 /**
  * High-End PlayerCardShowcase Component
  * Broadcast-Grade Live Football Auction Engine
  */
+
 
 const formatTime = (isoString) => {
   if (!isoString) return 'Just now';
@@ -23,7 +25,7 @@ const formatTime = (isoString) => {
 
 // ── 1. IDLE STAGE ─────────────────────────────────────────────────────────
 const IdleStage = ({ tournament, teams }) => (
-  <StadiumBackground>
+  <div className="w-full h-full">
     <div className="relative z-10 w-full h-full flex flex-col items-center justify-center p-10 select-none">
       
       {/* Center Hero Banner */}
@@ -82,37 +84,242 @@ const IdleStage = ({ tournament, teams }) => (
         </div>
       )}
     </div>
-  </StadiumBackground>
+  </div>
 );
 
-// ── 2. INTRO STAGE (CARD CENTERED ON STADIUM PITCH - CLEAN PRESENTATION) ─────
-const IntroStage = ({ player, tournament, settings }) => {
-  const cardTheme = settings?.cardTheme || 'GOLD';
+
+
+// ── MYSTERY CARD BACK COMPONENT (FOR SUSPENSE REVEAL) ────────────────────
+const MysteryCardBack = ({ size = 'xl' }) => {
+  const scaleMap = { sm: 0.65, md: 0.85, lg: 1.1, xl: 1.35 };
+  const scale = scaleMap[size] || scaleMap.xl;
+  const cardWidth = 320 * scale;
+  const cardHeight = 440 * scale;
 
   return (
-    <StadiumBackground ambientColor="#38bdf8">
-      <div className="relative z-10 w-full h-full flex flex-col items-center justify-center p-8 select-none">
-        
-        {/* CENTER PLAYER CARD HERO (NO PEDESTAL ELLIPSE SHADOW) */}
-        <motion.div
-          key={`center-card-${player.id}`}
-          initial={{ scale: 0.65, y: 80, opacity: 0 }}
-          animate={{ scale: 1, y: 0, opacity: 1 }}
-          exit={{ scale: 0.7, opacity: 0 }}
-          transition={{ type: 'spring', stiffness: 100, damping: 14 }}
-          className="my-auto flex flex-col items-center justify-center relative"
-        >
-          {/* Glowing EA FC Player Card */}
-          <EFootballCard 
-            player={player} 
-            size="xl" 
-            theme={cardTheme}
-            highlight={true} 
+    <div
+      style={{ width: cardWidth, height: cardHeight }}
+      className="relative select-none"
+    >
+      <svg
+        viewBox="0 0 320 440"
+        width={cardWidth}
+        height={cardHeight}
+        className="w-full h-full overflow-visible"
+        style={{ filter: 'drop-shadow(0 0 30px rgba(212,160,23,0.5)) drop-shadow(0 15px 30px rgba(0,0,0,0.9))' }}
+      >
+        <defs>
+          <path
+            id="mystery-card-shape"
+            d="M 32 14 Q 160 0 288 14 C 304 16 312 26 312 42 L 312 336 C 312 386 200 426 160 434 C 120 426 8 386 8 336 L 8 42 C 8 26 16 16 32 14 Z"
           />
-        </motion.div>
+          <linearGradient id="mystery-bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#1e293b" />
+            <stop offset="50%" stopColor="#0f172a" />
+            <stop offset="100%" stopColor="#020617" />
+          </linearGradient>
+          <linearGradient id="mystery-border-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#fae3a5" />
+            <stop offset="50%" stopColor="#d4a017" />
+            <stop offset="100%" stopColor="#7a540b" />
+          </linearGradient>
+          <pattern id="mystery-holo" width="30" height="30" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+            <line x1="0" y1="0" x2="0" y2="30" stroke="rgba(212,160,23,0.18)" strokeWidth="1.5" />
+            <polygon points="0,0 15,8 30,0 15,22" fill="rgba(212,160,23,0.06)" />
+          </pattern>
+        </defs>
+
+        {/* Outer Gold Bevel Frame */}
+        <use href="#mystery-card-shape" fill="none" stroke="url(#mystery-border-grad)" strokeWidth="8" strokeLinejoin="round" />
+        
+        {/* Inner Shield Fill */}
+        <use href="#mystery-card-shape" fill="url(#mystery-bg-grad)" />
+        
+        {/* Holographic Mesh Overlay */}
+        <use href="#mystery-card-shape" fill="url(#mystery-holo)" style={{ mixBlendMode: 'overlay' }} />
+
+        {/* Center Glowing SPL Crest */}
+        <g transform="translate(160, 200)">
+          {/* Pulsing Energy Rings */}
+          <circle cx="0" cy="0" r="70" fill="none" stroke="rgba(212,160,23,0.25)" strokeWidth="2" strokeDasharray="6 4" />
+          <circle cx="0" cy="0" r="55" fill="none" stroke="rgba(212,160,23,0.4)" strokeWidth="1.5" />
+          
+          {/* Mystery Logo */}
+          <image href="/assets/logo.png" x="-45" y="-45" width="90" height="90" preserveAspectRatio="xMidYMid meet" />
+          
+          <text
+            x="0"
+            y="7"
+            fontFamily="system-ui, -apple-system, sans-serif"
+            fontSize="18"
+            fontWeight="900"
+            fill="#FFFFFF"
+            textAnchor="middle"
+            letterSpacing="0.06em"
+            filter="drop-shadow(0 2px 4px rgba(0,0,0,0.9))"
+          >
+            SPL
+          </text>
+        </g>
+
+        {/* Top Mystery Text */}
+        <text
+          x="160"
+          y="75"
+          fontFamily="var(--font-broadcast), 'Bebas Neue', sans-serif"
+          fontSize="24"
+          fontWeight="900"
+          fill="#d4a017"
+          textAnchor="middle"
+          letterSpacing="4"
+          filter="drop-shadow(0 2px 4px rgba(0,0,0,0.8))"
+        >
+          SUPER PREMIER LEAGUE
+        </text>
+
+        {/* Bottom Mystery Question Badge */}
+        <g transform="translate(160, 365)">
+          <text
+            x="0"
+            y="0"
+            fontFamily="var(--font-broadcast), 'Bebas Neue', Impact, sans-serif"
+            fontSize="52"
+            fontWeight="900"
+            fill="#d4a017"
+            textAnchor="middle"
+            filter="drop-shadow(0 2px 8px rgba(212,160,23,0.7))"
+          >
+            ?
+          </text>
+        </g>
+      </svg>
+    </div>
+  );
+};
+
+// ── 2. INTRO STAGE — SIMPLE CARD FLIP REVEAL ──────────────────────────────
+//
+//  1. Card back is shown first (mystery side)
+//  2. After 1.8s it smoothly flips 180° to reveal the player card
+//  3. After flip: subtle looping gloss shimmer on the card only
+//  4. Info bar gently rises from below
+//
+const IntroStage = ({ player, tournament, settings }) => {
+  const cardTheme = settings?.cardTheme || 'GOLD';
+  const [flipped, setFlipped]     = useState(false);   // triggers the flip
+  const [revealed, setRevealed]   = useState(false);   // flip animation done
+  const [displayPlayer, setDisplayPlayer] = useState(player);
+
+  useEffect(() => {
+    if (player?.id !== displayPlayer?.id) {
+      setFlipped(false);
+      setRevealed(false);
+      
+      const t1 = setTimeout(() => {
+        setDisplayPlayer(player);
+        soundEngine.playRevealSound();
+      }, 600);
+      
+      const t2 = setTimeout(() => setFlipped(true), 1400);
+      const t3 = setTimeout(() => setRevealed(true), 2500);
+      
+      return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
+    } else {
+      setFlipped(false);
+      setRevealed(false);
+      soundEngine.playRevealSound();
+  
+      const t1 = setTimeout(() => setFlipped(true), 1800);
+      const t2 = setTimeout(() => setRevealed(true), 2900);
+  
+      return () => { clearTimeout(t1); clearTimeout(t2); };
+    }
+  }, [player?.id]);
+
+  // Click to skip suspense
+  const handleSkip = () => {
+    if (!flipped) {
+      setFlipped(true);
+      setTimeout(() => setRevealed(true), 1100);
+    }
+  };
+
+  // Card dimensions matching MysteryCardBack xl scale (1.35)
+  const CARD_W = Math.round(320 * 1.35);
+  const CARD_H = Math.round(440 * 1.35);
+
+  return (
+    <div className="w-full h-full">
+      <div
+        onClick={handleSkip}
+        className="relative z-10 w-full h-full flex flex-col items-center justify-center select-none"
+        style={{ cursor: flipped ? 'default' : 'pointer' }}
+      >
+
+        {/* ── CENTER: 3D card flip container ── */}
+        <div className="flex-1 flex items-center justify-center">
+          {/*
+            perspective wrapper — required for 3D depth.
+            Inner card-flipper rotates from 0 → 180deg.
+            Both faces are absolutely stacked; backface-visibility:hidden
+            hides the non-active face.
+          */}
+          <motion.div
+            initial={{ scale: 0.88, opacity: 0, y: 20 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+            style={{ perspective: 1200 }}
+          >
+            {/* Flipper — this is what rotates */}
+            <motion.div
+              animate={{ rotateY: flipped ? 180 : 0 }}
+              transition={{ duration: 1.05, ease: [0.4, 0, 0.2, 1] }}
+              style={{
+                width: CARD_W,
+                height: CARD_H,
+                position: 'relative',
+                transformStyle: 'preserve-3d',
+              }}
+            >
+
+              {/* ── BACK FACE (mystery card) ── */}
+              <div
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  backfaceVisibility: 'hidden',
+                  WebkitBackfaceVisibility: 'hidden',
+                }}
+              >
+                <MysteryCardBack size="xl" />
+              </div>
+
+              {/* ── FRONT FACE (player card) — pre-rotated 180° so it starts hidden ── */}
+              <div
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  backfaceVisibility: 'hidden',
+                  WebkitBackfaceVisibility: 'hidden',
+                  transform: 'rotateY(180deg)',
+                }}
+              >
+                <div style={{ position: 'relative', width: CARD_W, height: CARD_H }}>
+                  <EFootballCard
+                    player={displayPlayer}
+                    size="xl"
+                    theme={cardTheme}
+                    highlight={false}
+                  />
+                </div>
+              </div>
+
+            </motion.div>
+          </motion.div>
+        </div>
 
       </div>
-    </StadiumBackground>
+    </div>
   );
 };
 
@@ -136,7 +343,7 @@ const BiddingStage = ({
   }, [currentBid]);
 
   return (
-    <StadiumBackground ambientColor={leadingTeam?.primaryColor || '#ea580c'}>
+    <div className="w-full h-full">
       <div className="relative z-10 w-full h-full flex flex-col p-6 select-none overflow-hidden">
         
         {/* Top Live Broadcast Bar */}
@@ -346,7 +553,7 @@ const BiddingStage = ({
           </motion.div>
         </div>
       </div>
-    </StadiumBackground>
+    </div>
   );
 };
 
@@ -355,7 +562,7 @@ const SoldStage = ({ player, winningTeam, finalPrice, tournament, settings }) =>
   const cardTheme = settings?.cardTheme || 'GOLD';
 
   return (
-    <StadiumBackground ambientColor="#22c55e">
+    <div className="w-full h-full">
       <div className="relative z-10 w-full h-full flex flex-col items-center justify-between p-10 select-none">
         
         {/* Top Banner */}
@@ -435,7 +642,7 @@ const SoldStage = ({ player, winningTeam, finalPrice, tournament, settings }) =>
           {player?.name} HAS OFFICIALLY JOINED {winningTeam?.name || 'THE CLUB'}
         </div>
       </div>
-    </StadiumBackground>
+    </div>
   );
 };
 
@@ -444,7 +651,7 @@ const UnsoldStage = ({ player, settings }) => {
   const cardTheme = settings?.cardTheme || 'GOLD';
 
   return (
-    <StadiumBackground ambientColor="#ef4444">
+    <div className="w-full h-full">
       <div className="relative z-10 w-full h-full flex flex-col items-center justify-center p-10 select-none text-center">
         <motion.div
           initial={{ scale: 0.7, opacity: 0 }}
@@ -466,7 +673,7 @@ const UnsoldStage = ({ player, settings }) => {
           </p>
         </motion.div>
       </div>
-    </StadiumBackground>
+    </div>
   );
 };
 
