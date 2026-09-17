@@ -27,9 +27,9 @@ const formatTime = (isoString) => {
 const IdleStage = ({ tournament, teams }) => (
   <div className="w-full h-full">
     <div className="relative z-10 w-full h-full flex flex-col items-center justify-center p-10 select-none">
-      
+
       {/* Center Hero Banner */}
-      <motion.div 
+      <motion.div
         initial={{ scale: 0.85, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ duration: 0.8 }}
@@ -38,7 +38,7 @@ const IdleStage = ({ tournament, teams }) => (
         <div className="p-4 bg-slate-900/60 rounded-full border border-amber-400/30 backdrop-blur-md shadow-2xl">
           <SPLLogo size={140} />
         </div>
-        <h1 
+        <h1
           className="text-white text-6xl md:text-8xl tracking-wider font-extrabold uppercase drop-shadow-2xl"
           style={{ fontFamily: 'var(--font-broadcast)' }}
         >
@@ -60,8 +60,8 @@ const IdleStage = ({ tournament, teams }) => (
           </h4>
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
             {teams.map((t) => (
-              <div 
-                key={t.id} 
+              <div
+                key={t.id}
                 className="bg-black/50 border border-white/10 rounded-xl p-3 flex items-center gap-3 shadow-lg"
                 style={{ borderLeft: `4px solid ${t.primaryColor || '#3b82f6'}` }}
               >
@@ -95,103 +95,170 @@ const MysteryCardBack = ({ size = 'xl' }) => {
   const scale = scaleMap[size] || scaleMap.xl;
   const cardWidth = 320 * scale;
   const cardHeight = 440 * scale;
+  const cardPath = "M 80 15 Q 160 5 240 15 L 305 55 L 305 345 L 160 405 L 15 345 L 15 55 Z";
 
   return (
-    <div
-      style={{ width: cardWidth, height: cardHeight }}
-      className="relative select-none"
-    >
+    <div style={{ width: cardWidth, height: cardHeight }} className="relative select-none">
       <svg
         viewBox="0 0 320 440"
         width={cardWidth}
         height={cardHeight}
         className="w-full h-full overflow-visible"
-        style={{ filter: 'drop-shadow(0 0 30px rgba(212,160,23,0.5)) drop-shadow(0 15px 30px rgba(0,0,0,0.9))' }}
+        style={{ filter: 'drop-shadow(0 0 50px rgba(212,175,55,0.5)) drop-shadow(0 20px 40px rgba(0,0,0,0.95))' }}
       >
         <defs>
-          <path
-            id="mystery-card-shape"
-            d="M 32 14 Q 160 0 288 14 C 304 16 312 26 312 42 L 312 336 C 312 386 200 426 160 434 C 120 426 8 386 8 336 L 8 42 C 8 26 16 16 32 14 Z"
-          />
-          <linearGradient id="mystery-bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#1e293b" />
-            <stop offset="50%" stopColor="#0f172a" />
-            <stop offset="100%" stopColor="#020617" />
+          <path id="mys-shape" d={cardPath} />
+          <clipPath id="mys-clip"><use href="#mys-shape" /></clipPath>
+
+          {/* Rich Obsidian Background */}
+          <linearGradient id="mys-bg" x1="30%" y1="0%" x2="70%" y2="100%">
+            <stop offset="0%" stopColor="#141824" />
+            <stop offset="40%" stopColor="#0B0F1A" />
+            <stop offset="100%" stopColor="#020408" />
           </linearGradient>
-          <linearGradient id="mystery-border-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#fae3a5" />
-            <stop offset="50%" stopColor="#d4a017" />
-            <stop offset="100%" stopColor="#7a540b" />
+
+          {/* 5-stop Shimmer Gold Border */}
+          <linearGradient id="mys-gold" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#FFFDE7" />
+            <stop offset="20%" stopColor="#F59E0B" />
+            <stop offset="50%" stopColor="#FEF08A" />
+            <stop offset="80%" stopColor="#B45309" />
+            <stop offset="100%" stopColor="#FDE68A" />
           </linearGradient>
-          <pattern id="mystery-holo" width="30" height="30" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-            <line x1="0" y1="0" x2="0" y2="30" stroke="rgba(212,160,23,0.18)" strokeWidth="1.5" />
-            <polygon points="0,0 15,8 30,0 15,22" fill="rgba(212,160,23,0.06)" />
+
+          {/* Inner border accent */}
+          <linearGradient id="mys-gold-inner" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="rgba(254,240,138,0.4)" />
+            <stop offset="50%" stopColor="rgba(245,158,11,0.15)" />
+            <stop offset="100%" stopColor="rgba(254,240,138,0.4)" />
+          </linearGradient>
+
+          {/* Center emblem dark circle */}
+          <radialGradient id="mys-emblem-bg" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="#1A1F30" />
+            <stop offset="100%" stopColor="#08090F" />
+          </radialGradient>
+
+          {/* Radial center spotlight */}
+          <radialGradient id="mys-spotlight" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="rgba(245,158,11,0.18)" />
+            <stop offset="60%" stopColor="rgba(245,158,11,0.06)" />
+            <stop offset="100%" stopColor="rgba(0,0,0,0)" />
+          </radialGradient>
+
+          {/* Diagonal stripe texture */}
+          <pattern id="mys-stripes" width="24" height="24" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+            <rect width="1" height="24" fill="rgba(245,158,11,0.05)" />
+          </pattern>
+
+          {/* Horizontal lines */}
+          <pattern id="mys-hlines" width="320" height="16" patternUnits="userSpaceOnUse">
+            <line x1="0" y1="15.5" x2="320" y2="15.5" stroke="rgba(245,158,11,0.04)" strokeWidth="1" />
           </pattern>
         </defs>
 
-        {/* Outer Gold Bevel Frame */}
-        <use href="#mystery-card-shape" fill="none" stroke="url(#mystery-border-grad)" strokeWidth="8" strokeLinejoin="round" />
-        
-        {/* Inner Shield Fill */}
-        <use href="#mystery-card-shape" fill="url(#mystery-bg-grad)" />
-        
-        {/* Holographic Mesh Overlay */}
-        <use href="#mystery-card-shape" fill="url(#mystery-holo)" style={{ mixBlendMode: 'overlay' }} />
+        {/* ── LAYER 1: Deep background ── */}
+        <use href="#mys-shape" fill="url(#mys-bg)" />
 
-        {/* Center Glowing SPL Crest */}
-        <g transform="translate(160, 200)">
-          {/* Pulsing Energy Rings */}
-          <circle cx="0" cy="0" r="70" fill="none" stroke="rgba(212,160,23,0.25)" strokeWidth="2" strokeDasharray="6 4" />
-          <circle cx="0" cy="0" r="55" fill="none" stroke="rgba(212,160,23,0.4)" strokeWidth="1.5" />
-          
-          {/* Mystery Logo */}
-          <image href="/assets/logo.png" x="-45" y="-45" width="90" height="90" preserveAspectRatio="xMidYMid meet" />
-          
+        {/* ── LAYER 2: Subtle grid texture ── */}
+        <use href="#mys-shape" fill="url(#mys-stripes)" />
+        <use href="#mys-shape" fill="url(#mys-hlines)" />
+
+        {/* ── LAYER 3: Clipped design elements ── */}
+        <g clipPath="url(#mys-clip)">
+          {/* Sweeping diagonal golden light beam (top-left to bottom-right) */}
+          <rect x="-40" y="-40" width="80" height="500" transform="rotate(-35, 160, 210)" fill="rgba(245,158,11,0.04)" />
+          <rect x="60" y="-40" width="30" height="500" transform="rotate(-35, 160, 210)" fill="rgba(245,158,11,0.03)" />
+
+          {/* Top decorative geometric triangle accent */}
+          <polygon points="160,18 130,55 190,55" fill="rgba(245,158,11,0.12)" />
+          <polygon points="160,28 140,55 180,55" fill="rgba(245,158,11,0.08)" />
+
+          {/* Horizontal accent lines (top and bottom thirds) */}
+          <line x1="30" y1="85" x2="290" y2="85" stroke="url(#mys-gold-inner)" strokeWidth="1" />
+          <line x1="30" y1="88" x2="290" y2="88" stroke="rgba(245,158,11,0.06)" strokeWidth="0.5" />
+          <line x1="30" y1="330" x2="290" y2="330" stroke="url(#mys-gold-inner)" strokeWidth="1" />
+          <line x1="30" y1="333" x2="290" y2="333" stroke="rgba(245,158,11,0.06)" strokeWidth="0.5" />
+
+          {/* Corner diamond accents - top */}
+          <polygon points="40,60 55,68 40,76" fill="rgba(245,158,11,0.25)" />
+          <polygon points="280,60 265,68 280,76" fill="rgba(245,158,11,0.25)" />
+
+          {/* Center radial spotlight */}
+          <ellipse cx="160" cy="210" rx="130" ry="100" fill="url(#mys-spotlight)" />
+
+          {/* ── CENTER EMBLEM SYSTEM ── */}
+          {/* Outer rings */}
+          <circle cx="160" cy="200" r="88" fill="none" stroke="rgba(245,158,11,0.12)" strokeWidth="2" />
+          <circle cx="160" cy="200" r="80" fill="none" stroke="rgba(245,158,11,0.2)" strokeWidth="1" strokeDasharray="6 6" />
+          <circle cx="160" cy="200" r="70" fill="none" stroke="rgba(245,158,11,0.35)" strokeWidth="1.5" />
+
+          {/* Dark emblem background circle */}
+          <circle cx="160" cy="200" r="58" fill="url(#mys-emblem-bg)" />
+          <circle cx="160" cy="200" r="58" fill="none" stroke="url(#mys-gold)" strokeWidth="2.5" />
+
+          {/* SPL Logo centered perfectly at (160, 200) */}
+          <image
+            href="/assets/logo.png"
+            x="122" y="162" width="76" height="76"
+            preserveAspectRatio="xMidYMid meet"
+            style={{ filter: 'drop-shadow(0px 3px 8px rgba(0,0,0,0.9))' }}
+          />
+          {/* SPL text — CSS flex centers it perfectly in the logo's pentagon */}
+          <foreignObject x="124" y="162" width="76" height="76">
+            <div xmlns="http://www.w3.org/1999/xhtml" style={{
+              width: '100%',
+              height: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontFamily: "'Bebas Neue', Impact, 'Arial Black', sans-serif",
+              fontSize: '16px',
+              fontWeight: 'bold',
+              color: '#FFFFFF',
+              letterSpacing: '2px',
+              textShadow: '0px 1px 5px rgba(0,0,0,0.95)',
+              pointerEvents: 'none',
+            }}>SPL</div>
+          </foreignObject>
+
+          {/* ── BOTTOM BRANDING SECTION ── */}
+          {/* Divider dots */}
+          <circle cx="140" cy="290" r="1.5" fill="rgba(245,158,11,0.6)" />
+          <circle cx="160" cy="290" r="1.5" fill="rgba(245,158,11,0.9)" />
+          <circle cx="180" cy="290" r="1.5" fill="rgba(245,158,11,0.6)" />
+
+          {/* SUPER PREMIER LEAGUE text */}
           <text
-            x="0"
-            y="7"
-            fontFamily="system-ui, -apple-system, sans-serif"
-            fontSize="18"
-            fontWeight="900"
-            fill="#FFFFFF"
+            x="160" y="315"
+            fontFamily="'Bebas Neue', Impact, sans-serif"
+            fontSize="22"
+            fontWeight="700"
+            fill="url(#mys-gold)"
             textAnchor="middle"
-            letterSpacing="0.06em"
-            filter="drop-shadow(0 2px 4px rgba(0,0,0,0.9))"
-          >
-            SPL
-          </text>
+            style={{ letterSpacing: '4px' }}
+          >SUPER PREMIER LEAGUE</text>
+
+          {/* Season text */}
+          <text
+            x="160" y="332"
+            fontFamily="Arial, sans-serif"
+            fontSize="10"
+            fontWeight="400"
+            fill="rgba(255,255,255,0.35)"
+            textAnchor="middle"
+            style={{ letterSpacing: '3px' }}
+          >2026 SEASON</text>
+
+          {/* Bottom corner accents */}
+          <polygon points="40,345 55,337 40,329" fill="rgba(245,158,11,0.25)" />
+          <polygon points="280,345 265,337 280,329" fill="rgba(245,158,11,0.25)" />
         </g>
 
-        {/* Top Mystery Text */}
-        <text
-          x="160"
-          y="75"
-          fontFamily="var(--font-broadcast), 'Bebas Neue', sans-serif"
-          fontSize="24"
-          fontWeight="900"
-          fill="#d4a017"
-          textAnchor="middle"
-          letterSpacing="4"
-          filter="drop-shadow(0 2px 4px rgba(0,0,0,0.8))"
-        >
-          SUPER PREMIER LEAGUE
-        </text>
-
-        {/* Bottom Mystery Question Badge */}
-        <g transform="translate(160, 365)">
-          <text
-            x="0"
-            y="0"
-            fontFamily="var(--font-broadcast), 'Bebas Neue', Impact, sans-serif"
-            fontSize="52"
-            fontWeight="900"
-            fill="#d4a017"
-            textAnchor="middle"
-            filter="drop-shadow(0 2px 8px rgba(212,160,23,0.7))"
-          >
-            ?
-          </text>
-        </g>
+        {/* ── LAYER 4: Outer gold border (drawn last so it's on top) ── */}
+        <use href="#mys-shape" fill="none" stroke="url(#mys-gold)" strokeWidth="5" />
+        {/* Inner gold accent border */}
+        <use href="#mys-shape" fill="none" stroke="rgba(254,240,138,0.2)" strokeWidth="2" />
       </svg>
     </div>
   );
@@ -206,32 +273,32 @@ const MysteryCardBack = ({ size = 'xl' }) => {
 //
 const IntroStage = ({ player, tournament, settings }) => {
   const cardTheme = settings?.cardTheme || 'GOLD';
-  const [flipped, setFlipped]     = useState(false);   // triggers the flip
-  const [revealed, setRevealed]   = useState(false);   // flip animation done
+  const [flipped, setFlipped] = useState(false);   // triggers the flip
+  const [revealed, setRevealed] = useState(false);   // flip animation done
   const [displayPlayer, setDisplayPlayer] = useState(player);
 
   useEffect(() => {
     if (player?.id !== displayPlayer?.id) {
       setFlipped(false);
       setRevealed(false);
-      
+
       const t1 = setTimeout(() => {
         setDisplayPlayer(player);
         soundEngine.playRevealSound();
       }, 600);
-      
+
       const t2 = setTimeout(() => setFlipped(true), 1400);
       const t3 = setTimeout(() => setRevealed(true), 2500);
-      
+
       return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
     } else {
       setFlipped(false);
       setRevealed(false);
       soundEngine.playRevealSound();
-  
+
       const t1 = setTimeout(() => setFlipped(true), 1800);
       const t2 = setTimeout(() => setRevealed(true), 2900);
-  
+
       return () => { clearTimeout(t1); clearTimeout(t2); };
     }
   }, [player?.id]);
@@ -345,7 +412,7 @@ const BiddingStage = ({
   return (
     <div className="w-full h-full">
       <div className="relative z-10 w-full h-full flex flex-col p-6 select-none overflow-hidden">
-        
+
         {/* Top Live Broadcast Bar */}
         <div className="w-full flex items-center justify-between border-b border-white/10 pb-3 mb-4">
           <div className="flex items-center gap-4">
@@ -364,7 +431,7 @@ const BiddingStage = ({
 
         {/* SPLIT SCREEN LAYOUT: CARD POSITIONED ON LEFT, TABLES ON RIGHT */}
         <div className="flex-1 w-full flex gap-8 items-center min-h-0 overflow-hidden">
-          
+
           {/* LEFT SIDE: EA FC PLAYER CARD (POSITION SHIFTED LEFT) */}
           <motion.div
             initial={{ x: -120, opacity: 0 }}
@@ -372,11 +439,11 @@ const BiddingStage = ({
             transition={{ type: 'spring', stiffness: 100, damping: 15 }}
             className="w-[35%] h-full flex flex-col items-center justify-center relative flex-shrink-0"
           >
-            <EFootballCard 
-              player={player} 
-              size="lg" 
+            <EFootballCard
+              player={player}
+              size="lg"
               theme={cardTheme}
-              highlight={true} 
+              highlight={true}
             />
           </motion.div>
 
@@ -388,7 +455,7 @@ const BiddingStage = ({
             className="flex-1 h-full flex flex-col gap-4 min-w-0"
           >
             {/* HERO CURRENT BID PANEL */}
-            <div 
+            <div
               className="bg-slate-900/95 border border-white/15 rounded-2xl p-6 relative overflow-hidden flex items-center justify-between shadow-2xl backdrop-blur-xl"
               style={{
                 borderLeft: leadingTeam ? `8px solid ${leadingTeam.primaryColor}` : '8px solid #ea580c',
@@ -398,10 +465,9 @@ const BiddingStage = ({
                 <div className="text-xs font-black uppercase text-orange-400 tracking-widest mb-1" style={{ fontFamily: 'var(--font-display)' }}>
                   CURRENT HIGHEST BID
                 </div>
-                <div 
-                  className={`text-6xl md:text-7xl font-black tracking-tight transition-all duration-300 ${
-                    flash ? 'text-orange-400 scale-105' : 'text-amber-400'
-                  }`}
+                <div
+                  className={`text-6xl md:text-7xl font-black tracking-tight transition-all duration-300 ${flash ? 'text-orange-400 scale-105' : 'text-amber-400'
+                    }`}
                   style={{ fontFamily: 'var(--font-broadcast)' }}
                 >
                   {formatCurrency(currentBid || player?.basePrice, tournament?.currency)}
@@ -464,16 +530,14 @@ const BiddingStage = ({
                         const isHighest = idx === 0;
                         const team = teams.find(t => t.id === bid.teamId) || { name: bid.teamName || 'Club', primaryColor: '#3b82f6' };
                         return (
-                          <tr 
+                          <tr
                             key={bid.id || idx}
-                            className={`transition-colors ${
-                              isHighest ? 'bg-orange-500/20 font-bold' : 'hover:bg-white/5'
-                            }`}
+                            className={`transition-colors ${isHighest ? 'bg-orange-500/20 font-bold' : 'hover:bg-white/5'
+                              }`}
                           >
                             <td className="py-3 px-3">
-                              <span className={`inline-flex items-center justify-center w-6 h-6 rounded text-xs font-black ${
-                                isHighest ? 'bg-orange-500 text-white' : 'bg-slate-800 text-slate-400'
-                              }`}>
+                              <span className={`inline-flex items-center justify-center w-6 h-6 rounded text-xs font-black ${isHighest ? 'bg-orange-500 text-white' : 'bg-slate-800 text-slate-400'
+                                }`}>
                                 #{bidHistory.length - idx}
                               </span>
                             </td>
@@ -526,11 +590,10 @@ const BiddingStage = ({
                   {teams.map(t => {
                     const isLeading = t.id === leadingTeam?.id;
                     return (
-                      <div 
-                        key={t.id} 
-                        className={`p-2.5 rounded-lg border flex items-center justify-between ${
-                          isLeading ? 'bg-orange-500/15 border-orange-500/50' : 'bg-black/40 border-white/10'
-                        }`}
+                      <div
+                        key={t.id}
+                        className={`p-2.5 rounded-lg border flex items-center justify-between ${isLeading ? 'bg-orange-500/15 border-orange-500/50' : 'bg-black/40 border-white/10'
+                          }`}
                       >
                         <div className="min-w-0">
                           <div className="text-xs font-extrabold text-white uppercase truncate" style={{ fontFamily: 'var(--font-display)', color: t.primaryColor }}>
@@ -564,7 +627,7 @@ const SoldStage = ({ player, winningTeam, finalPrice, tournament, settings }) =>
   return (
     <div className="w-full h-full">
       <div className="relative z-10 w-full h-full flex flex-col items-center justify-between p-10 select-none">
-        
+
         {/* Top Banner */}
         <motion.div
           initial={{ y: -50, opacity: 0 }}
@@ -579,18 +642,18 @@ const SoldStage = ({ player, winningTeam, finalPrice, tournament, settings }) =>
 
         {/* Center Presentation */}
         <div className="my-auto flex flex-col md:flex-row items-center justify-center gap-12 w-full max-w-5xl">
-          
+
           {/* EA FC Card with SOLD Stamp */}
           <motion.div
             initial={{ scale: 0.6, rotate: -6, opacity: 0 }}
             animate={{ scale: 1, rotate: 0, opacity: 1 }}
             transition={{ type: 'spring', stiffness: 120, damping: 12 }}
           >
-            <EFootballCard 
-              player={player} 
-              size="lg" 
+            <EFootballCard
+              player={player}
+              size="lg"
               theme={cardTheme}
-              status="SOLD" 
+              status="SOLD"
               highlight={true}
             />
           </motion.div>
@@ -612,8 +675,8 @@ const SoldStage = ({ player, winningTeam, finalPrice, tournament, settings }) =>
                   <img src={winningTeam.logoUrl} alt={winningTeam.name} className="w-20 h-20 object-contain" />
                 )}
                 <div>
-                  <h2 
-                    className="text-5xl font-black uppercase tracking-wider" 
+                  <h2
+                    className="text-5xl font-black uppercase tracking-wider"
                     style={{ fontFamily: 'var(--font-broadcast)', color: winningTeam.primaryColor || '#22c55e' }}
                   >
                     {winningTeam.name}
@@ -658,11 +721,11 @@ const UnsoldStage = ({ player, settings }) => {
           animate={{ scale: 1, opacity: 1 }}
           className="flex flex-col items-center gap-6"
         >
-          <EFootballCard 
-            player={player} 
-            size="lg" 
+          <EFootballCard
+            player={player}
+            size="lg"
             theme={cardTheme}
-            status="UNSOLD" 
+            status="UNSOLD"
           />
 
           <h2 className="text-5xl font-black text-red-500 uppercase tracking-widest" style={{ fontFamily: 'var(--font-broadcast)' }}>
@@ -706,26 +769,26 @@ export const PlayerCardShowcase = ({
 
       {stage === 'BIDDING' && player && (
         <motion.div key={`bidding-${player.id}`} className="w-full h-full" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-          <BiddingStage 
-            player={player} 
-            currentBid={currentBid} 
-            leadingTeam={leadingTeam} 
-            bidHistory={bidHistory} 
+          <BiddingStage
+            player={player}
+            currentBid={currentBid}
+            leadingTeam={leadingTeam}
+            bidHistory={bidHistory}
             teams={teams}
-            tournament={tournament} 
-            settings={settings} 
+            tournament={tournament}
+            settings={settings}
           />
         </motion.div>
       )}
 
       {(stage === 'SOLD' || stage === 'SIGNING') && player && (
         <motion.div key={`sold-${player.id}`} className="w-full h-full" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-          <SoldStage 
-            player={player} 
-            winningTeam={winningTeam || leadingTeam} 
-            finalPrice={finalPrice || currentBid} 
-            tournament={tournament} 
-            settings={settings} 
+          <SoldStage
+            player={player}
+            winningTeam={winningTeam || leadingTeam}
+            finalPrice={finalPrice || currentBid}
+            tournament={tournament}
+            settings={settings}
           />
         </motion.div>
       )}
