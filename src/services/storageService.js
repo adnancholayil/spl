@@ -10,6 +10,7 @@ const KEYS = {
   AUTH:             'spl_auth_user',
   SETTINGS:         'spl_app_settings',
   PROJECTOR_SETTINGS: 'spl_projector_settings',
+  CARD_THEME:       'spl_card_theme',
   DATA_CLEARED:     'spl_user_cleared_data',
   DEMO_WIPED:       'spl_demo_cleared_wipe_v2'
 };
@@ -26,6 +27,16 @@ const DEFAULT_PROJECTOR_SETTINGS = {
   customTickerText: 'SUPER PREMIER LEAGUE 2026 • OFFICIAL PLAYER AUCTION & SQUAD DRAFT',
   selectedTeamId: '',
   screenTheme: 'DEFAULT',
+  bgImage: '',
+  bgFilter1: '#060503',
+  bgFilter2: '#1c1404',
+  bgFilterOpacity1: 85,
+  bgFilterOpacity2: 90,
+  panelBgColor: '#000000',
+  panelBgOpacity: 50,
+  panelBorderColor: '#ffffff',
+  panelBorderOpacity: 10,
+  ambientShadowOpacity: 20,
 };
 
 const DEFAULT_TOURNAMENT = {
@@ -39,6 +50,55 @@ const DEFAULT_TOURNAMENT = {
   defaultBudget: 5000,
   minIncrement: 5,
   createdAt: new Date().toISOString()
+};
+
+const DEFAULT_CARD_THEME = {
+  bgGrad1: '#fff3c2',
+  bgGrad2: '#e6b856',
+  bgGrad3: '#c29029',
+  bgGrad4: '#4a3206',
+  border1: '#fff4cc',
+  border2: '#e6c265',
+  border3: '#523403',
+  textDark: '#1c1505',
+  textLight: '#ffffff',
+  accent: '#fff',
+  // Layout offsets
+  layoutRatingX: 55,
+  layoutRatingY: 90,
+  layoutNameY: 280,
+  layoutNameFontSize: 40,
+  layoutImageX: 40,
+  layoutImageY: 50,
+  layoutImageW: 280,
+  layoutImageH: 280,
+  layoutImageFadeY: 55,
+  layoutShadowY: 220,
+  layoutShadowOpacity: 60,
+  layoutRatingSize: 52,
+  layoutPositionSize: 18,
+  layoutStatNumSize: 18,
+  layoutStatLabelSize: 18,
+  layoutLogoScale: 100,
+  cardShape: 'eafc24', // eafc24, shield, classic
+  layoutStatsY: 315,
+  layoutStatsGapX: 40,
+  layoutStatsGapY: 30,
+  // Visibility Toggles
+  showRating: true,
+  showLogos: true,
+  showName: true,
+  showStats: true,
+  // Front Side Layout
+  frontSideDesign: 'geometric',
+  // Back Side Layout
+  backSideDesign: 'geometric',
+  backSideLogoY: 200,
+  backSideLogoScale: 100,
+  showBackSideLogo: true,
+  backSideTextY: 315,
+  backSideTextSize: 22,
+  showBackSideText: true,
 };
 
 const INITIAL_AUCTION_STATE = {
@@ -80,7 +140,20 @@ export const storageService = {
   getTeams()             { this.init(); return JSON.parse(localStorage.getItem(KEYS.TEAMS)) || []; },
   saveTeams(teams)       { localStorage.setItem(KEYS.TEAMS, JSON.stringify(teams)); return teams; },
 
-  getPlayers()           { this.init(); return JSON.parse(localStorage.getItem(KEYS.PLAYERS)) || []; },
+  getPlayers() { 
+    this.init(); 
+    let players = JSON.parse(localStorage.getItem(KEYS.PLAYERS)) || []; 
+    let updated = false;
+    players = players.map(p => {
+      if (p.name.toUpperCase().includes('HAALAND') && p.photoUrl === '/assets/players/roony.png') {
+        updated = true;
+        return { ...p, photoUrl: createRealisticPlayerPortrait('HAALAND') };
+      }
+      return p;
+    });
+    if (updated) this.savePlayers(players);
+    return players;
+  },
   savePlayers(players)   { localStorage.setItem(KEYS.PLAYERS, JSON.stringify(players)); return players; },
 
   getAuctionState()      { this.init(); return JSON.parse(localStorage.getItem(KEYS.AUCTION_STATE)); },
@@ -104,6 +177,24 @@ export const storageService = {
       window.dispatchEvent(new Event('storage'));
     } catch (e) {
       console.error('Failed to save projector settings', e);
+    }
+  },
+
+  getCardTheme() {
+    try {
+      const data = localStorage.getItem(KEYS.CARD_THEME);
+      return data ? { ...DEFAULT_CARD_THEME, ...JSON.parse(data) } : DEFAULT_CARD_THEME;
+    } catch {
+      return DEFAULT_CARD_THEME;
+    }
+  },
+
+  saveCardTheme(theme) {
+    try {
+      localStorage.setItem(KEYS.CARD_THEME, JSON.stringify(theme));
+      window.dispatchEvent(new Event('card-theme-updated'));
+    } catch (e) {
+      console.error('Failed to save card theme', e);
     }
   },
 

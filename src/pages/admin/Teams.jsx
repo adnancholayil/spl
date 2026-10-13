@@ -3,6 +3,7 @@ import { useTournament } from '../../context/TournamentContext';
 import { formatCurrency } from '../../utils/currency';
 import { EFootballCard } from '../../components/common/EFootballCard';
 import { ConfirmModal } from '../../components/common/ConfirmModal';
+import { TeamLogoUploader } from '../../components/common/TeamLogoUploader';
 import { Plus, Edit2, Trash2, X, Users } from 'lucide-react';
 
 export const Teams = () => {
@@ -19,7 +20,7 @@ export const Teams = () => {
 
   const handleOpenModal = (team = null) => {
     if (team) { setEditingTeam(team); setFormData({ ...team }); }
-    else { setEditingTeam(null); setFormData({ name: '', shortName: '', managerName: '', primaryColor: '#1A56DB', secondaryColor: '#0C1220', startingBudget: tournament?.defaultBudget || 5000 }); }
+    else { setEditingTeam(null); setFormData({ name: '', shortName: '', managerName: '', primaryColor: '#1A56DB', secondaryColor: '#0C1220', startingBudget: tournament?.defaultBudget || 5000, logoUrl: '' }); }
     setShowModal(true);
   };
 
@@ -229,9 +230,18 @@ export const Teams = () => {
                   <input type="color" value={formData.primaryColor} onChange={e => setFormData({ ...formData, primaryColor: e.target.value })} className="input-field" style={{ padding: '4px', height: 36, cursor: 'pointer' }} />
                 </div>
               </div>
+
               <div>
                 <label style={{ fontFamily: 'var(--font-display)', fontSize: 9, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.2em', display: 'block', marginBottom: 5 }}>Starting Budget</label>
                 <input type="number" value={formData.startingBudget} onChange={e => setFormData({ ...formData, startingBudget: parseInt(e.target.value, 10) })} required className="input-field" style={{ padding: '8px 12px' }} />
+              </div>
+
+              {/* Logo Uploader */}
+              <div style={{ marginTop: 8 }}>
+                <TeamLogoUploader 
+                  logoUrl={formData.logoUrl} 
+                  onLogoChange={(url) => setFormData(prev => ({ ...prev, logoUrl: url }))} 
+                />
               </div>
               <div style={{ display: 'flex', gap: 10, paddingTop: 4 }}>
                 <button type="button" onClick={() => setShowModal(false)} className="btn-ghost" style={{ flex: 1, padding: '10px 0', fontSize: 13 }}>Cancel</button>

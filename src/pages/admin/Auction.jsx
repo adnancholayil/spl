@@ -101,9 +101,9 @@ export const Auction = () => {
   const handleTeamBid = (teamId) => {
     const team = teams.find(t => t.id === teamId);
     if (!team) return;
-    // First call starting bid starts at $10
-    const nextBid = (!auctionState.leadingTeamId || auctionState.currentBid < 10)
-      ? 10
+    // First call starting bid starts at base price
+    const nextBid = (!auctionState.leadingTeamId)
+      ? auctionState.currentBid
       : auctionState.currentBid + (tournament?.minIncrement || 5);
     try { placeBid(teamId, nextBid); } catch (err) { showAlert('Bid Error', err.message); }
   };

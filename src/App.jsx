@@ -13,6 +13,8 @@ import { Players } from './pages/admin/Players';
 import { Auction } from './pages/admin/Auction';
 import { AuctionHistory } from './pages/admin/AuctionHistory';
 import { Settings } from './pages/admin/Settings';
+import { CardCustomization } from './pages/admin/CardCustomization';
+import { ProjectorScreenCustomization } from './pages/admin/ProjectorScreenCustomization';
 import { ProjectorControl } from './pages/admin/ProjectorControl';
 import { ProjectorScreen } from './pages/projector/ProjectorScreen';
 
@@ -52,6 +54,8 @@ export function App() {
                 <Route path="history" element={<AuctionHistory />} />
                 <Route path="projector-control" element={<ProjectorControl />} />
                 <Route path="settings" element={<Settings />} />
+                <Route path="card-customization" element={<CardCustomization />} />
+                <Route path="projector-customization" element={<ProjectorScreenCustomization />} />
               </Route>
 
               {/* Default Redirect */}

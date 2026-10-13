@@ -4,6 +4,7 @@ import { formatCurrency } from '../../utils/currency';
 import { EFootballCard } from '../common/EFootballCard';
 import { StadiumBackground } from './StadiumBackground';
 import { SPLLogo } from '../common/SPLLogo';
+import { storageService } from '../../services/storageService';
 import { soundEngine } from '../../services/soundService';
 import { Trophy, Shield, TrendingUp, Clock, Award, Users, Flame } from 'lucide-react';
 
@@ -90,53 +91,80 @@ const IdleStage = ({ tournament, teams }) => (
 
 
 // ── MYSTERY CARD BACK COMPONENT (FOR SUSPENSE REVEAL) ────────────────────
-const MysteryCardBack = ({ size = 'xl' }) => {
+export const MysteryCardBack = ({ size = 'xl', customTheme = null }) => {
+  const [cfg, setCfg] = useState(customTheme);
+
+  useEffect(() => {
+    if (!customTheme) {
+      setCfg(storageService.getCardTheme());
+    } else {
+      setCfg(customTheme);
+    }
+  }, [customTheme]);
+
   const scaleMap = { sm: 0.65, md: 0.85, lg: 1.1, xl: 1.35 };
   const scale = scaleMap[size] || scaleMap.xl;
   const cardWidth = 320 * scale;
   const cardHeight = 440 * scale;
-  const cardPath = "M 80 15 Q 160 5 240 15 L 305 55 L 305 345 L 160 405 L 15 345 L 15 55 Z";
+  
+  let cardPath = "M 80 15 Q 160 5 240 15 L 305 55 L 305 345 L 160 405 L 15 345 L 15 55 Z";
+  if (cfg?.cardShape === 'shield') {
+    cardPath = "M 15 15 L 305 15 L 305 280 Q 160 440 15 280 Z";
+  } else if (cfg?.cardShape === 'classic') {
+    cardPath = "M 35 15 L 285 15 Q 305 15 305 35 L 305 385 Q 305 405 285 405 L 35 405 Q 15 405 15 385 L 15 35 Q 15 15 35 15 Z";
+  } else if (cfg?.cardShape === 'notched') {
+    cardPath = "M 45 15 L 275 15 L 305 45 L 305 375 L 275 405 L 45 405 L 15 375 L 15 45 Z";
+  } else if (cfg?.cardShape === 'hex') {
+    cardPath = "M 160 15 L 305 80 L 270 380 L 160 415 L 50 380 L 15 80 Z";
+  } else if (cfg?.cardShape === 'cyber') {
+    cardPath = "M 60 15 L 260 15 L 305 60 L 305 340 L 160 415 L 15 340 L 15 60 Z";
+  }
 
   return (
-    <div style={{ width: cardWidth, height: cardHeight }} className="relative select-none">
+    <div 
+      style={{ 
+        width: cardWidth, 
+        height: cardHeight,
+        filter: 'drop-shadow(0 0 50px rgba(0,0,0,0.5)) drop-shadow(0 20px 40px rgba(0,0,0,0.95))'
+      }} 
+      className="relative select-none"
+    >
       <svg
         viewBox="0 0 320 440"
         width={cardWidth}
         height={cardHeight}
         className="w-full h-full overflow-visible"
-        style={{ filter: 'drop-shadow(0 0 50px rgba(212,175,55,0.5)) drop-shadow(0 20px 40px rgba(0,0,0,0.95))' }}
       >
         <defs>
           <path id="mys-shape" d={cardPath} />
           <clipPath id="mys-clip"><use href="#mys-shape" /></clipPath>
 
           {/* Rich Obsidian Background */}
-          <linearGradient id="mys-bg" x1="30%" y1="0%" x2="70%" y2="100%">
-            <stop offset="0%" stopColor="#141824" />
-            <stop offset="40%" stopColor="#0B0F1A" />
-            <stop offset="100%" stopColor="#020408" />
+          <linearGradient id="mys-bg" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor={cfg?.bgGrad1 || '#141824'} />
+            <stop offset="25%" stopColor={cfg?.bgGrad2 || '#0B0F1A'} />
+            <stop offset="60%" stopColor={cfg?.bgGrad3 || '#0B0F1A'} />
+            <stop offset="100%" stopColor={cfg?.bgGrad4 || '#020408'} />
           </linearGradient>
 
           {/* 5-stop Shimmer Gold Border */}
           <linearGradient id="mys-gold" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#FFFDE7" />
-            <stop offset="20%" stopColor="#F59E0B" />
-            <stop offset="50%" stopColor="#FEF08A" />
-            <stop offset="80%" stopColor="#B45309" />
-            <stop offset="100%" stopColor="#FDE68A" />
+            <stop offset="0%" stopColor={cfg?.border1 || '#FFFDE7'} />
+            <stop offset="40%" stopColor={cfg?.border2 || '#F59E0B'} />
+            <stop offset="100%" stopColor={cfg?.border3 || '#FDE68A'} />
           </linearGradient>
 
           {/* Inner border accent */}
           <linearGradient id="mys-gold-inner" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="rgba(254,240,138,0.4)" />
-            <stop offset="50%" stopColor="rgba(245,158,11,0.15)" />
-            <stop offset="100%" stopColor="rgba(254,240,138,0.4)" />
+            <stop offset="0%" stopColor={cfg?.border1 || 'rgba(254,240,138,0.4)'} stopOpacity="0.4" />
+            <stop offset="50%" stopColor={cfg?.border2 || 'rgba(245,158,11,0.15)'} stopOpacity="0.15" />
+            <stop offset="100%" stopColor={cfg?.border1 || 'rgba(254,240,138,0.4)'} stopOpacity="0.4" />
           </linearGradient>
 
           {/* Center emblem dark circle */}
           <radialGradient id="mys-emblem-bg" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="#1A1F30" />
-            <stop offset="100%" stopColor="#08090F" />
+            <stop offset="0%" stopColor={cfg?.bgGrad4 || '#1A1F30'} />
+            <stop offset="100%" stopColor="#000000" />
           </radialGradient>
 
           {/* Radial center spotlight */}
@@ -146,113 +174,243 @@ const MysteryCardBack = ({ size = 'xl' }) => {
             <stop offset="100%" stopColor="rgba(0,0,0,0)" />
           </radialGradient>
 
-          {/* Diagonal stripe texture */}
+          {/* Diagonal stripe texture (Geometric) */}
           <pattern id="mys-stripes" width="24" height="24" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-            <rect width="1" height="24" fill="rgba(245,158,11,0.05)" />
+            <rect width="1" height="24" fill="rgba(255,255,255,0.05)" />
           </pattern>
 
-          {/* Horizontal lines */}
+          {/* Horizontal lines (Geometric) */}
           <pattern id="mys-hlines" width="320" height="16" patternUnits="userSpaceOnUse">
-            <line x1="0" y1="15.5" x2="320" y2="15.5" stroke="rgba(245,158,11,0.04)" strokeWidth="1" />
+            <line x1="0" y1="15.5" x2="320" y2="15.5" stroke="rgba(255,255,255,0.04)" strokeWidth="1" />
+          </pattern>
+          
+          {/* Hexagon texture (Modern) */}
+          <pattern id="mys-hex" width="28" height="48" patternUnits="userSpaceOnUse" patternTransform="scale(0.5)">
+            <path d="M14 0 L28 8 L28 24 L14 32 L0 24 L0 8 Z M14 48 L28 40 L28 24 L14 32 L0 24 L0 40 Z" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
+          </pattern>
+          
+          {/* Waves (Organic) */}
+          <pattern id="mys-waves" width="100" height="40" patternUnits="userSpaceOnUse">
+            <path d="M0 20 Q25 0 50 20 T100 20" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="1" />
+          </pattern>
+
+          {/* Circuit Board (Circuit) */}
+          <pattern id="mys-circuit" width="60" height="60" patternUnits="userSpaceOnUse">
+            <path d="M10 10 L30 10 L40 20 L40 50 M20 30 L50 30" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="1" />
+            <circle cx="10" cy="10" r="2" fill="rgba(255,255,255,0.15)" />
+            <circle cx="40" cy="20" r="2" fill="rgba(255,255,255,0.15)" />
+            <circle cx="20" cy="30" r="2" fill="rgba(255,255,255,0.15)" />
+          </pattern>
+
+          {/* Carbon Fiber (Carbon) */}
+          <pattern id="mys-carbon" width="8" height="8" patternUnits="userSpaceOnUse">
+            <rect width="4" height="4" fill="rgba(255,255,255,0.03)" />
+            <rect x="4" y="4" width="4" height="4" fill="rgba(255,255,255,0.03)" />
+            <path d="M0 0 L4 4 M4 0 L0 4 M4 4 L8 8 M8 4 L4 8" stroke="rgba(0,0,0,0.1)" strokeWidth="0.5" />
+          </pattern>
+
+          {/* Halftone Dots (Halftone) */}
+          <pattern id="mys-halftone" width="16" height="16" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+            <circle cx="4" cy="4" r="1.5" fill="rgba(255,255,255,0.08)" />
+            <circle cx="12" cy="12" r="3" fill="rgba(255,255,255,0.08)" />
+          </pattern>
+
+          {/* Topo Map (Topo) */}
+          <pattern id="mys-topo" width="100" height="100" patternUnits="userSpaceOnUse">
+            <path d="M0 50 Q25 25 50 50 T100 50 M0 70 Q25 45 50 70 T100 70 M0 30 Q25 5 50 30 T100 30" fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth="1" />
+            <path d="M30 0 Q55 25 30 50 T30 100" fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth="1" />
           </pattern>
         </defs>
 
         {/* ── LAYER 1: Deep background ── */}
         <use href="#mys-shape" fill="url(#mys-bg)" />
 
-        {/* ── LAYER 2: Subtle grid texture ── */}
-        <use href="#mys-shape" fill="url(#mys-stripes)" />
-        <use href="#mys-shape" fill="url(#mys-hlines)" />
+        {/* ── LAYER 2: Textures based on Design Template ── */}
+        {(cfg?.backSideDesign === 'geometric' || !cfg?.backSideDesign) && (
+          <>
+            <use href="#mys-shape" fill="url(#mys-stripes)" />
+            <use href="#mys-shape" fill="url(#mys-hlines)" />
+          </>
+        )}
+        {cfg?.backSideDesign === 'modern' && (
+          <use href="#mys-shape" fill="url(#mys-hex)" />
+        )}
+        {cfg?.backSideDesign === 'organic' && (
+          <use href="#mys-shape" fill="url(#mys-waves)" />
+        )}
+        {cfg?.backSideDesign === 'circuit' && (
+          <use href="#mys-shape" fill="url(#mys-circuit)" />
+        )}
+        {cfg?.backSideDesign === 'carbon' && (
+          <use href="#mys-shape" fill="url(#mys-carbon)" />
+        )}
+        {cfg?.backSideDesign === 'halftone' && (
+          <use href="#mys-shape" fill="url(#mys-halftone)" />
+        )}
+        {cfg?.backSideDesign === 'topo' && (
+          <use href="#mys-shape" fill="url(#mys-topo)" />
+        )}
+        {/* 'minimal' has no layer 2 texture */}
 
         {/* ── LAYER 3: Clipped design elements ── */}
         <g clipPath="url(#mys-clip)">
-          {/* Sweeping diagonal golden light beam (top-left to bottom-right) */}
-          <rect x="-40" y="-40" width="80" height="500" transform="rotate(-35, 160, 210)" fill="rgba(245,158,11,0.04)" />
-          <rect x="60" y="-40" width="30" height="500" transform="rotate(-35, 160, 210)" fill="rgba(245,158,11,0.03)" />
+          
+          {(cfg?.backSideDesign === 'geometric' || !cfg?.backSideDesign) && (
+            <>
+              {/* Sweeping diagonal golden light beam (top-left to bottom-right) */}
+              <rect x="-40" y="-40" width="80" height="500" transform="rotate(-35, 160, 210)" fill="rgba(255,255,255,0.04)" />
+              <rect x="60" y="-40" width="30" height="500" transform="rotate(-35, 160, 210)" fill="rgba(255,255,255,0.03)" />
 
-          {/* Top decorative geometric triangle accent */}
-          <polygon points="160,18 130,55 190,55" fill="rgba(245,158,11,0.12)" />
-          <polygon points="160,28 140,55 180,55" fill="rgba(245,158,11,0.08)" />
+              {/* Top decorative geometric triangle accent */}
+              <polygon points="160,18 130,55 190,55" fill="rgba(255,255,255,0.12)" />
+              <polygon points="160,28 140,55 180,55" fill="rgba(255,255,255,0.08)" />
 
-          {/* Horizontal accent lines (top and bottom thirds) */}
-          <line x1="30" y1="85" x2="290" y2="85" stroke="url(#mys-gold-inner)" strokeWidth="1" />
-          <line x1="30" y1="88" x2="290" y2="88" stroke="rgba(245,158,11,0.06)" strokeWidth="0.5" />
-          <line x1="30" y1="330" x2="290" y2="330" stroke="url(#mys-gold-inner)" strokeWidth="1" />
-          <line x1="30" y1="333" x2="290" y2="333" stroke="rgba(245,158,11,0.06)" strokeWidth="0.5" />
+              {/* Horizontal accent lines (top and bottom thirds) */}
+              <line x1="30" y1="85" x2="290" y2="85" stroke="url(#mys-gold-inner)" strokeWidth="1" />
+              <line x1="30" y1="88" x2="290" y2="88" stroke="rgba(255,255,255,0.06)" strokeWidth="0.5" />
+              <line x1="30" y1="330" x2="290" y2="330" stroke="url(#mys-gold-inner)" strokeWidth="1" />
+              <line x1="30" y1="333" x2="290" y2="333" stroke="rgba(255,255,255,0.06)" strokeWidth="0.5" />
 
-          {/* Corner diamond accents - top */}
-          <polygon points="40,60 55,68 40,76" fill="rgba(245,158,11,0.25)" />
-          <polygon points="280,60 265,68 280,76" fill="rgba(245,158,11,0.25)" />
+              {/* Corner diamond accents - top */}
+              <polygon points="40,60 55,68 40,76" fill="rgba(255,255,255,0.25)" />
+              <polygon points="280,60 265,68 280,76" fill="rgba(255,255,255,0.25)" />
+            </>
+          )}
 
-          {/* Center radial spotlight */}
-          <ellipse cx="160" cy="210" rx="130" ry="100" fill="url(#mys-spotlight)" />
+          {cfg?.backSideDesign === 'modern' && (
+            <>
+              {/* Sleek diagonal cuts */}
+              <polygon points="0,150 320,50 320,100 0,200" fill="url(#mys-gold-inner)" opacity="0.3" />
+              <polygon points="0,400 320,300 320,350 0,450" fill="url(#mys-gold-inner)" opacity="0.3" />
+              {/* Simple border trace */}
+              <use href="#mys-shape" fill="none" stroke="url(#mys-gold-inner)" strokeWidth="4" />
+            </>
+          )}
+
+          {cfg?.backSideDesign === 'organic' && (
+            <>
+              {/* Flowing curves */}
+              <path d="M -50 150 Q 160 50 370 150 L 370 200 Q 160 100 -50 200 Z" fill="url(#mys-gold-inner)" opacity="0.4" />
+              <path d="M -50 300 Q 160 400 370 300 L 370 250 Q 160 350 -50 250 Z" fill="url(#mys-gold-inner)" opacity="0.2" />
+            </>
+          )}
+
+          {cfg?.backSideDesign === 'circuit' && (
+            <>
+              {/* Cyberpunk tech nodes */}
+              <circle cx="60" cy="80" r="4" fill="rgba(255,255,255,0.3)" />
+              <circle cx="260" cy="80" r="4" fill="rgba(255,255,255,0.3)" />
+              <circle cx="60" cy="360" r="4" fill="rgba(255,255,255,0.3)" />
+              <circle cx="260" cy="360" r="4" fill="rgba(255,255,255,0.3)" />
+              <line x1="60" y1="80" x2="60" y2="360" stroke="rgba(255,255,255,0.1)" strokeWidth="1" />
+              <line x1="260" y1="80" x2="260" y2="360" stroke="rgba(255,255,255,0.1)" strokeWidth="1" />
+            </>
+          )}
+
+          {cfg?.backSideDesign === 'carbon' && (
+            <>
+              {/* Sports dynamic angled bars */}
+              <polygon points="0,60 120,60 100,80 0,80" fill="url(#mys-gold-inner)" opacity="0.5" />
+              <polygon points="320,380 200,380 220,360 320,360" fill="url(#mys-gold-inner)" opacity="0.5" />
+            </>
+          )}
+
+          {cfg?.backSideDesign === 'halftone' && (
+            <>
+              {/* Comic / Pop-art styling */}
+              <circle cx="160" cy="220" r="140" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="15" strokeDasharray="1 30" strokeLinecap="round" />
+            </>
+          )}
+
+          {cfg?.backSideDesign === 'topo' && (
+            <>
+              {/* Topographic elevation lines */}
+              <circle cx="160" cy="220" r="100" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="1" />
+              <circle cx="160" cy="220" r="130" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="1" />
+              <circle cx="160" cy="220" r="160" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
+            </>
+          )}
+          
+          {cfg?.backSideDesign === 'minimal' && (
+            <>
+              {/* Minimalist inset border */}
+              <rect x="20" y="20" width="280" height="400" rx="10" fill="none" stroke="url(#mys-gold-inner)" strokeWidth="1.5" />
+            </>
+          )}
+
+          {/* Center radial spotlight (all except minimal) */}
+          {cfg?.backSideDesign !== 'minimal' && (
+            <ellipse cx="160" cy="210" rx="130" ry="100" fill="url(#mys-spotlight)" />
+          )}
 
           {/* ── CENTER EMBLEM SYSTEM ── */}
-          {/* Outer rings */}
-          <circle cx="160" cy="200" r="88" fill="none" stroke="rgba(245,158,11,0.12)" strokeWidth="2" />
-          <circle cx="160" cy="200" r="80" fill="none" stroke="rgba(245,158,11,0.2)" strokeWidth="1" strokeDasharray="6 6" />
-          <circle cx="160" cy="200" r="70" fill="none" stroke="rgba(245,158,11,0.35)" strokeWidth="1.5" />
+          {cfg?.showBackSideLogo !== false && (
+            <g transform={`translate(160, ${cfg?.backSideLogoY ?? 200}) scale(${(cfg?.backSideLogoScale ?? 100)/100}) translate(-160, -200)`}>
+              {/* Outer rings */}
+              <circle cx="160" cy="200" r="88" fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="2" />
+              <circle cx="160" cy="200" r="80" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="1" strokeDasharray="6 6" />
+              <circle cx="160" cy="200" r="70" fill="none" stroke="rgba(255,255,255,0.35)" strokeWidth="1.5" />
 
-          {/* Dark emblem background circle */}
-          <circle cx="160" cy="200" r="58" fill="url(#mys-emblem-bg)" />
-          <circle cx="160" cy="200" r="58" fill="none" stroke="url(#mys-gold)" strokeWidth="2.5" />
+              {/* Dark emblem background circle */}
+              <circle cx="160" cy="200" r="58" fill="url(#mys-emblem-bg)" />
+              <circle cx="160" cy="200" r="58" fill="none" stroke="url(#mys-gold)" strokeWidth="2.5" />
 
-          {/* SPL Logo centered perfectly at (160, 200) */}
-          <image
-            href="/assets/logo.png"
-            x="122" y="162" width="76" height="76"
-            preserveAspectRatio="xMidYMid meet"
-            style={{ filter: 'drop-shadow(0px 3px 8px rgba(0,0,0,0.9))' }}
-          />
-          {/* SPL text — CSS flex centers it perfectly in the logo's pentagon */}
-          <foreignObject x="124" y="162" width="76" height="76">
-            <div xmlns="http://www.w3.org/1999/xhtml" style={{
-              width: '100%',
-              height: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontFamily: "'Bebas Neue', Impact, 'Arial Black', sans-serif",
-              fontSize: '16px',
-              fontWeight: 'bold',
-              color: '#FFFFFF',
-              letterSpacing: '2px',
-              textShadow: '0px 1px 5px rgba(0,0,0,0.95)',
-              pointerEvents: 'none',
-            }}>SPL</div>
-          </foreignObject>
+              {/* SPL Logo */}
+              <image
+                href="/assets/logo.png"
+                x="122" y="162" width="76" height="76"
+                preserveAspectRatio="xMidYMid meet"
+                style={{ filter: 'drop-shadow(0px 3px 8px rgba(0,0,0,0.9))' }}
+              />
+              <foreignObject x="124" y="162" width="76" height="76">
+                <div xmlns="http://www.w3.org/1999/xhtml" style={{
+                  width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontFamily: "'Bebas Neue', Impact, 'Arial Black', sans-serif", fontSize: '16px', fontWeight: 'bold',
+                  color: '#FFFFFF', letterSpacing: '2px', textShadow: '0px 1px 5px rgba(0,0,0,0.95)', pointerEvents: 'none'
+                }}>SPL</div>
+              </foreignObject>
+            </g>
+          )}
 
           {/* ── BOTTOM BRANDING SECTION ── */}
-          {/* Divider dots */}
-          <circle cx="140" cy="290" r="1.5" fill="rgba(245,158,11,0.6)" />
-          <circle cx="160" cy="290" r="1.5" fill="rgba(245,158,11,0.9)" />
-          <circle cx="180" cy="290" r="1.5" fill="rgba(245,158,11,0.6)" />
+          {cfg?.showBackSideText !== false && (
+            <g transform={`translate(0, ${(cfg?.backSideTextY ?? 315) - 315})`}>
+              {/* Divider dots */}
+              <circle cx="140" cy="290" r="1.5" fill="rgba(255,255,255,0.6)" />
+              <circle cx="160" cy="290" r="1.5" fill="rgba(255,255,255,0.9)" />
+              <circle cx="180" cy="290" r="1.5" fill="rgba(255,255,255,0.6)" />
 
-          {/* SUPER PREMIER LEAGUE text */}
-          <text
-            x="160" y="315"
-            fontFamily="'Bebas Neue', Impact, sans-serif"
-            fontSize="22"
-            fontWeight="700"
-            fill="url(#mys-gold)"
-            textAnchor="middle"
-            style={{ letterSpacing: '4px' }}
-          >SUPER PREMIER LEAGUE</text>
+              {/* SUPER PREMIER LEAGUE text */}
+              <text
+                x="160" y="315"
+                fontFamily="'Bebas Neue', Impact, sans-serif"
+                fontSize={cfg?.backSideTextSize ?? 22}
+                fontWeight="700"
+                fill="url(#mys-gold)"
+                textAnchor="middle"
+                style={{ letterSpacing: '4px' }}
+              >SUPER PREMIER LEAGUE</text>
 
-          {/* Season text */}
-          <text
-            x="160" y="332"
-            fontFamily="Arial, sans-serif"
-            fontSize="10"
-            fontWeight="400"
-            fill="rgba(255,255,255,0.35)"
-            textAnchor="middle"
-            style={{ letterSpacing: '3px' }}
-          >2026 SEASON</text>
+              {/* Season text */}
+              <text
+                x="160" y={315 + 17}
+                fontFamily="Arial, sans-serif"
+                fontSize={Math.max(10, (cfg?.backSideTextSize ?? 22) - 12)}
+                fontWeight="400"
+                fill="rgba(255,255,255,0.35)"
+                textAnchor="middle"
+                style={{ letterSpacing: '3px' }}
+              >2026 SEASON</text>
+            </g>
+          )}
 
-          {/* Bottom corner accents */}
-          <polygon points="40,345 55,337 40,329" fill="rgba(245,158,11,0.25)" />
-          <polygon points="280,345 265,337 280,329" fill="rgba(245,158,11,0.25)" />
+          {/* Bottom corner accents (Geometric only) */}
+          {(cfg?.backSideDesign === 'geometric' || !cfg?.backSideDesign) && (
+            <>
+              <polygon points="40,345 55,337 40,329" fill="rgba(255,255,255,0.25)" />
+              <polygon points="280,345 265,337 280,329" fill="rgba(255,255,255,0.25)" />
+            </>
+          )}
         </g>
 
         {/* ── LAYER 4: Outer gold border (drawn last so it's on top) ── */}
@@ -390,7 +548,7 @@ const IntroStage = ({ player, tournament, settings }) => {
   );
 };
 
-// ── 3. BIDDING STAGE (CARD POSITION SHIFTED TO LEFT, TABLES ON RIGHT) ─────────
+// ── 3. BIDDING STAGE (PRECISION BROADCAST LAYOUT) ─────────
 const BiddingStage = ({
   player,
   currentBid,
@@ -409,210 +567,185 @@ const BiddingStage = ({
     return () => clearTimeout(t);
   }, [currentBid]);
 
+  // bidHistory has newest bids at index 0 (stored via unshift / [newBid, ...rest])
+  const recentBids = (bidHistory || []).slice(0, 3);
+  const teamColor = leadingTeam?.primaryColor || '#3b82f6';
+
   return (
-    <div className="w-full h-full">
-      <div className="relative z-10 w-full h-full flex flex-col p-6 select-none overflow-hidden">
+    <div className="w-full h-full relative">
+      <div className="relative z-10 w-full h-full flex flex-col p-8 md:p-12 select-none overflow-hidden justify-center items-center">
 
-        {/* Top Live Broadcast Bar */}
-        <div className="w-full flex items-center justify-between border-b border-white/10 pb-3 mb-4">
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 bg-orange-600/30 border border-orange-500/50 px-3.5 py-1.5 rounded-md shadow-lg shadow-orange-500/20">
-              <span className="w-2.5 h-2.5 rounded-full bg-orange-500 animate-ping" />
-              <span className="text-xs font-black text-orange-400 uppercase tracking-widest" style={{ fontFamily: 'var(--font-display)' }}>
-                LIVE AUCTION IN PROGRESS
+        {/* Top-Right Broadcast Badge */}
+        <div className="absolute top-8 right-8 z-30 flex items-center gap-3 bg-black/60 border border-white/10 backdrop-blur-md px-4 py-2 rounded-full shadow-2xl">
+          <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse shadow-[0_0_12px_rgba(239,68,68,0.9)]" />
+          <span className="text-[11px] font-black text-white uppercase tracking-[0.25em]" style={{ fontFamily: 'var(--font-display)' }}>
+            Live Auction
+          </span>
+          {bidHistory && bidHistory.length > 0 && (
+            <>
+              <span className="w-1 h-1 rounded-full bg-white/25" />
+              <span className="text-[11px] font-bold text-white/50 uppercase tracking-widest" style={{ fontFamily: 'var(--font-display)' }}>
+                Bids: <strong className="text-amber-400 font-black">{bidHistory.length}</strong>
               </span>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-6 text-xs text-slate-300 font-extrabold uppercase tracking-wider" style={{ fontFamily: 'var(--font-display)' }}>
-            <span>TOTAL BIDS: <strong className="text-amber-300 text-sm">{bidHistory.length}</strong></span>
-          </div>
+            </>
+          )}
         </div>
 
-        {/* SPLIT SCREEN LAYOUT: CARD POSITIONED ON LEFT, TABLES ON RIGHT */}
-        <div className="flex-1 w-full flex gap-8 items-center min-h-0 overflow-hidden">
-
-          {/* LEFT SIDE: EA FC PLAYER CARD (POSITION SHIFTED LEFT) */}
+        {/* MAIN STAGE: DUAL-COLUMN BROADCAST GRID */}
+        <div className="flex items-center justify-center gap-16 lg:gap-24 w-full max-w-[1300px] my-auto">
+          
+          {/* LEFT COLUMN: HERO EA FC PLAYER CARD */}
           <motion.div
-            initial={{ x: -120, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            transition={{ type: 'spring', stiffness: 100, damping: 15 }}
-            className="w-[35%] h-full flex flex-col items-center justify-center relative flex-shrink-0"
+            initial={{ x: -80, opacity: 0, scale: 0.94 }}
+            animate={{ x: 0, opacity: 1, scale: 1 }}
+            transition={{ type: 'spring', stiffness: 90, damping: 20 }}
+            className="flex-shrink-0 relative z-20 flex items-center justify-center"
           >
+            {/* Dynamic team aura behind card */}
+            <div 
+              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[420px] h-[540px] blur-[120px] -z-10 rounded-full opacity-25 mix-blend-screen pointer-events-none transition-colors duration-700" 
+              style={{ backgroundColor: teamColor }}
+            />
             <EFootballCard
               player={player}
-              size="lg"
+              size="xl"
               theme={cardTheme}
               highlight={true}
             />
           </motion.div>
 
-          {/* RIGHT SIDE: BROADCAST DASHBOARD & STANDARD TABLES */}
+          {/* RIGHT COLUMN: PRECISION ALIGNED BROADCAST DATA STACK */}
           <motion.div
-            initial={{ x: 120, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            transition={{ duration: 0.5 }}
-            className="flex-1 h-full flex flex-col gap-4 min-w-0"
+            initial={{ opacity: 0, x: 60 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.7, ease: "easeOut" }}
+            className="flex flex-col items-center justify-center w-full max-w-[460px] relative z-10"
           >
-            {/* HERO CURRENT BID PANEL */}
-            <div
-              className="bg-slate-900/95 border border-white/15 rounded-2xl p-6 relative overflow-hidden flex items-center justify-between shadow-2xl backdrop-blur-xl"
-              style={{
-                borderLeft: leadingTeam ? `8px solid ${leadingTeam.primaryColor}` : '8px solid #ea580c',
-              }}
-            >
-              <div>
-                <div className="text-xs font-black uppercase text-orange-400 tracking-widest mb-1" style={{ fontFamily: 'var(--font-display)' }}>
-                  CURRENT HIGHEST BID
-                </div>
-                <div
-                  className={`text-6xl md:text-7xl font-black tracking-tight transition-all duration-300 ${flash ? 'text-orange-400 scale-105' : 'text-amber-400'
-                    }`}
-                  style={{ fontFamily: 'var(--font-broadcast)' }}
-                >
-                  {formatCurrency(currentBid || player?.basePrice, tournament?.currency)}
-                </div>
-              </div>
+            {/* 1. CURRENT BID SECTION */}
+            <div className="flex flex-col items-center w-full text-center">
+              <span 
+                className="text-xs tracking-[0.45em] text-white/50 uppercase mb-3 font-bold" 
+                style={{ fontFamily: 'var(--font-display)' }}
+              >
+                Current Bid
+              </span>
+              <span 
+                className={`text-[115px] lg:text-[130px] leading-none text-white font-black drop-shadow-2xl transition-all duration-300 ${
+                  flash ? 'scale-105 text-amber-400' : ''
+                }`} 
+                style={{ 
+                  fontFamily: 'var(--font-broadcast)',
+                  letterSpacing: '0.08em'
+                }}
+              >
+                {formatCurrency(currentBid || player?.basePrice, tournament?.currency)}
+              </span>
+            </div>
 
-              {/* Leading Team Crest */}
+            {/* SEPARATOR 1 */}
+            <div className="w-full max-w-[440px] h-[1px] bg-gradient-to-r from-transparent via-white/15 to-transparent my-8" />
+
+            {/* 2. LEADING CLUB SECTION (CLEAN & UNBOXED) */}
+            <div className="flex flex-col items-center w-full">
+              <span 
+                className="text-[11px] tracking-[0.4em] text-white/40 uppercase mb-3 font-bold" 
+                style={{ fontFamily: 'var(--font-display)' }}
+              >
+                {leadingTeam ? 'Leading Club' : 'Awaiting Bids'}
+              </span>
               {leadingTeam ? (
-                <div className="flex items-center gap-5 bg-black/60 border border-white/15 p-4 rounded-xl shadow-inner">
+                <div className="flex items-center justify-center gap-5">
                   {leadingTeam.logoUrl ? (
-                    <img src={leadingTeam.logoUrl} alt={leadingTeam.name} className="w-16 h-16 object-contain" />
+                    <img 
+                      src={leadingTeam.logoUrl} 
+                      alt={leadingTeam.name} 
+                      className="w-16 h-16 object-contain drop-shadow-2xl flex-shrink-0" 
+                    />
                   ) : (
-                    <Shield className="w-14 h-14" style={{ color: leadingTeam.primaryColor }} />
+                    <Shield className="w-14 h-14 flex-shrink-0" style={{ color: leadingTeam.primaryColor || '#38bdf8' }} />
                   )}
-                  <div>
-                    <div className="text-3xl font-black text-white uppercase tracking-wider" style={{ fontFamily: 'var(--font-broadcast)', color: leadingTeam.primaryColor }}>
-                      {leadingTeam.name}
-                    </div>
-                    <div className="text-xs text-slate-300 font-bold" style={{ fontFamily: 'var(--font-display)' }}>
-                      Budget Left: <span className="text-amber-300 font-extrabold">{formatCurrency(leadingTeam.currentBalance, tournament?.currency)}</span>
-                    </div>
-                  </div>
+                  <span 
+                    className="text-4xl lg:text-5xl text-white font-black tracking-widest uppercase drop-shadow-xl" 
+                    style={{ fontFamily: 'var(--font-display)' }}
+                  >
+                    {leadingTeam.name}
+                  </span>
                 </div>
               ) : (
-                <div className="text-slate-400 text-sm font-bold uppercase tracking-wider italic" style={{ fontFamily: 'var(--font-display)' }}>
-                  Awaiting opening bid...
-                </div>
+                <span className="text-2xl text-white/20 font-bold tracking-widest uppercase" style={{ fontFamily: 'var(--font-display)' }}>
+                  ...
+                </span>
               )}
             </div>
 
-            {/* STANDARD BID HISTORY TABLE */}
-            <div className="flex-1 bg-slate-900/90 border border-white/15 rounded-2xl p-4 flex flex-col min-h-0 overflow-hidden backdrop-blur-xl shadow-2xl">
-              <div className="flex items-center justify-between border-b border-white/10 pb-3 mb-3">
-                <div className="flex items-center gap-2">
-                  <TrendingUp className="w-5 h-5 text-orange-400" />
-                  <h3 className="text-sm font-black text-white uppercase tracking-widest" style={{ fontFamily: 'var(--font-display)' }}>
-                    Live Bidding History Standard Table
-                  </h3>
-                </div>
-                <span className="text-xs text-slate-400 font-extrabold uppercase tracking-wider" style={{ fontFamily: 'var(--font-display)' }}>
-                  {bidHistory.length} BIDS RECORDED
+            {/* SEPARATOR 2 (ONLY WHEN BIDS EXIST) */}
+            {recentBids.length > 0 && (
+              <div className="w-full max-w-[440px] h-[1px] bg-gradient-to-r from-transparent via-white/15 to-transparent my-8" />
+            )}
+
+            {/* 3. RECENT ACTIVITY (STANDARD & MODERN UNBOXED BROADCAST TABLE) */}
+            {recentBids.length > 0 && (
+              <div className="flex flex-col items-center w-full max-w-[440px]">
+                <span 
+                  className="text-[11px] tracking-[0.4em] text-white/40 uppercase mb-5 font-bold" 
+                  style={{ fontFamily: 'var(--font-display)' }}
+                >
+                  Recent Activity
                 </span>
-              </div>
-
-              {/* Standard Table View */}
-              <div className="flex-1 overflow-y-auto pr-1">
-                {bidHistory && bidHistory.length > 0 ? (
-                  <table className="w-full text-left border-collapse">
-                    <thead>
-                      <tr className="border-b border-white/10 text-xs font-black text-slate-400 uppercase tracking-widest" style={{ fontFamily: 'var(--font-display)' }}>
-                        <th className="py-2.5 px-3">Rank</th>
-                        <th className="py-2.5 px-3">Bidding Club</th>
-                        <th className="py-2.5 px-3">Amount</th>
-                        <th className="py-2.5 px-3">Time</th>
-                        <th className="py-2.5 px-3 text-right">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-white/5 text-sm" style={{ fontFamily: 'var(--font-display)' }}>
-                      {bidHistory.slice().reverse().map((bid, idx) => {
-                        const isHighest = idx === 0;
-                        const team = teams.find(t => t.id === bid.teamId) || { name: bid.teamName || 'Club', primaryColor: '#3b82f6' };
-                        return (
-                          <tr
-                            key={bid.id || idx}
-                            className={`transition-colors ${isHighest ? 'bg-orange-500/20 font-bold' : 'hover:bg-white/5'
-                              }`}
-                          >
-                            <td className="py-3 px-3">
-                              <span className={`inline-flex items-center justify-center w-6 h-6 rounded text-xs font-black ${isHighest ? 'bg-orange-500 text-white' : 'bg-slate-800 text-slate-400'
-                                }`}>
-                                #{bidHistory.length - idx}
-                              </span>
-                            </td>
-                            <td className="py-3 px-3">
-                              <div className="flex items-center gap-2.5">
-                                <span className="w-3 h-3 rounded-full" style={{ background: team.primaryColor || '#3b82f6' }} />
-                                <span className="text-white font-extrabold uppercase tracking-wider" style={{ color: isHighest ? team.primaryColor : '#fff' }}>
-                                  {team.name}
-                                </span>
-                              </div>
-                            </td>
-                            <td className="py-3 px-3 font-extrabold text-amber-300 text-base" style={{ fontFamily: 'var(--font-broadcast)' }}>
-                              {formatCurrency(bid.amount, tournament?.currency)}
-                            </td>
-                            <td className="py-3 px-3 text-xs text-slate-400 font-semibold">
-                              {formatTime(bid.timestamp)}
-                            </td>
-                            <td className="py-3 px-3 text-right">
-                              {isHighest ? (
-                                <span className="px-2.5 py-1 bg-orange-500/25 border border-orange-500/50 text-orange-400 text-xs font-black uppercase rounded">
-                                  LEADER
-                                </span>
-                              ) : (
-                                <span className="text-slate-500 text-xs font-bold uppercase">
-                                  OUTBID
-                                </span>
-                              )}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                ) : (
-                  <div className="h-full flex flex-col items-center justify-center text-slate-400 text-xs font-extrabold tracking-widest py-10" style={{ fontFamily: 'var(--font-display)' }}>
-                    <Clock className="w-10 h-10 mb-2 opacity-30 text-orange-400" />
-                    NO BIDS PLACED YET. WAITING FOR FIRST BID...
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* FRANCHISE BUDGETS STANDINGS TABLE */}
-            {teams && teams.length > 0 && (
-              <div className="bg-slate-900/90 border border-white/15 rounded-xl p-3 backdrop-blur-xl flex-shrink-0">
-                <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2" style={{ fontFamily: 'var(--font-display)' }}>
-                  Franchise Budget Balances
-                </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                  {teams.map(t => {
-                    const isLeading = t.id === leadingTeam?.id;
+                <div className="flex flex-col gap-4 w-full">
+                  {recentBids.map((bid, idx) => {
+                    const team = teams.find(t => t.id === bid.teamId) || { name: bid.teamName || 'Club', primaryColor: '#3b82f6' };
+                    const isLatest = idx === 0;
                     return (
-                      <div
-                        key={t.id}
-                        className={`p-2.5 rounded-lg border flex items-center justify-between ${isLeading ? 'bg-orange-500/15 border-orange-500/50' : 'bg-black/40 border-white/10'
-                          }`}
+                      <div 
+                        key={bid.id || idx} 
+                        className="flex items-center justify-between w-full"
                       >
-                        <div className="min-w-0">
-                          <div className="text-xs font-extrabold text-white uppercase truncate" style={{ fontFamily: 'var(--font-display)', color: t.primaryColor }}>
-                            {t.name}
-                          </div>
-                          <div className="text-xs font-black text-amber-300" style={{ fontFamily: 'var(--font-display)' }}>
-                            {formatCurrency(t.currentBalance, tournament?.currency)}
-                          </div>
+                        {/* Team Name with indicator */}
+                        <div className="flex items-center gap-3 flex-shrink-0">
+                          <span 
+                            className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${
+                              isLatest ? 'bg-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.9)] animate-pulse' : 'bg-white/30'
+                            }`} 
+                            style={team.primaryColor ? { backgroundColor: team.primaryColor } : {}}
+                          />
+                          <span 
+                            className={`text-sm uppercase tracking-widest font-bold ${
+                              isLatest ? 'text-amber-400 font-extrabold' : 'text-white/60'
+                            }`} 
+                            style={{ fontFamily: 'var(--font-display)' }}
+                          >
+                            {team.name}
+                          </span>
                         </div>
-                        {isLeading && (
-                          <span className="w-2.5 h-2.5 rounded-full bg-orange-500 animate-ping" />
-                        )}
+
+                        {/* Connecting Dotted Line */}
+                        <div 
+                          className={`flex-1 border-b border-dashed mx-4 ${
+                            isLatest ? 'border-amber-400/30' : 'border-white/15'
+                          }`} 
+                        />
+
+                        {/* Bid Amount with gap on numbers */}
+                        <div className="flex items-center flex-shrink-0">
+                          <span 
+                            className={`text-2xl font-black ${
+                              isLatest ? 'text-amber-400 drop-shadow-[0_0_12px_rgba(251,191,36,0.5)]' : 'text-white/60'
+                            }`} 
+                            style={{ 
+                              fontFamily: 'var(--font-broadcast)',
+                              letterSpacing: '0.06em'
+                            }}
+                          >
+                            {formatCurrency(bid.amount, tournament?.currency)}
+                          </span>
+                        </div>
                       </div>
                     );
                   })}
                 </div>
               </div>
             )}
-
           </motion.div>
         </div>
       </div>
@@ -623,86 +756,116 @@ const BiddingStage = ({
 // ── 4. SOLD STAGE ───────────────────────────────────────────────────────
 const SoldStage = ({ player, winningTeam, finalPrice, tournament, settings }) => {
   const cardTheme = settings?.cardTheme || 'GOLD';
+  
+  // Use team color or default green for glow
+  const teamColor = winningTeam?.primaryColor || '#22c55e';
 
   return (
-    <div className="w-full h-full">
-      <div className="relative z-10 w-full h-full flex flex-col items-center justify-between p-10 select-none">
+    <div className="w-full h-full relative overflow-hidden">
+      {/* MASSIVE TEAM LOGO AURA BACKGROUND */}
+      {winningTeam?.logoUrl && (
+        <div className="absolute inset-0 flex items-center justify-center opacity-[0.07] mix-blend-screen pointer-events-none z-0">
+          <motion.img 
+            initial={{ scale: 0.5, rotate: -20, opacity: 0 }}
+            animate={{ scale: 1.8, rotate: 0, opacity: 1 }}
+            transition={{ duration: 2, ease: "easeOut" }}
+            src={winningTeam.logoUrl} 
+            className="w-[800px] h-[800px] object-contain blur-[2px]"
+          />
+        </div>
+      )}
+      
+      {/* Ambient Color Glow */}
+      <div 
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] blur-[150px] -z-10 rounded-full opacity-20 pointer-events-none"
+        style={{ backgroundColor: teamColor }}
+      />
 
-        {/* Top Banner */}
+      <div className="relative z-10 w-full h-full flex flex-col items-center justify-center p-10 select-none">
+        
+        {/* COLLAB GRAPHIC CONTAINER */}
+        <div className="flex flex-col items-center justify-center relative w-full h-full">
+          
+        {/* HEADER: TEAM NAME */}
         <motion.div
           initial={{ y: -50, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          className="flex items-center gap-3 bg-green-950/90 border border-green-500/60 px-8 py-2.5 rounded-full shadow-2xl shadow-green-500/30"
+          transition={{ delay: 0.3, duration: 0.8 }}
+          className="mb-8 flex flex-col items-center"
         >
-          <Award className="w-7 h-7 text-green-400" />
-          <span className="text-2xl font-black text-green-400 tracking-widest uppercase" style={{ fontFamily: 'var(--font-broadcast)' }}>
-            OFFICIAL TRANSFER DEAL COMPLETED
-          </span>
+          <div className="text-sm tracking-[0.5em] text-white/70 uppercase mb-4 font-bold" style={{ fontFamily: 'var(--font-display)' }}>
+            Official Transfer To
+          </div>
+          <div 
+            className="text-6xl md:text-8xl font-black uppercase tracking-wide drop-shadow-2xl text-center leading-tight" 
+            style={{ fontFamily: 'var(--font-broadcast)', color: teamColor }}
+          >
+            {winningTeam?.name || 'NEW CLUB'}
+          </div>
         </motion.div>
 
-        {/* Center Presentation */}
-        <div className="my-auto flex flex-col md:flex-row items-center justify-center gap-12 w-full max-w-5xl">
-
-          {/* EA FC Card with SOLD Stamp */}
+        {/* HORIZONTAL COLLAB LAYOUT */}
+        <div className="flex items-center justify-center gap-8 md:gap-16 w-full max-w-[1400px]">
+          
+          {/* LEFT: FINAL TRANSFER FEE */}
           <motion.div
-            initial={{ scale: 0.6, rotate: -6, opacity: 0 }}
-            animate={{ scale: 1, rotate: 0, opacity: 1 }}
-            transition={{ type: 'spring', stiffness: 120, damping: 12 }}
+            initial={{ x: -100, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            transition={{ type: 'spring', stiffness: 100, damping: 20, delay: 1.6 }}
+            className="flex flex-col items-end text-right flex-1"
+          >
+            <div className="text-sm font-bold text-white/50 uppercase tracking-[0.4em] mb-4" style={{ fontFamily: 'var(--font-display)' }}>
+              Final Transfer Fee
+            </div>
+            <div className="text-[80px] md:text-[110px] font-black text-white tracking-normal drop-shadow-[0_20px_50px_rgba(0,0,0,0.9)] leading-none" style={{ fontFamily: 'var(--font-broadcast)' }}>
+              {formatCurrency(finalPrice, tournament?.currency)}
+            </div>
+          </motion.div>
+
+          {/* CENTER: THE CARD + SOLD STAMP */}
+          <motion.div
+            initial={{ scale: 0.8, y: 50, opacity: 0 }}
+            animate={{ scale: 1, y: 0, opacity: 1 }}
+            transition={{ type: 'spring', stiffness: 100, damping: 15, delay: 0.1 }}
+            className="relative z-20 shrink-0"
           >
             <EFootballCard
               player={player}
-              size="lg"
+              size="xl"
               theme={cardTheme}
-              status="SOLD"
               highlight={true}
             />
+            
+            {/* EPIC SOLD STAMP */}
+            <motion.div
+               initial={{ scale: 4, opacity: 0, rotate: 0 }}
+               animate={{ scale: 1, opacity: 1, rotate: -8 }}
+               transition={{ type: 'spring', stiffness: 150, damping: 10, delay: 0.8 }}
+               className="absolute inset-0 flex items-center justify-center pointer-events-none z-50"
+            >
+               <div className="relative flex flex-col items-center justify-center px-8 py-3 bg-black/60 backdrop-blur-md border-y-[6px] border-red-600 shadow-[0_15px_40px_rgba(0,0,0,0.8)] min-w-[320px]">
+                 <span className="text-white font-black text-[120px] tracking-[0.3em] pl-[0.3em] uppercase drop-shadow-[0_0_15px_rgba(220,38,38,0.8)] leading-none" style={{ fontFamily: 'var(--font-broadcast)' }}>
+                   SOLD
+                 </span>
+               </div>
+            </motion.div>
           </motion.div>
 
-          {/* Winning Club Details */}
+          {/* RIGHT: THE TEAM LOGO */}
           <motion.div
-            initial={{ x: 50, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            transition={{ delay: 0.3 }}
-            className="flex flex-col items-start gap-4 text-left"
+             initial={{ x: 100, opacity: 0 }}
+             animate={{ x: 0, opacity: 1 }}
+             transition={{ type: 'spring', stiffness: 100, damping: 20, delay: 1.8 }}
+             className="flex-1 flex justify-start items-center"
           >
-            <div className="text-xs font-black text-green-400 uppercase tracking-widest" style={{ fontFamily: 'var(--font-display)' }}>
-              ACQUIRED BY
-            </div>
-
-            {winningTeam && (
-              <div className="flex items-center gap-6 bg-slate-900/95 border border-white/15 p-6 rounded-2xl shadow-2xl backdrop-blur-xl">
-                {winningTeam.logoUrl && (
-                  <img src={winningTeam.logoUrl} alt={winningTeam.name} className="w-20 h-20 object-contain" />
-                )}
-                <div>
-                  <h2
-                    className="text-5xl font-black uppercase tracking-wider"
-                    style={{ fontFamily: 'var(--font-broadcast)', color: winningTeam.primaryColor || '#22c55e' }}
-                  >
-                    {winningTeam.name}
-                  </h2>
-                  <p className="text-sm text-slate-300 font-extrabold" style={{ fontFamily: 'var(--font-display)' }}>
-                    Manager: {winningTeam.managerName || 'Franchise Director'}
-                  </p>
-                </div>
-              </div>
-            )}
-
-            <div className="mt-2">
-              <div className="text-xs font-black text-slate-400 uppercase tracking-widest" style={{ fontFamily: 'var(--font-display)' }}>
-                FINAL TRANSFER FEE
-              </div>
-              <div className="text-7xl font-black text-amber-400 tracking-tight" style={{ fontFamily: 'var(--font-broadcast)' }}>
-                {formatCurrency(finalPrice, tournament?.currency)}
-              </div>
-            </div>
+             {winningTeam?.logoUrl ? (
+                <img src={winningTeam.logoUrl} alt="Team" className="w-32 h-32 md:w-48 md:h-48 object-contain drop-shadow-[0_15px_30px_rgba(0,0,0,0.6)]" />
+             ) : (
+                <Shield className="w-32 h-32 md:w-48 md:h-48 drop-shadow-[0_15px_30px_rgba(0,0,0,0.6)]" style={{ color: teamColor }} />
+             )}
           </motion.div>
 
         </div>
-
-        {/* Footer */}
-        <div className="text-xs font-extrabold text-slate-400 uppercase tracking-widest" style={{ fontFamily: 'var(--font-display)' }}>
-          {player?.name} HAS OFFICIALLY JOINED {winningTeam?.name || 'THE CLUB'}
         </div>
       </div>
     </div>

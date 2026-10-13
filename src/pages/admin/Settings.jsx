@@ -2,10 +2,13 @@ import React, { useState } from 'react';
 import { useTournament } from '../../context/TournamentContext';
 import { storageService } from '../../services/storageService';
 import { ConfirmModal } from '../../components/common/ConfirmModal';
-import { Download, Upload, RotateCcw, AlertTriangle, Zap, CheckCircle2, Trash2 } from 'lucide-react';
-
+import { Download, Upload, RotateCcw, AlertTriangle, Zap, CheckCircle2, Trash2, Users, Palette, Tv } from 'lucide-react';
+import { generateMockData } from '../../utils/mockDataGenerator';
+import { createRealisticPlayerPortrait } from '../../utils/fifaPlayerGenerator';
+import { useNavigate } from 'react-router-dom';
 export const Settings = () => {
   const { refreshData } = useTournament();
+  const navigate = useNavigate();
 
   // Custom Modal State
   const [modalConfig, setModalConfig] = useState({
@@ -105,6 +108,36 @@ export const Settings = () => {
     });
   };
 
+  const handleLoadMockData = () => {
+    showConfirm({
+      title: 'Load Realistic Mock Data',
+      message: 'This will add several realistic top clubs and world-class players to your current database. Proceed?',
+      confirmText: 'Load Data',
+      type: 'info',
+      onConfirm: () => {
+        const { teams, players } = generateMockData();
+        
+        // Append teams
+        const existingTeams = storageService.getTeams();
+        const newTeams = [...existingTeams, ...teams];
+        storageService.saveTeams(newTeams);
+
+        // Append players with generated portraits
+        const existingPlayers = storageService.getPlayers();
+        const playersWithPortraits = players.map(p => ({
+          ...p,
+          photoUrl: createRealisticPlayerPortrait(p.name, p.position)
+        }));
+        
+        const newPlayers = [...existingPlayers, ...playersWithPortraits];
+        storageService.savePlayers(newPlayers);
+        
+        refreshData();
+        showAlert('Data Loaded', 'Successfully added mock teams and players!', 'success');
+      }
+    });
+  };
+
   return (
     <div style={{ padding: '32px 40px', maxWidth: 880, margin: '0 auto' }}>
 
@@ -190,6 +223,95 @@ export const Settings = () => {
           </div>
           <input type="file" accept=".json" onChange={handleImportJSON} style={{ display: 'none' }} />
         </label>
+
+        {/* Card Customization */}
+        <button
+          onClick={() => navigate('/admin/card-customization')}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 20,
+            background: 'var(--spl-panel)', border: '1px solid var(--border-subtle)',
+            borderRadius: 10, padding: '22px 24px', cursor: 'pointer', textAlign: 'left',
+            transition: 'border-color 0.15s, background 0.15s, transform 0.1s',
+          }}
+          onMouseEnter={e => { e.currentTarget.style.borderColor = '#A855F7'; e.currentTarget.style.background = 'var(--spl-elevated)'; }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border-subtle)'; e.currentTarget.style.background = 'var(--spl-panel)'; }}
+        >
+          <div style={{
+            width: 52, height: 52, borderRadius: 8, flexShrink: 0,
+            background: 'rgba(168, 85, 247, 0.15)', border: '1px solid rgba(168, 85, 247, 0.3)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <Palette className="w-6 h-6" style={{ color: '#A855F7' }} />
+          </div>
+          <div>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 700, color: '#fff', letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: 4 }}>
+              Player Card Customization
+            </div>
+            <div style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'var(--text-secondary)' }}>
+              100% customize the primary card theme design, gradients, borders, and typography.
+            </div>
+          </div>
+        </button>
+
+        {/* Projector Customization */}
+        <button
+          onClick={() => navigate('/admin/projector-customization')}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 20,
+            background: 'var(--spl-panel)', border: '1px solid var(--border-subtle)',
+            borderRadius: 10, padding: '22px 24px', cursor: 'pointer', textAlign: 'left',
+            transition: 'border-color 0.15s, background 0.15s, transform 0.1s',
+          }}
+          onMouseEnter={e => { e.currentTarget.style.borderColor = '#0EA5E9'; e.currentTarget.style.background = 'var(--spl-elevated)'; }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border-subtle)'; e.currentTarget.style.background = 'var(--spl-panel)'; }}
+        >
+          <div style={{
+            width: 52, height: 52, borderRadius: 8, flexShrink: 0,
+            background: 'rgba(14, 165, 233, 0.15)', border: '1px solid rgba(14, 165, 233, 0.3)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <Tv className="w-6 h-6" style={{ color: '#0EA5E9' }} />
+          </div>
+          <div>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 700, color: '#fff', letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: 4 }}>
+              Projector Screen Customization
+            </div>
+            <div style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'var(--text-secondary)' }}>
+              Customize the live screen background image, filter gradients, opacity, and ambient shadows.
+            </div>
+          </div>
+        </button>
+      </div>
+
+      {/* Demo Data Zone */}
+      <div style={{ marginBottom: 36 }}>
+        <button
+          onClick={handleLoadMockData}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 20, width: '100%',
+            background: 'var(--spl-panel)', border: '1px solid var(--border-subtle)',
+            borderRadius: 10, padding: '22px 24px', cursor: 'pointer', textAlign: 'left',
+            transition: 'border-color 0.15s, background 0.15s, transform 0.1s',
+          }}
+          onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--spl-blue)'; e.currentTarget.style.background = 'var(--spl-elevated)'; }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border-subtle)'; e.currentTarget.style.background = 'var(--spl-panel)'; }}
+        >
+          <div style={{
+            width: 52, height: 52, borderRadius: 8, flexShrink: 0,
+            background: 'rgba(234, 179, 8, 0.15)', border: '1px solid rgba(234, 179, 8, 0.3)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <Users className="w-6 h-6" style={{ color: '#EAB308' }} />
+          </div>
+          <div>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 700, color: '#fff', letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: 4 }}>
+              Load Realistic Demo Data
+            </div>
+            <div style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'var(--text-secondary)' }}>
+              Populate your database with top-tier clubs and world-class players for testing and demonstration.
+            </div>
+          </div>
+        </button>
       </div>
 
       {/* Danger zone */}

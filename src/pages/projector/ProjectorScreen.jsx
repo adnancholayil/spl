@@ -9,7 +9,7 @@ import { formatCurrency } from '../../utils/currency';
 import { Maximize2, Minimize2, Radio, Trophy, Users, Shield, CheckCircle2 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 
-import { StadiumBackground, STADIUM_IMAGES, getRandomStadiumImage } from '../../components/projector/StadiumBackground';
+import { getRandomStadiumImage } from '../../components/projector/StadiumBackground';
 
 export const ProjectorScreen = () => {
   const { tournament, teams, players } = useTournament();
@@ -93,17 +93,25 @@ export const ProjectorScreen = () => {
   const soldPlayers = players?.filter(p => p.status === 'SOLD') || [];
   const unsoldPlayers = players?.filter(p => p.status === 'UNSOLD' || p.status === 'UPCOMING') || [];
 
-  const [bgImage, setBgImage] = useState(() => getRandomStadiumImage());
+  const [bgImage, setBgImage] = useState(() => projectorSettings?.bgImage || getRandomStadiumImage());
 
   useEffect(() => {
-    // Randomly select a stadium background from /assets/stedium
-    setBgImage(getRandomStadiumImage());
-  }, []);
+    if (!projectorSettings?.bgImage) {
+      setBgImage(getRandomStadiumImage());
+    } else {
+      setBgImage(projectorSettings.bgImage);
+    }
+  }, [projectorSettings?.bgImage]);
 
-  const themeBg = projectorSettings.screenTheme === 'GOLD' ? 'linear-gradient(135deg, rgba(6,5,3,0.85) 0%, rgba(28,20,4,0.9) 100%)'
-                : projectorSettings.screenTheme === 'NEON' ? 'linear-gradient(135deg, rgba(3,8,5,0.85) 0%, rgba(6,28,15,0.9) 100%)'
-                : projectorSettings.screenTheme === 'CYBER' ? 'linear-gradient(135deg, rgba(6,2,3,0.85) 0%, rgba(32,5,7,0.9) 100%)'
-                : 'linear-gradient(135deg, rgba(10,10,10,0.85) 0%, rgba(0,0,0,0.95) 100%)';
+  const hexToRgb = (hex) => {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? `${parseInt(result[1], 16)},${parseInt(result[2], 16)},${parseInt(result[3], 16)}` : '0,0,0';
+  };
+
+  const themeBg = `linear-gradient(135deg, rgba(${hexToRgb(projectorSettings?.bgFilter1 || '#060503')},${(projectorSettings?.bgFilterOpacity1 ?? 85)/100}) 0%, rgba(${hexToRgb(projectorSettings?.bgFilter2 || '#1c1404')},${(projectorSettings?.bgFilterOpacity2 ?? 90)/100}) 100%)`;
+  const panelBg = `rgba(${hexToRgb(projectorSettings?.panelBgColor || '#000000')},${(projectorSettings?.panelBgOpacity ?? 50)/100})`;
+  const panelBorder = `rgba(${hexToRgb(projectorSettings?.panelBorderColor || '#ffffff')},${(projectorSettings?.panelBorderOpacity ?? 10)/100})`;
+  const shadowOpacity = (projectorSettings?.ambientShadowOpacity ?? 20) / 100;
 
   const getAmbientColor = () => {
     if (stage === 'BIDDING') return leadingTeam?.primaryColor || '#ea580c';
@@ -140,7 +148,7 @@ export const ProjectorScreen = () => {
       {/* RENDER CONTENT BASED ON MODE */}
       <div className="flex-1 w-full h-full relative overflow-hidden">
         {mode === 'AUTO' && (
-          <StadiumBackground ambientColor={getAmbientColor()}>
+          <div className="w-full h-full absolute inset-0">
             <AnimatePresence mode="wait">
               {stage === 'IDLE' && (
                 <motion.div key="idle" className="w-full h-full absolute inset-0" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
@@ -173,7 +181,7 @@ export const ProjectorScreen = () => {
                 </motion.div>
               )}
             </AnimatePresence>
-          </StadiumBackground>
+          </div>
         )}
 
         {/* CUSTOM MODE: CLUBS OVERVIEW & MANAGER BALANCES */}
@@ -202,7 +210,7 @@ export const ProjectorScreen = () => {
                 const spent = t.totalSpent || 0;
                 const pct = Math.max(0, Math.min(100, (t.currentBalance / t.startingBudget) * 100));
                 return (
-                  <div key={t.id} style={{ background: 'rgba(15,23,42,0.85)', border: `2px solid ${t.primaryColor}60`, borderRadius: 12, padding: 20, boxShadow: `0 10px 30px ${t.primaryColor}20` }}>
+                  <div key={t.id} style={{ background: panelBg, border: `2px solid ${t.primaryColor}60`, borderRadius: 12, padding: 20, boxShadow: `0 10px 30px ${t.primaryColor}${Math.round(shadowOpacity * 255).toString(16).padStart(2, '0')}` }}>
                     <div style={{ height: 4, background: t.primaryColor, borderRadius: 2, marginBottom: 14 }} />
                     {projectorSettings.showTeamLogos && t.logoUrl && (
                       <img src={t.logoUrl} alt={t.name} style={{ width: 64, height: 64, objectFit: 'contain', margin: '0 auto 12px' }} />
@@ -265,7 +273,7 @@ export const ProjectorScreen = () => {
               </div>
 
               {projectorSettings.showManagerBalance && (
-                <div style={{ background: 'rgba(15,23,42,0.9)', border: `1px solid ${selectedTeam.primaryColor}60`, borderRadius: 10, padding: '12px 20px', textAlign: 'right' }}>
+                <div style={{ background: panelBg, border: `1px solid ${selectedTeam.primaryColor}60`, borderRadius: 10, padding: '12px 20px', textAlign: 'right' }}>
                   <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Manager: {selectedTeam.managerName}</div>
                   <div style={{ fontFamily: 'var(--font-broadcast)', fontSize: 26, color: 'var(--spl-gold-light)' }}>
                     {formatCurrency(selectedTeam.currentBalance)}
@@ -306,7 +314,7 @@ export const ProjectorScreen = () => {
               {soldPlayers.map(p => {
                 const team = teams.find(t => t.id === p.teamId);
                 return (
-                  <div key={p.id} style={{ background: 'rgba(15,23,42,0.85)', border: '1px solid rgba(34,197,94,0.4)', borderRadius: 12, padding: 16, display: 'flex', alignItems: 'center', gap: 14 }}>
+                  <div key={p.id} style={{ background: panelBg, border: '1px solid rgba(34,197,94,0.4)', borderRadius: 12, padding: 16, display: 'flex', alignItems: 'center', gap: 14 }}>
                     <img src={p.photoUrl || p.presentationPng} alt={p.name} style={{ width: 64, height: 64, borderRadius: 10, objectFit: 'cover', border: '1px solid rgba(255,255,255,0.2)' }} />
                     <div>
                       <div style={{ fontFamily: 'var(--font-broadcast)', fontSize: 18, color: '#fff' }}>{p.name}</div>

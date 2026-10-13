@@ -77,31 +77,8 @@ export const PlayerImageUploader = ({
     reader.onload = (e) => {
       const img = new Image();
       img.onload = () => {
-        const MAX_SIZE = 400;
-        let width = img.width;
-        let height = img.height;
-
-        if (width > height) {
-          if (width > MAX_SIZE) {
-            height *= MAX_SIZE / width;
-            width = MAX_SIZE;
-          }
-        } else {
-          if (height > MAX_SIZE) {
-            width *= MAX_SIZE / height;
-            height = MAX_SIZE;
-          }
-        }
-
-        const canvas = document.createElement('canvas');
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, width, height);
-
-        // Compress to WEBP at 80% quality to save massive space in localStorage
-        const compressedDataUrl = canvas.toDataURL('image/webp', 0.8);
-        notifyPhotoChange(compressedDataUrl);
+        // Bypass compression and resizing to maintain 100% original quality
+        notifyPhotoChange(e.target.result);
       };
       img.src = e.target.result;
     };
