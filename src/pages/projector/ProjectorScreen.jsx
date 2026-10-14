@@ -4,6 +4,7 @@ import { useAuction } from '../../context/AuctionContext';
 import { useProjector } from '../../hooks/useProjector';
 import { storageService } from '../../services/storageService';
 import { PlayerCardShowcase } from '../../components/projector/PlayerCardShowcase';
+import { TacticalPitchSquad } from '../../components/projector/TacticalPitchSquad';
 import { EFootballCard } from '../../components/common/EFootballCard';
 import { formatCurrency } from '../../utils/currency';
 import { Maximize2, Minimize2, Radio, Trophy, Users, Shield, CheckCircle2 } from 'lucide-react';
@@ -17,19 +18,26 @@ export const ProjectorScreen = () => {
   const { isFullscreen, toggleFullscreen } = useProjector();
 
   const [projectorSettings, setProjectorSettings] = useState(() => storageService.getProjectorSettings());
+  const [squadFormat, setSquadFormat] = useState(() => storageService.getSquadFormat());
 
-  // Listen to live projector settings changes
+  // Listen to live projector settings and squad format changes
   useEffect(() => {
     const handleStorageChange = () => {
       setProjectorSettings(storageService.getProjectorSettings());
+      setSquadFormat(storageService.getSquadFormat());
     };
     window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
+    window.addEventListener('squad-format-updated', handleStorageChange);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('squad-format-updated', handleStorageChange);
+    };
   }, []);
 
   const activePlayer = players?.find(p => p.id === auctionState?.currentPlayerId);
   const leadingTeam  = teams?.find(t => t.id === auctionState?.leadingTeamId);
-  const winningTeam  = leadingTeam;
+  const winningTeam  = leadingTeam || teams?.find(t => t.id === activePlayer?.teamId);
+  const finalPrice   = auctionState?.currentBid || activePlayer?.soldPrice || 0;
   const stage        = auctionState?.stage || 'IDLE';
 
   const mode = projectorSettings.mode || 'AUTO';
@@ -166,13 +174,13 @@ export const ProjectorScreen = () => {
                 </motion.div>
               )}
               {stage === 'SOLD' && activePlayer && (
-                <motion.div key={`sold-${activePlayer.id}`} className="w-full h-full absolute inset-0" initial={{ x: -1000, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: 1000, opacity: 0 }} transition={{ type: 'spring', stiffness: 150, damping: 20 }}>
-                  <PlayerCardShowcase stage="SOLD" player={activePlayer} tournament={tournament} winningTeam={winningTeam} finalPrice={auctionState?.currentBid} settings={projectorSettings} />
+                <motion.div key={`sold-${activePlayer.id}`} className="w-full h-full absolute inset-0" initial={{ x: -1000, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ opacity: 0, scale: 0.95 }} transition={{ type: 'spring', stiffness: 150, damping: 20 }}>
+                  <PlayerCardShowcase stage="SOLD" player={activePlayer} tournament={tournament} winningTeam={winningTeam} finalPrice={finalPrice} settings={projectorSettings} />
                 </motion.div>
               )}
               {stage === 'SIGNING' && activePlayer && (
-                <motion.div key={`signing-${activePlayer.id}`} className="w-full h-full absolute inset-0" initial={{ x: -1000, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: 1000, opacity: 0 }} transition={{ type: 'spring', stiffness: 150, damping: 20 }}>
-                  <PlayerCardShowcase stage="SIGNING" player={activePlayer} tournament={tournament} winningTeam={winningTeam} finalPrice={auctionState?.currentBid} settings={projectorSettings} />
+                <motion.div key={`signing-${activePlayer.id}`} className="w-full h-full absolute inset-0" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.05 }} transition={{ duration: 0.5, ease: 'easeOut' }}>
+                  <PlayerCardShowcase stage="SIGNING" player={activePlayer} tournament={tournament} winningTeam={winningTeam} finalPrice={finalPrice} settings={projectorSettings} />
                 </motion.div>
               )}
               {stage === 'UNSOLD' && activePlayer && (
@@ -254,45 +262,16 @@ export const ProjectorScreen = () => {
           </div>
         )}
 
-        {/* CUSTOM MODE: SQUAD SHOWCASE */}
+        {/* CUSTOM MODE: SQUAD SHOWCASE (EA FC TACTICAL PITCH SQUAD) */}
         {mode === 'SQUAD_SHOWCASE' && selectedTeam && (
-          <div className="w-full h-full p-12 flex flex-col justify-between">
-            <div className="flex items-center justify-between border-b border-white/10 pb-6">
-              <div className="flex items-center gap-6">
-                {projectorSettings.showTeamLogos && selectedTeam.logoUrl && (
-                  <img src={selectedTeam.logoUrl} alt={selectedTeam.name} style={{ width: 72, height: 72, objectFit: 'contain' }} />
-                )}
-                <div>
-                  <div style={{ fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: 800, color: selectedTeam.primaryColor || 'var(--spl-blue-light)', letterSpacing: '0.3em' }}>
-                    OFFICIAL SQUAD PRESENTATION
-                  </div>
-                  <h1 style={{ fontFamily: 'var(--font-broadcast)', fontSize: 44, color: '#fff', textTransform: 'uppercase' }}>
-                    {selectedTeam.name}
-                  </h1>
-                </div>
-              </div>
-
-              {projectorSettings.showManagerBalance && (
-                <div style={{ background: panelBg, border: `1px solid ${selectedTeam.primaryColor}60`, borderRadius: 10, padding: '12px 20px', textAlign: 'right' }}>
-                  <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Manager: {selectedTeam.managerName}</div>
-                  <div style={{ fontFamily: 'var(--font-broadcast)', fontSize: 26, color: 'var(--spl-gold-light)' }}>
-                    {formatCurrency(selectedTeam.currentBalance)}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div id={`scroll-container-${mode}`} onScroll={handleScroll} className="my-auto flex gap-6 overflow-x-auto justify-center py-4">
-              {players.filter(p => p.teamId === selectedTeam.id).map(p => (
-                <EFootballCard key={p.id} player={p} size="lg" />
-              ))}
-              {players.filter(p => p.teamId === selectedTeam.id).length === 0 && (
-                <div style={{ fontSize: 20, fontFamily: 'var(--font-display)', color: 'var(--text-muted)', letterSpacing: '0.15em' }}>
-                  NO PLAYERS ACQUIRED IN THIS SQUAD YET
-                </div>
-              )}
-            </div>
-            <div />
+          <div className="w-full h-full relative overflow-hidden">
+            <TacticalPitchSquad
+              team={selectedTeam}
+              squad={players.filter(p => p.teamId === selectedTeam.id)}
+              format={squadFormat}
+              isSigningAnimation={false}
+              tournament={tournament}
+            />
           </div>
         )}
 

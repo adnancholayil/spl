@@ -21,6 +21,13 @@ export const TournamentProvider = ({ children }) => {
 
   useEffect(() => {
     refreshData();
+    const handleUpdate = () => refreshData();
+    window.addEventListener('storage', handleUpdate);
+    window.addEventListener('teams-updated', handleUpdate);
+    return () => {
+      window.removeEventListener('storage', handleUpdate);
+      window.removeEventListener('teams-updated', handleUpdate);
+    };
   }, []);
 
   const updateTournament = (updates) => {

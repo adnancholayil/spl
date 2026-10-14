@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatCurrency } from '../../utils/currency';
 import { EFootballCard } from '../common/EFootballCard';
@@ -6,7 +6,8 @@ import { StadiumBackground } from './StadiumBackground';
 import { SPLLogo } from '../common/SPLLogo';
 import { storageService } from '../../services/storageService';
 import { soundEngine } from '../../services/soundService';
-import { Trophy, Shield, TrendingUp, Clock, Award, Users, Flame } from 'lucide-react';
+import { TacticalPitchSquad } from './TacticalPitchSquad';
+import { Trophy, Shield, TrendingUp, Clock, Award, Users, Flame, Sparkles, FileText, Star, CheckCircle2 } from 'lucide-react';
 
 /**
  * High-End PlayerCardShowcase Component
@@ -91,16 +92,18 @@ const IdleStage = ({ tournament, teams }) => (
 
 
 // ── MYSTERY CARD BACK COMPONENT (FOR SUSPENSE REVEAL) ────────────────────
-export const MysteryCardBack = ({ size = 'xl', customTheme = null }) => {
-  const [cfg, setCfg] = useState(customTheme);
+export const MysteryCardBack = ({ size = 'xl', customTheme = null, isStudio = false, selectedElement = null, onSelectElement = null }) => {
+  const [storedTheme, setStoredTheme] = useState(() => storageService.getCardTheme());
 
   useEffect(() => {
     if (!customTheme) {
-      setCfg(storageService.getCardTheme());
-    } else {
-      setCfg(customTheme);
+      const handleUpdate = () => setStoredTheme(storageService.getCardTheme());
+      window.addEventListener('card-theme-updated', handleUpdate);
+      return () => window.removeEventListener('card-theme-updated', handleUpdate);
     }
   }, [customTheme]);
+
+  const cfg = customTheme || storedTheme;
 
   const scaleMap = { sm: 0.65, md: 0.85, lg: 1.1, xl: 1.35 };
   const scale = scaleMap[size] || scaleMap.xl;
@@ -120,6 +123,18 @@ export const MysteryCardBack = ({ size = 'xl', customTheme = null }) => {
     cardPath = "M 60 15 L 260 15 L 305 60 L 305 340 L 160 415 L 15 340 L 15 60 Z";
   }
 
+  const rayColor1 = cfg?.border2 || '#f59e0b';
+  const rayColor2 = cfg?.border1 || '#fbbf24';
+  const fxIntensity = (cfg?.fxIntensity ?? 100) / 100;
+  const effectsOn = cfg?.enableEffects !== false;
+
+  const sheenSpeed = cfg?.fxSheenSpeed !== undefined ? Number(cfg.fxSheenSpeed) : 3.5;
+  const sheenLag = cfg?.fxSheenLag !== undefined ? Number(cfg.fxSheenLag) : 1.5;
+  const sheenSize = cfg?.fxSheenSize !== undefined ? Number(cfg.fxSheenSize) : 220;
+  const sheenOpacity = (cfg?.fxSheenOpacity !== undefined ? Number(cfg.fxSheenOpacity) : 85) / 100;
+  const totalSheenCycle = Math.max(0.8, Number((sheenSpeed + sheenLag).toFixed(2)));
+  const sweepPercent = Math.min(99, Math.max(15, Math.round((sheenSpeed / totalSheenCycle) * 100)));
+
   return (
     <div 
       style={{ 
@@ -129,6 +144,50 @@ export const MysteryCardBack = ({ size = 'xl', customTheme = null }) => {
       }} 
       className="relative select-none"
     >
+      {/* ── CARD BACK EFFECTS ── */}
+      {effectsOn && (
+        <>
+          {cfg?.fxBgRays && (
+            <div
+              className="absolute inset-0 pointer-events-none -z-10 flex items-center justify-center overflow-visible"
+              style={{ transform: 'scale(1.4)' }}
+            >
+              <div
+                style={{
+                  width: '180%',
+                  height: '180%',
+                  position: 'absolute',
+                  background: `conic-gradient(from 0deg at 50% 50%, ${rayColor1}45 0deg, transparent 35deg, ${rayColor2}70 90deg, transparent 125deg, ${rayColor1}45 180deg, transparent 215deg, ${rayColor2}70 270deg, transparent 305deg, ${rayColor1}45 360deg)`,
+                  animation: 'splFc24RaySpin 10s linear infinite',
+                  borderRadius: '50%',
+                  filter: 'blur(8px)',
+                  opacity: fxIntensity,
+                }}
+              />
+            </div>
+          )}
+
+          {cfg?.fxBgParticles && (
+            <div className="absolute inset-0 pointer-events-none -z-10 overflow-visible" style={{ opacity: fxIntensity }}>
+              <div className="spl-particle-1 absolute" style={{ bottom: '15%', left: '15%', width: 6, height: 6, borderRadius: '50%', background: '#fff', boxShadow: `0 0 8px ${rayColor1}, 0 0 16px ${rayColor2}` }} />
+              <div className="spl-particle-2 absolute" style={{ bottom: '8%', right: '20%', width: 8, height: 8, borderRadius: '50%', background: '#fff', boxShadow: `0 0 10px ${rayColor2}, 0 0 20px #ffffff` }} />
+              <div className="spl-particle-3 absolute" style={{ bottom: '25%', left: '48%', width: 5, height: 5, borderRadius: '50%', background: '#fff', boxShadow: `0 0 8px ${rayColor1}, 0 0 14px ${rayColor2}` }} />
+            </div>
+          )}
+
+          {cfg?.fxBgPulse && (
+            <div
+              className="absolute -inset-5 pointer-events-none -z-10 rounded-3xl spl-bg-pulse"
+              style={{
+                background: `radial-gradient(circle at 50% 50%, ${rayColor1}50 0%, ${rayColor2}25 50%, transparent 75%)`,
+                filter: 'blur(22px)',
+                opacity: fxIntensity,
+              }}
+            />
+          )}
+        </>
+      )}
+
       <svg
         viewBox="0 0 320 440"
         width={cardWidth}
@@ -160,6 +219,46 @@ export const MysteryCardBack = ({ size = 'xl', customTheme = null }) => {
             <stop offset="50%" stopColor={cfg?.border2 || 'rgba(245,158,11,0.15)'} stopOpacity="0.15" />
             <stop offset="100%" stopColor={cfg?.border1 || 'rgba(254,240,138,0.4)'} stopOpacity="0.4" />
           </linearGradient>
+
+          {/* Dynamic Specular Sheen Beam */}
+          <linearGradient id="mys-sheen-beam" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#ffffff" stopOpacity="0" />
+            <stop offset="38%" stopColor="#ffffff" stopOpacity="0.12" />
+            <stop offset="50%" stopColor="#ffffff" stopOpacity={Math.min(1, Math.max(0.2, sheenOpacity * 1.15))} />
+            <stop offset="62%" stopColor="#ffffff" stopOpacity="0.12" />
+            <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
+          </linearGradient>
+
+          <style>{`
+            @keyframes sheenAnim-back {
+              0% {
+                transform: translateX(-160%) skewX(-25deg);
+                opacity: 0;
+              }
+              ${Math.max(4, Math.round(sweepPercent * 0.2))}% {
+                opacity: ${Number((sheenOpacity * fxIntensity).toFixed(3))};
+              }
+              ${Math.max(10, Math.round(sweepPercent * 0.55))}% {
+                opacity: ${Number((sheenOpacity * fxIntensity).toFixed(3))};
+              }
+              ${Math.max(16, Math.round(sweepPercent * 0.88))}% {
+                opacity: ${Number((sheenOpacity * fxIntensity * 0.5).toFixed(3))};
+              }
+              ${Math.max(20, sweepPercent)}% {
+                transform: translateX(280%) skewX(-25deg);
+                opacity: 0;
+              }
+              100% {
+                transform: translateX(280%) skewX(-25deg);
+                opacity: 0;
+              }
+            }
+            .sheen-run-back {
+              animation: sheenAnim-back ${totalSheenCycle}s ease-in-out infinite;
+              mix-blend-mode: overlay;
+              pointer-events: none;
+            }
+          `}</style>
 
           {/* Center emblem dark circle */}
           <radialGradient id="mys-emblem-bg" cx="50%" cy="50%" r="50%">
@@ -345,7 +444,16 @@ export const MysteryCardBack = ({ size = 'xl', customTheme = null }) => {
 
           {/* ── CENTER EMBLEM SYSTEM ── */}
           {cfg?.showBackSideLogo !== false && (
-            <g transform={`translate(160, ${cfg?.backSideLogoY ?? 200}) scale(${(cfg?.backSideLogoScale ?? 100)/100}) translate(-160, -200)`}>
+            <g
+              transform={`translate(${cfg?.backSideLogoX ?? 160}, ${cfg?.backSideLogoY ?? 200}) scale(${(cfg?.backSideLogoScale ?? 100)/100}) translate(-160, -200)`}
+              onClick={() => onSelectElement && onSelectElement('backLogo')}
+              style={{ cursor: isStudio ? 'pointer' : 'default' }}
+            >
+              {/* Studio Selection Ring */}
+              {isStudio && selectedElement === 'backLogo' && (
+                <circle cx="160" cy="200" r="95" fill="rgba(56, 189, 248, 0.12)" stroke="#38bdf8" strokeWidth="2.5" strokeDasharray="6 4" />
+              )}
+
               {/* Outer rings */}
               <circle cx="160" cy="200" r="88" fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="2" />
               <circle cx="160" cy="200" r="80" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="1" strokeDasharray="6 6" />
@@ -374,7 +482,16 @@ export const MysteryCardBack = ({ size = 'xl', customTheme = null }) => {
 
           {/* ── BOTTOM BRANDING SECTION ── */}
           {cfg?.showBackSideText !== false && (
-            <g transform={`translate(0, ${(cfg?.backSideTextY ?? 315) - 315})`}>
+            <g
+              transform={`translate(${(cfg?.backSideTextX ?? 160) - 160}, ${(cfg?.backSideTextY ?? 315) - 315})`}
+              onClick={() => onSelectElement && onSelectElement('backText')}
+              style={{ cursor: isStudio ? 'pointer' : 'default' }}
+            >
+              {/* Studio Selection Box */}
+              {isStudio && selectedElement === 'backText' && (
+                <rect x="25" y="290" width="270" height="54" rx="6" fill="rgba(56, 189, 248, 0.12)" stroke="#38bdf8" strokeWidth="2" strokeDasharray="6 4" />
+              )}
+
               {/* Divider dots */}
               <circle cx="140" cy="290" r="1.5" fill="rgba(255,255,255,0.6)" />
               <circle cx="160" cy="290" r="1.5" fill="rgba(255,255,255,0.9)" />
@@ -411,12 +528,41 @@ export const MysteryCardBack = ({ size = 'xl', customTheme = null }) => {
               <polygon points="280,345 265,337 280,329" fill="rgba(255,255,255,0.25)" />
             </>
           )}
+
+          {/* Surface Sheen Sweep */}
+          {effectsOn && cfg?.fxSurfaceSheen !== false && (
+            <rect
+              x="-160"
+              y="-100"
+              width={sheenSize}
+              height="700"
+              fill="url(#mys-sheen-beam)"
+              className="sheen-run-back"
+              style={{ pointerEvents: 'none', mixBlendMode: 'overlay' }}
+            />
+          )}
         </g>
 
         {/* ── LAYER 4: Outer gold border (drawn last so it's on top) ── */}
         <use href="#mys-shape" fill="none" stroke="url(#mys-gold)" strokeWidth="5" />
         {/* Inner gold accent border */}
         <use href="#mys-shape" fill="none" stroke="rgba(254,240,138,0.2)" strokeWidth="2" />
+
+        {/* Border FX: Perimeter Gleam Tracer */}
+        {effectsOn && cfg?.fxBorderGleam && (
+          <use
+            href="#mys-shape"
+            fill="none"
+            stroke={cfg?.border1 || '#ffffff'}
+            strokeWidth="3.5"
+            className="spl-border-gleam-line"
+            style={{
+              '--border-gleam-color': cfg?.border2 || '#f59e0b',
+              mixBlendMode: 'screen',
+              pointerEvents: 'none',
+            }}
+          />
+        )}
       </svg>
     </div>
   );
@@ -872,7 +1018,486 @@ const SoldStage = ({ player, winningTeam, finalPrice, tournament, settings }) =>
   );
 };
 
-// ── 5. UNSOLD STAGE ─────────────────────────────────────────────────────
+// ── DYNAMIC CURSIVE SIGNATURE COMPONENT ─────────────────────────────
+const DynamicSignature = ({ playerName = 'Player Signature' }) => {
+  return (
+    <div className="relative w-full h-full flex items-center justify-start overflow-hidden">
+      {/* Animated Signature Ink Paths */}
+      <svg 
+        viewBox="0 0 380 75" 
+        className="w-full h-full max-w-[340px]" 
+        style={{ filter: 'drop-shadow(0 1px 2px rgba(15,23,42,0.15))' }}
+      >
+        {/* Main Initial Flourish Loop */}
+        <motion.path
+          d="M 20 58 C 25 18, 45 10, 62 16 C 78 22, 68 62, 42 55 C 24 50, 52 38, 85 42"
+          fill="transparent"
+          stroke="#0f172a"
+          strokeWidth="3.2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          initial={{ pathLength: 0 }}
+          animate={{ pathLength: 1 }}
+          transition={{ duration: 0.8, ease: "easeInOut", delay: 0.15 }}
+        />
+        {/* Cursive Name Flow */}
+        <motion.path
+          d="M 85 42 C 100 28, 115 28, 125 44 C 135 30, 148 30, 156 42 C 168 25, 182 22, 188 46 C 198 32, 210 32, 218 42 C 228 20, 242 16, 248 44"
+          fill="transparent"
+          stroke="#0f172a"
+          strokeWidth="2.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          initial={{ pathLength: 0 }}
+          animate={{ pathLength: 1 }}
+          transition={{ duration: 0.9, ease: "easeInOut", delay: 0.75 }}
+        />
+        {/* Confident Athletic Underline Swoosh & Flourish */}
+        <motion.path
+          d="M 248 44 Q 275 32 305 38 Q 335 30 360 22 M 30 65 Q 140 54 260 58 T 355 50"
+          fill="transparent"
+          stroke="#0f172a"
+          strokeWidth="2.6"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          initial={{ pathLength: 0 }}
+          animate={{ pathLength: 1 }}
+          transition={{ duration: 0.9, ease: "easeInOut", delay: 1.4 }}
+        />
+        {/* Signature Accent Dot */}
+        <motion.circle
+          cx="365"
+          cy="24"
+          r="3"
+          fill="#0f172a"
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ delay: 2.2, duration: 0.2 }}
+        />
+      </svg>
+    </div>
+  );
+};
+
+// ── 5. SIGNING STAGE (OFFICIAL UNVEILING CEREMONY) ─────────────────────
+const SigningStage = ({ player, winningTeam, finalPrice, tournament, settings }) => {
+  const [viewMode, setViewMode] = useState('pitch'); // 'pitch' by default
+  const [squadFormat, setSquadFormat] = useState(() => storageService.getSquadFormat());
+  const [teamSquad, setTeamSquad] = useState([]);
+
+  const cardTheme = settings?.cardTheme || 'GOLD';
+  const teamColor = winningTeam?.primaryColor || '#22c55e';
+
+  // Sound fanfare on signing unveiling
+  useEffect(() => {
+    try {
+      soundEngine.playRevealSound();
+    } catch (e) {
+      console.error('Audio play error:', e);
+    }
+  }, []);
+
+  // Sync squad format live
+  useEffect(() => {
+    const handleFormatChange = () => {
+      setSquadFormat(storageService.getSquadFormat());
+    };
+    window.addEventListener('squad-format-updated', handleFormatChange);
+    window.addEventListener('storage', handleFormatChange);
+    return () => {
+      window.removeEventListener('squad-format-updated', handleFormatChange);
+      window.removeEventListener('storage', handleFormatChange);
+    };
+  }, []);
+
+  // Update card to proudly display the new club's crest
+  const signingPlayer = useMemo(() => {
+    if (!player) return null;
+    return {
+      ...player,
+      clubLogo: winningTeam?.logoUrl || player?.clubLogo,
+      teamId: winningTeam?.id || player?.teamId,
+    };
+  }, [player, winningTeam]);
+
+  // Load squad for the winning team
+  useEffect(() => {
+    const allPlayers = storageService.getPlayers();
+    if (winningTeam?.id) {
+      const squad = allPlayers.filter(p => p.teamId === winningTeam.id);
+      // Ensure the current signing player is included
+      if (signingPlayer && !squad.some(p => p.id === signingPlayer.id)) {
+        squad.push(signingPlayer);
+      }
+      setTeamSquad(squad);
+    } else {
+      setTeamSquad(signingPlayer ? [signingPlayer] : []);
+    }
+  }, [winningTeam?.id, signingPlayer]);
+
+  // Default view: EA FC Mobile Tactical Pitch Squad with animated card slotting
+  if (viewMode === 'pitch') {
+    return (
+      <div className="w-full h-full relative overflow-hidden bg-slate-950">
+        <TacticalPitchSquad
+          team={winningTeam}
+          squad={teamSquad}
+          format={squadFormat}
+          signingPlayer={signingPlayer}
+          isSigningAnimation={true}
+          finalPrice={finalPrice}
+          tournament={tournament}
+          onViewCertificate={() => setViewMode('certificate')}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-full h-full relative overflow-hidden flex items-center justify-center">
+      {/* Floating Toggle to Switch back to Pitch */}
+      <div className="absolute top-5 right-6 z-50">
+        <button
+          onClick={() => setViewMode('pitch')}
+          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-900/90 hover:bg-slate-900 border border-emerald-400/60 text-emerald-300 text-xs font-black uppercase tracking-wider backdrop-blur-md shadow-xl transition-all hover:scale-105 active:scale-95 cursor-pointer"
+          style={{ fontFamily: 'var(--font-display)' }}
+          title="Switch to Tactical Pitch Squad"
+        >
+          <Shield className="w-4 h-4 text-emerald-400" />
+          <span>Tactical Squad Pitch</span>
+        </button>
+      </div>
+
+      {/* ── 1. LUMINOUS WHITE & GOLDEN GLOWING GRADIENT (OPAQUE LUXURY BACKDROP) ── */}
+      <div 
+        className="absolute inset-0 z-0 pointer-events-none"
+        style={{
+          background: 'radial-gradient(circle at 50% 30%, #ffffff 0%, #fffdf2 20%, #fef3c7 45%, #fde68a 70%, #f59e0b 95%, #d97706 100%)',
+        }}
+      />
+
+      {/* ── 2. ROTATING CELEBRATORY SUNBURST LIGHT RAYS (DYNAMIC STAGE SPOTLIGHTS) ── */}
+      <motion.div
+        animate={{ rotate: 360 }}
+        transition={{ duration: 90, repeat: Infinity, ease: 'linear' }}
+        className="absolute w-[1800px] h-[1800px] -top-[450px] -left-[450px] pointer-events-none z-0 opacity-20 mix-blend-overlay"
+        style={{
+          background: 'repeating-conic-gradient(from 0deg, rgba(255,255,255,0.8) 0deg 15deg, transparent 15deg 30deg)'
+        }}
+      />
+
+      {/* ── 3. MASSIVE TEAM WATERMARK IN GOLDEN GLOW ── */}
+      {winningTeam?.logoUrl && (
+        <div className="absolute right-[-8%] top-1/2 -translate-y-1/2 opacity-[0.12] pointer-events-none z-0">
+          <motion.img 
+            initial={{ scale: 0.8, rotate: -10, opacity: 0 }}
+            animate={{ scale: 1.8, rotate: 5, opacity: 1 }}
+            transition={{ duration: 2.2, ease: "easeOut" }}
+            src={winningTeam.logoUrl} 
+            className="w-[900px] h-[900px] object-contain blur-[1px]"
+          />
+        </div>
+      )}
+
+      {/* ── 4. PULSING TEAM AURA BLENDED INTO GOLDEN LIGHT ── */}
+      <div 
+        className="absolute top-1/2 left-1/3 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[900px] blur-[180px] -z-0 rounded-full opacity-30 pointer-events-none"
+        style={{ backgroundColor: teamColor }}
+      />
+
+      {/* ── 5. FLOATING GOLDEN EMBERS & SPARKLES ── */}
+      <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
+        {[...Array(20)].map((_, i) => (
+          <motion.div
+            key={i}
+            initial={{ 
+              x: ((i * 83) % 1400) - 700, 
+              y: 400 + (i * 20), 
+              opacity: 0, 
+              scale: 0.6 
+            }}
+            animate={{ 
+              y: -400 - (i * 20), 
+              opacity: [0, 0.85, 0], 
+              scale: [0.6, 1.3, 0.4] 
+            }}
+            transition={{ 
+              duration: 3.5 + (i % 4) * 1.2, 
+              repeat: Infinity, 
+              delay: (i % 5) * 0.5,
+              ease: "easeInOut" 
+            }}
+            className="absolute top-1/2 left-1/2 w-2.5 h-2.5 rounded-full"
+            style={{
+              backgroundColor: '#fff',
+              boxShadow: '0 0 12px #f59e0b, 0 0 20px #fbbf24'
+            }}
+          />
+        ))}
+      </div>
+
+      {/* ── 6. MAIN PRESENTATION CONTENT ── */}
+      <div className="relative z-10 w-full h-full flex flex-col items-center justify-center p-6 md:p-10 select-none">
+        
+        {/* TOP MARQUEE: WELCOME TO [CLUB NAME] */}
+        <motion.div
+          initial={{ y: -40, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.2, duration: 0.8 }}
+          className="mb-6 flex flex-col items-center text-center"
+        >
+          <div className="inline-flex items-center gap-2 px-5 py-1.5 rounded-full bg-white/80 border border-amber-300 shadow-md mb-2">
+            <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping" />
+            <span 
+              className="text-xs font-black uppercase tracking-[0.35em] text-amber-900" 
+              style={{ fontFamily: 'var(--font-display)' }}
+            >
+              OFFICIAL SQUAD UNVEILING • SEASON {tournament?.season || '2026'}
+            </span>
+          </div>
+
+          <h1 
+            className="text-5xl md:text-7xl lg:text-8xl font-black uppercase tracking-tight text-slate-950 leading-none drop-shadow-sm text-center"
+            style={{ fontFamily: 'var(--font-broadcast)' }}
+          >
+            <span>WELCOME TO </span>
+            <span style={{ color: teamColor }}>{winningTeam?.name || 'NEW CLUB'}</span>
+          </h1>
+        </motion.div>
+
+        {/* 2-COLUMN BROADCAST UNVEILING STAGE */}
+        <div className="flex flex-col lg:flex-row items-center justify-center gap-10 lg:gap-14 xl:gap-20 w-full max-w-[1380px]">
+          
+          {/* LEFT: THE HERO CARD (PROUDLY WEARING NEW CREST) */}
+          <motion.div
+            initial={{ scale: 0.8, x: -50, opacity: 0 }}
+            animate={{ scale: 1, x: 0, opacity: 1 }}
+            transition={{ type: 'spring', stiffness: 90, damping: 15 }}
+            className="relative z-20 shrink-0 flex flex-col items-center"
+          >
+            {/* Card Glow */}
+            <div 
+              className="absolute -inset-6 rounded-3xl opacity-50 blur-2xl pointer-events-none -z-10"
+              style={{ background: `radial-gradient(circle, ${teamColor} 0%, rgba(245,158,11,0.4) 60%, transparent 100%)` }}
+            />
+
+            <motion.div
+              animate={{ y: [-5, 5, -5] }}
+              transition={{ duration: 4.5, repeat: Infinity, ease: 'easeInOut' }}
+              style={{ filter: 'drop-shadow(0 25px 40px rgba(180, 83, 9, 0.35))' }}
+            >
+              <EFootballCard
+                player={signingPlayer}
+                size="xl"
+                theme={cardTheme}
+                highlight={true}
+              />
+            </motion.div>
+
+            {/* GOLD MEDAL BASE SEAL */}
+            <motion.div
+              initial={{ scale: 1.8, opacity: 0, y: 15 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              transition={{ type: 'spring', stiffness: 140, damping: 12, delay: 0.4 }}
+              className="mt-[-20px] relative z-30 flex items-center justify-center pointer-events-none"
+            >
+              <div className="px-6 py-2 rounded-full bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-600 border-2 border-white shadow-[0_8px_25px_rgba(245,158,11,0.6)] flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-slate-950 inline-block" />
+                <span 
+                  className="text-slate-950 font-black text-sm md:text-base tracking-[0.2em] uppercase leading-none" 
+                  style={{ fontFamily: 'var(--font-broadcast)' }}
+                >
+                  CONTRACT CERTIFIED • 2026
+                </span>
+              </div>
+            </motion.div>
+          </motion.div>
+
+          {/* RIGHT: THE OFFICIAL CONTRACT CERTIFICATE & SIGNING PAD */}
+          <motion.div
+            initial={{ x: 50, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            transition={{ type: 'spring', stiffness: 85, damping: 16, delay: 0.2 }}
+            className="flex-1 w-full max-w-[620px] bg-white/85 backdrop-blur-2xl border border-white/90 rounded-[32px] p-7 md:p-8 shadow-[0_30px_70px_rgba(180,83,9,0.18),0_10px_25px_rgba(0,0,0,0.04)] flex flex-col gap-4 md:gap-5 relative overflow-hidden self-center"
+          >
+            {/* Ambient subtle warm corner glow */}
+            <div 
+              className="absolute -top-24 -right-24 w-60 h-60 rounded-full blur-3xl opacity-20 pointer-events-none"
+              style={{ backgroundColor: teamColor }}
+            />
+
+            {/* Header: Club Crest & Verification */}
+            <div className="flex items-center justify-between pb-3.5 border-b border-slate-200/80">
+              <div className="flex items-center gap-3.5">
+                <div className="w-13 h-13 md:w-14 md:h-14 flex items-center justify-center shrink-0">
+                  {winningTeam?.logoUrl ? (
+                    <img 
+                      src={winningTeam.logoUrl} 
+                      alt={winningTeam.name} 
+                      className="w-full h-full object-contain drop-shadow-md" 
+                    />
+                  ) : (
+                    <Shield className="w-10 h-10 drop-shadow-md" style={{ color: teamColor }} />
+                  )}
+                </div>
+                <div>
+                  <div 
+                    className="text-[10px] font-extrabold uppercase tracking-[0.25em] text-slate-400 leading-none mb-1.5" 
+                    style={{ fontFamily: 'var(--font-display)' }}
+                  >
+                    OFFICIAL SQUAD SIGNING
+                  </div>
+                  <div 
+                    className="text-2xl md:text-3xl font-black text-slate-950 uppercase leading-none" 
+                    style={{ fontFamily: 'var(--font-display)' }}
+                  >
+                    {winningTeam?.name || 'FRANCHISE'}
+                  </div>
+                </div>
+              </div>
+
+              <div className="text-right">
+                <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-emerald-50 border border-emerald-200/80 shadow-sm">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <span 
+                    className="text-xs font-black uppercase tracking-widest text-emerald-800 leading-none" 
+                    style={{ fontFamily: 'var(--font-display)' }}
+                  >
+                    RATIFIED
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Player Identity & Roles */}
+            <div>
+              <div 
+                className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.25em] mb-1 leading-none" 
+                style={{ fontFamily: 'var(--font-display)' }}
+              >
+                REGISTERED SQUAD PLAYER
+              </div>
+              <h2 
+                className="text-4xl md:text-5xl lg:text-6xl font-black text-slate-950 uppercase tracking-tight leading-none mb-2.5" 
+                style={{ fontFamily: 'var(--font-broadcast)' }}
+              >
+                {player.name}
+              </h2>
+              <div className="flex items-center gap-2.5 flex-wrap">
+                <span 
+                  className="px-3 py-1 rounded-lg bg-slate-950 text-white text-xs font-black uppercase tracking-wider shadow-sm" 
+                  style={{ fontFamily: 'var(--font-display)' }}
+                >
+                  {player.position || 'ST'}
+                </span>
+                <span 
+                  className="px-3 py-1 rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 text-xs font-black uppercase tracking-wider shadow-sm" 
+                  style={{ fontFamily: 'var(--font-display)' }}
+                >
+                  {player.overallRating || 98} OVR
+                </span>
+                <span 
+                  className="px-3 py-1 rounded-lg bg-slate-100 border border-slate-200/80 text-slate-800 text-xs font-extrabold uppercase tracking-wider" 
+                  style={{ fontFamily: 'var(--font-display)' }}
+                >
+                  {player.category || 'FORWARD'}
+                </span>
+              </div>
+            </div>
+
+            {/* Transfer Valuation & Terms (Broadcast Hero Grid) */}
+            <div className="grid grid-cols-2 gap-5 py-4 border-y border-slate-200/80">
+              <div className="flex flex-col justify-start">
+                <div 
+                  className="text-[11px] font-extrabold uppercase tracking-[0.22em] text-slate-400 mb-1 leading-none" 
+                  style={{ fontFamily: 'var(--font-display)' }}
+                >
+                  FINAL TRANSFER VALUATION
+                </div>
+                <div 
+                  className="text-4xl md:text-5xl font-black text-slate-950 tracking-tight leading-none" 
+                  style={{ fontFamily: 'var(--font-broadcast)' }}
+                >
+                  {formatCurrency(finalPrice, tournament?.currency)}
+                </div>
+              </div>
+
+              <div className="border-l border-slate-200/80 pl-6 flex flex-col justify-start">
+                <div 
+                  className="text-[11px] font-extrabold uppercase tracking-[0.22em] text-slate-400 mb-1 leading-none" 
+                  style={{ fontFamily: 'var(--font-display)' }}
+                >
+                  HEAD COACH
+                </div>
+                <div 
+                  className="text-xl md:text-2xl font-black text-slate-950 uppercase tracking-tight leading-tight" 
+                  style={{ fontFamily: 'var(--font-display)' }}
+                >
+                  {winningTeam?.managerName || 'CLUB MANAGEMENT'}
+                </div>
+                <div 
+                  className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mt-1 leading-none" 
+                  style={{ fontFamily: 'var(--font-display)' }}
+                >
+                  {tournament?.season ? `SEASON ${tournament.season}` : '2026 CAMPAIGN'}
+                </div>
+              </div>
+            </div>
+
+            {/* AUTHENTIC AUTOGRAPH & RATIFICATION SEAL PAD */}
+            <div className="rounded-2xl bg-gradient-to-br from-slate-50 to-slate-100/90 border border-slate-200/80 py-3 px-5 flex items-center justify-between gap-4 shadow-sm relative">
+              <div className="flex-1 flex flex-col justify-center min-w-0">
+                <div 
+                  className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400 mb-1 flex items-center gap-1.5 leading-none" 
+                  style={{ fontFamily: 'var(--font-display)' }}
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
+                  OFFICIAL PLAYER AUTOGRAPH
+                </div>
+
+                <div className="h-13 md:h-15 w-full max-w-[300px] flex items-center">
+                  <DynamicSignature playerName={player.name} />
+                </div>
+
+                <div 
+                  className="text-[11px] font-bold text-slate-500 tracking-wide mt-1 truncate leading-none" 
+                  style={{ fontFamily: 'var(--font-display)' }}
+                >
+                  Ratified by <span className="font-black text-slate-900">{player.name}</span>
+                </div>
+              </div>
+
+              {/* Gold Certified Medallion Seal */}
+              <div className="shrink-0 flex flex-col items-center justify-center">
+                <div className="w-14 h-14 rounded-full bg-gradient-to-br from-amber-400 via-yellow-300 to-amber-600 p-0.5 shadow-md flex items-center justify-center">
+                  <div className="w-full h-full rounded-full bg-white flex flex-col items-center justify-center p-1 border border-amber-300/60 text-center">
+                    <Award className="w-4.5 h-4.5 text-amber-600" />
+                    <span 
+                      className="text-[7.5px] font-black tracking-widest text-amber-950 uppercase leading-none mt-0.5" 
+                      style={{ fontFamily: 'var(--font-display)' }}
+                    >
+                      OFFICIAL
+                    </span>
+                    <span 
+                      className="text-[6.5px] font-extrabold tracking-wider text-slate-500 uppercase leading-none mt-0.5" 
+                      style={{ fontFamily: 'var(--font-display)' }}
+                    >
+                      SEAL
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </motion.div>
+
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ── 6. UNSOLD STAGE ─────────────────────────────────────────────────────
 const UnsoldStage = ({ player, settings }) => {
   const cardTheme = settings?.cardTheme || 'GOLD';
 
@@ -944,9 +1569,21 @@ export const PlayerCardShowcase = ({
         </motion.div>
       )}
 
-      {(stage === 'SOLD' || stage === 'SIGNING') && player && (
+      {stage === 'SOLD' && player && (
         <motion.div key={`sold-${player.id}`} className="w-full h-full" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
           <SoldStage
+            player={player}
+            winningTeam={winningTeam || leadingTeam}
+            finalPrice={finalPrice || currentBid}
+            tournament={tournament}
+            settings={settings}
+          />
+        </motion.div>
+      )}
+
+      {stage === 'SIGNING' && player && (
+        <motion.div key={`signing-${player.id}`} className="w-full h-full" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+          <SigningStage
             player={player}
             winningTeam={winningTeam || leadingTeam}
             finalPrice={finalPrice || currentBid}

@@ -11,6 +11,7 @@ const KEYS = {
   SETTINGS:         'spl_app_settings',
   PROJECTOR_SETTINGS: 'spl_projector_settings',
   CARD_THEME:       'spl_card_theme',
+  GK_CARD_THEME:    'spl_gk_card_theme',
   DATA_CLEARED:     'spl_user_cleared_data',
   DEMO_WIPED:       'spl_demo_cleared_wipe_v2'
 };
@@ -37,6 +38,7 @@ const DEFAULT_PROJECTOR_SETTINGS = {
   panelBorderColor: '#ffffff',
   panelBorderOpacity: 10,
   ambientShadowOpacity: 20,
+  squadFormat: '11s', // '11s' | '7s' | '5s'
 };
 
 const DEFAULT_TOURNAMENT = {
@@ -49,10 +51,11 @@ const DEFAULT_TOURNAMENT = {
   currency: '$',
   defaultBudget: 5000,
   minIncrement: 5,
+  squadFormat: '11s', // '11s' | '7s' | '5s'
   createdAt: new Date().toISOString()
 };
 
-const DEFAULT_CARD_THEME = {
+export const DEFAULT_CARD_THEME = {
   bgGrad1: '#fff3c2',
   bgGrad2: '#e6b856',
   bgGrad3: '#c29029',
@@ -66,6 +69,15 @@ const DEFAULT_CARD_THEME = {
   // Layout offsets
   layoutRatingX: 55,
   layoutRatingY: 90,
+  layoutPositionGapY: 25,
+  layoutPositionX: 0,
+  layoutLogosGapY: 15,
+  layoutClubLogoGapY: 8,
+  layoutLogosX: 0,
+  layoutFlagWidth: 36,
+  layoutFlagHeight: 24,
+  layoutClubLogoSize: 28,
+  layoutNameX: 160,
   layoutNameY: 280,
   layoutNameFontSize: 40,
   layoutImageX: 40,
@@ -81,6 +93,7 @@ const DEFAULT_CARD_THEME = {
   layoutStatLabelSize: 18,
   layoutLogoScale: 100,
   cardShape: 'eafc24', // eafc24, shield, classic
+  layoutStatsX: 160,
   layoutStatsY: 315,
   layoutStatsGapX: 40,
   layoutStatsGapY: 30,
@@ -93,12 +106,53 @@ const DEFAULT_CARD_THEME = {
   frontSideDesign: 'geometric',
   // Back Side Layout
   backSideDesign: 'geometric',
+  backSideLogoX: 160,
   backSideLogoY: 200,
   backSideLogoScale: 100,
   showBackSideLogo: true,
+  backSideTextX: 160,
   backSideTextY: 315,
   backSideTextSize: 22,
   showBackSideText: true,
+  // Card Visual Effects System (Modular, broadcast-grade)
+  enableEffects: true,
+  fxIntensity: 100,
+  fxPlayerGlow: true,
+  fxPlayerParallax: true,
+  fxPlayerHolo: false,
+  fxBgRays: true,
+  fxBgParticles: true,
+  fxBgPulse: true,
+  fxSurfaceSheen: true,
+  fxSheenSpeed: 3.5,
+  fxSheenSize: 220,
+  fxSheenOpacity: 85,
+  fxSheenLag: 1.5,
+  fxHoloFoil: false,
+  fxGlintStars: true,
+  fxGlintSpeed: 2.6,
+  fxGlintSize: 100,
+  fxGlintOpacity: 90,
+  fxGlintLag: 1.2,
+  fxBorderGleam: true,
+  fxBorderPulse: false,
+};
+
+export const DEFAULT_GK_CARD_THEME = {
+  ...DEFAULT_CARD_THEME,
+  // Emerald Guardian GK Palette
+  bgGrad1: '#e6fffa',
+  bgGrad2: '#34d399',
+  bgGrad3: '#059669',
+  bgGrad4: '#064e3b',
+  border1: '#a7f3d0',
+  border2: '#10b981',
+  border3: '#022c22',
+  textDark: '#064e3b',
+  textLight: '#ffffff',
+  accent: '#34d399',
+  frontSideDesign: 'modern',
+  cardShape: 'eafc24',
 };
 
 const INITIAL_AUCTION_STATE = {
@@ -138,7 +192,12 @@ export const storageService = {
   saveTournament(data)   { localStorage.setItem(KEYS.TOURNAMENT, JSON.stringify(data)); return data; },
 
   getTeams()             { this.init(); return JSON.parse(localStorage.getItem(KEYS.TEAMS)) || []; },
-  saveTeams(teams)       { localStorage.setItem(KEYS.TEAMS, JSON.stringify(teams)); return teams; },
+  saveTeams(teams)       { 
+    localStorage.setItem(KEYS.TEAMS, JSON.stringify(teams)); 
+    try { window.dispatchEvent(new Event('teams-updated')); } catch (e) {}
+    try { window.dispatchEvent(new Event('storage')); } catch (e) {}
+    return teams; 
+  },
 
   getPlayers() { 
     this.init(); 
@@ -154,7 +213,50 @@ export const storageService = {
     if (updated) this.savePlayers(players);
     return players;
   },
-  savePlayers(players)   { localStorage.setItem(KEYS.PLAYERS, JSON.stringify(players)); return players; },
+  savePlayers(players) {
+    try {
+      localStorage.setItem(KEYS.PLAYERS, JSON.stringify(players));
+      try { window.dispatchEvent(new Event('players-updated')); } catch (e) {}
+      try { window.dispatchEvent(new Event('storage')); } catch (e) {}
+      return players;
+    } catch (err) {
+      console.warn('LocalStorage savePlayers failed (possible QuotaExceededError), attempting recovery...', err);
+      // Clean up and downscale any giant data URLs in all players
+      const sanitized = players.map(p => {
+        let photo = p.photoUrl;
+        let cutout = p.presentationPng;
+        // If a photo string is excessively large (> 90KB), replace with realistic portrait or downscale
+        if (photo && typeof photo === 'string' && photo.startsWith('data:image') && photo.length > 90000) {
+          photo = createRealisticPlayerPortrait(p.name, p.position);
+        }
+        if (cutout && typeof cutout === 'string' && cutout.startsWith('data:image') && cutout.length > 90000) {
+          cutout = '';
+        }
+        return { ...p, photoUrl: photo, presentationPng: cutout };
+      });
+
+      try {
+        localStorage.setItem(KEYS.PLAYERS, JSON.stringify(sanitized));
+        try { window.dispatchEvent(new Event('players-updated')); } catch (e) {}
+        try { window.dispatchEvent(new Event('storage')); } catch (e) {}
+        return sanitized;
+      } catch (retryErr) {
+        console.error('Fatal LocalStorage quota limit reached:', retryErr);
+        // Emergency prune: keep only essential fields for players
+        const minimalPlayers = sanitized.map(({ id, name, number, position, basePrice, category, status, teamId, soldPrice, photoScale, photoOffsetX, photoOffsetY }) => ({
+          id, name, number, position, basePrice, category, status, teamId, soldPrice, photoScale, photoOffsetX, photoOffsetY,
+          photoUrl: createRealisticPlayerPortrait(name, position)
+        }));
+        try {
+          localStorage.setItem(KEYS.PLAYERS, JSON.stringify(minimalPlayers));
+          return minimalPlayers;
+        } catch (e) {
+          console.error('LocalStorage completely exhausted:', e);
+          return players;
+        }
+      }
+    }
+  },
 
   getAuctionState()      { this.init(); return JSON.parse(localStorage.getItem(KEYS.AUCTION_STATE)); },
   saveAuctionState(state){ localStorage.setItem(KEYS.AUCTION_STATE, JSON.stringify(state)); return state; },
@@ -195,6 +297,57 @@ export const storageService = {
       window.dispatchEvent(new Event('card-theme-updated'));
     } catch (e) {
       console.error('Failed to save card theme', e);
+    }
+  },
+
+  getGkCardTheme() {
+    try {
+      const data = localStorage.getItem(KEYS.GK_CARD_THEME);
+      return data ? { ...DEFAULT_GK_CARD_THEME, ...JSON.parse(data) } : DEFAULT_GK_CARD_THEME;
+    } catch {
+      return DEFAULT_GK_CARD_THEME;
+    }
+  },
+
+  saveGkCardTheme(theme) {
+    try {
+      localStorage.setItem(KEYS.GK_CARD_THEME, JSON.stringify(theme));
+      window.dispatchEvent(new Event('card-theme-updated'));
+    } catch (e) {
+      console.error('Failed to save GK card theme', e);
+    }
+  },
+
+  getSquadFormat() {
+    try {
+      const tourn = this.getTournament();
+      if (tourn?.squadFormat) return tourn.squadFormat;
+      const proj = this.getProjectorSettings();
+      if (proj?.squadFormat) return proj.squadFormat;
+      return '11s';
+    } catch {
+      return '11s';
+    }
+  },
+
+  saveSquadFormat(format) {
+    try {
+      const tourn = this.getTournament();
+      if (tourn) {
+        tourn.squadFormat = format;
+        this.saveTournament(tourn);
+      }
+      const proj = this.getProjectorSettings();
+      if (proj) {
+        proj.squadFormat = format;
+        this.saveProjectorSettings(proj);
+      }
+      window.dispatchEvent(new Event('squad-format-updated'));
+      window.dispatchEvent(new Event('storage'));
+      return format;
+    } catch (e) {
+      console.error('Failed to save squad format', e);
+      return format;
     }
   },
 

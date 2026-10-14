@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { auctionService } from '../services/auctionService';
+import { storageService } from '../services/storageService';
 import { broadcastBus } from '../utils/broadcastChannel';
 import { useTournament } from './TournamentContext';
 
@@ -74,6 +75,12 @@ export const AuctionProvider = ({ children }) => {
       startBidding();
     } else if (stage === 'SOLD') {
       triggerSigning();
+    } else if (stage === 'SIGNING' || stage === 'UNSOLD') {
+      const allPlayers = storageService.getPlayers();
+      const next = allPlayers.find(p => !p.status || p.status === 'UPCOMING');
+      if (next) {
+        selectPlayer(next.id);
+      }
     }
   };
 

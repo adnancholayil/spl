@@ -57,6 +57,14 @@ export const createRealisticPlayerPortrait = (name = 'Player', position = 'ST', 
   
   // Custom player facial profiles
   const cleanName = name.toLowerCase();
+
+  // Real cutouts if available
+  if (cleanName.includes('courtois')) {
+    return '/assets/players/Thibaut-Courtois-Real-Madrid-Goalkeeper-8226.png';
+  }
+  if (cleanName.includes('rooney') || cleanName.includes('roony')) {
+    return '/assets/players/roony.png';
+  }
   
   // Skin tone selection
   let skin = '#e0ac69'; // default tan

@@ -1,0 +1,163 @@
+/* =========================================================================
+   SPL AUCTION PLATFORM — CARD VISUAL EFFECTS ENGINE
+   Card BG, Top/Surface, Player Image, and Border Real Specular Effects
+   ========================================================================= */
+
+/* --- Card BG: Conic Light Rays 360 Spin --- */
+@keyframes splFc24RaySpin {
+  0% { transform: translate(-50%, -50%) rotate(0deg); }
+  100% { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+/* --- Card BG: Floating Stardust & Ember Particles --- */
+@keyframes splParticleRise1 {
+  0% { transform: translateY(0) translateX(0) scale(0.6); opacity: 0; }
+  25% { opacity: 0.9; }
+  75% { opacity: 0.6; }
+  100% { transform: translateY(-90px) translateX(-18px) scale(1.1); opacity: 0; }
+}
+
+@keyframes splParticleRise2 {
+  0% { transform: translateY(0) translateX(0) scale(0.8); opacity: 0; }
+  30% { opacity: 1; }
+  70% { opacity: 0.5; }
+  100% { transform: translateY(-110px) translateX(22px) scale(0.4); opacity: 0; }
+}
+
+@keyframes splParticleRise3 {
+  0% { transform: translateY(0) translateX(0) scale(0.5); opacity: 0; }
+  35% { opacity: 0.85; }
+  65% { opacity: 0.45; }
+  100% { transform: translateY(-95px) translateX(-10px) scale(0.9); opacity: 0; }
+}
+
+.spl-particle-1 { animation: splParticleRise1 3.2s ease-out infinite; }
+.spl-particle-2 { animation: splParticleRise2 3.8s ease-out infinite 0.9s; }
+.spl-particle-3 { animation: splParticleRise3 4.2s ease-out infinite 1.8s; }
+
+/* --- Card BG: Ambient Breathing Radial Aura --- */
+@keyframes splAmbientPulse {
+  0%, 100% {
+    opacity: 0.45;
+    transform: scale(0.98);
+  }
+  50% {
+    opacity: 0.85;
+    transform: scale(1.04);
+  }
+}
+
+.spl-bg-pulse {
+  animation: splAmbientPulse 3.5s ease-in-out infinite;
+}
+
+/* --- Top & Surface: Diagonal Specular Sheen Beam Scan --- */
+@keyframes splFc24Sheen {
+  0%, 25% {
+    transform: translateX(-160%) skewX(-25deg);
+    opacity: 0;
+  }
+  35% {
+    opacity: 0.85;
+  }
+  60%, 100% {
+    transform: translateX(260%) skewX(-25deg);
+    opacity: 0;
+  }
+}
+
+.spl-surface-sheen {
+  animation: splFc24Sheen 3.6s ease-in-out infinite;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+}
+
+/* --- Top Effect: Diamond Glint Stars Twinkle --- */
+@keyframes splGlintStar {
+  0%, 100% {
+    opacity: 0.1;
+    transform: scale(0.5) rotate(0deg);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.3) rotate(90deg);
+    filter: drop-shadow(0 0 6px #ffffff) drop-shadow(0 0 12px rgba(255, 255, 255, 0.8));
+  }
+}
+
+.spl-glint-star-1 {
+  animation: splGlintStar 2.6s ease-in-out infinite;
+  transform-origin: center center;
+}
+
+.spl-glint-star-2 {
+  animation: splGlintStar 2.6s ease-in-out infinite 1.3s;
+  transform-origin: center center;
+}
+
+/* --- Player Image: 2.5D Parallax Floating --- */
+@keyframes splPlayerFloat {
+  0%, 100% {
+    transform: translateY(0px) scale(1);
+  }
+  50% {
+    transform: translateY(-5px) scale(1.015);
+  }
+}
+
+.spl-player-parallax {
+  animation: splPlayerFloat 3.6s ease-in-out infinite;
+  transform-origin: center bottom;
+  will-change: transform;
+}
+
+/* --- Player Image: Silhouette Rim Glow Aura --- */
+@keyframes splPlayerRimPulse {
+  0%, 100% {
+    filter: drop-shadow(0 0 8px var(--player-glow-color, rgba(245, 158, 11, 0.7))) drop-shadow(0 0 16px var(--player-glow-color, rgba(234, 179, 8, 0.35)));
+  }
+  50% {
+    filter: drop-shadow(0 0 16px var(--player-glow-color, rgba(245, 158, 11, 0.95))) drop-shadow(0 0 32px var(--player-glow-color, rgba(245, 158, 11, 0.6)));
+  }
+}
+
+.spl-player-rim-glow {
+  animation: splPlayerRimPulse 2.8s ease-in-out infinite;
+}
+
+/* --- Player Image: Chromatic Hologram Shimmer --- */
+.spl-player-holo {
+  filter: drop-shadow(2px 0 0 rgba(255, 0, 128, 0.5)) drop-shadow(-2px 0 0 rgba(0, 229, 255, 0.5));
+}
+
+/* --- Border & Perimeter: Edge Gleam Tracer --- */
+@keyframes splBorderGleamCycle {
+  0%, 100% {
+    stroke-opacity: 0.3;
+    filter: drop-shadow(0 0 4px var(--border-gleam-color, rgba(255,255,255,0.4)));
+  }
+  50% {
+    stroke-opacity: 1;
+    filter: drop-shadow(0 0 12px var(--border-gleam-color, rgba(255,255,255,0.9))) drop-shadow(0 0 20px var(--border-gleam-color, rgba(255,255,255,0.6)));
+  }
+}
+
+.spl-border-gleam-line {
+  animation: splBorderGleamCycle 2.4s ease-in-out infinite;
+}
+
+/* --- Border: Pulsing Neon Edge --- */
+@keyframes splBorderPulseGlow {
+  0%, 100% {
+    stroke-opacity: 0.35;
+    filter: drop-shadow(0 0 3px currentColor);
+  }
+  50% {
+    stroke-opacity: 0.95;
+    filter: drop-shadow(0 0 10px currentColor) drop-shadow(0 0 18px currentColor);
+  }
+}
+
+.spl-border-pulse {
+  animation: splBorderPulseGlow 2.5s ease-in-out infinite;
+}

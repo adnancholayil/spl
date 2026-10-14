@@ -4,6 +4,7 @@ import { formatCurrency } from '../../utils/currency';
 import { EFootballCard } from '../../components/common/EFootballCard';
 import { ConfirmModal } from '../../components/common/ConfirmModal';
 import { TeamLogoUploader } from '../../components/common/TeamLogoUploader';
+import { ManagerPhotoUploader } from '../../components/common/ManagerPhotoUploader';
 import { Plus, Edit2, Trash2, X, Users } from 'lucide-react';
 
 export const Teams = () => {
@@ -15,12 +16,14 @@ export const Teams = () => {
   const [formData, setFormData] = useState({
     name: '', shortName: '', managerName: '',
     primaryColor: '#1A56DB', secondaryColor: '#0C1220',
-    startingBudget: 5000
+    startingBudget: 5000,
+    logoUrl: '',
+    managerPhotoUrl: ''
   });
 
   const handleOpenModal = (team = null) => {
-    if (team) { setEditingTeam(team); setFormData({ ...team }); }
-    else { setEditingTeam(null); setFormData({ name: '', shortName: '', managerName: '', primaryColor: '#1A56DB', secondaryColor: '#0C1220', startingBudget: tournament?.defaultBudget || 5000, logoUrl: '' }); }
+    if (team) { setEditingTeam(team); setFormData({ managerPhotoUrl: '', logoUrl: '', ...team }); }
+    else { setEditingTeam(null); setFormData({ name: '', shortName: '', managerName: '', primaryColor: '#1A56DB', secondaryColor: '#0C1220', startingBudget: tournament?.defaultBudget || 5000, logoUrl: '', managerPhotoUrl: '' }); }
     setShowModal(true);
   };
 
@@ -90,8 +93,11 @@ export const Teams = () => {
                       <div style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 700, color: '#fff', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
                         {team.name}
                       </div>
-                      <div style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'var(--text-muted)', marginTop: 3 }}>
-                        Manager: {team.managerName || 'Unassigned'}
+                      <div style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'var(--text-muted)', marginTop: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+                        {team.managerPhotoUrl ? (
+                          <img src={team.managerPhotoUrl} alt={team.managerName} style={{ width: 20, height: 20, borderRadius: '50%', objectFit: 'cover', border: '1px solid rgba(245,158,11,0.5)' }} />
+                        ) : null}
+                        <span>Manager: {team.managerName || 'Unassigned'}</span>
                       </div>
                     </div>
                   </div>
@@ -211,15 +217,23 @@ export const Teams = () => {
               </button>
             </div>
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {[
-                { label: 'Club Name', key: 'name', type: 'text', required: true },
-                { label: 'Manager / Owner', key: 'managerName', type: 'text', required: true },
-              ].map(f => (
-                <div key={f.key}>
-                  <label style={{ fontFamily: 'var(--font-display)', fontSize: 9, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.2em', display: 'block', marginBottom: 5 }}>{f.label}</label>
-                  <input type={f.type} value={formData[f.key]} onChange={e => setFormData({ ...formData, [f.key]: e.target.value })} required={f.required} className="input-field" style={{ padding: '8px 12px' }} />
-                </div>
-              ))}
+              <div>
+                <label style={{ fontFamily: 'var(--font-display)', fontSize: 9, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.2em', display: 'block', marginBottom: 5 }}>Club Name</label>
+                <input type="text" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} required className="input-field" style={{ padding: '8px 12px' }} />
+              </div>
+              <div>
+                <label style={{ fontFamily: 'var(--font-display)', fontSize: 9, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.2em', display: 'block', marginBottom: 5 }}>Manager / Owner</label>
+                <input type="text" value={formData.managerName} onChange={e => setFormData({ ...formData, managerName: e.target.value })} required className="input-field" style={{ padding: '8px 12px' }} />
+              </div>
+
+              {/* Manager Photo Upload (Directly below Manager / Owner name) */}
+              <div style={{ marginTop: 2, marginBottom: 2 }}>
+                <ManagerPhotoUploader 
+                  managerPhotoUrl={formData.managerPhotoUrl}
+                  onPhotoChange={(url) => setFormData(prev => ({ ...prev, managerPhotoUrl: url }))}
+                  managerName={formData.managerName}
+                />
+              </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                 <div>
                   <label style={{ fontFamily: 'var(--font-display)', fontSize: 9, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.2em', display: 'block', marginBottom: 5 }}>Short Code</label>

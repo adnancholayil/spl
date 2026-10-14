@@ -10,6 +10,16 @@ export const Settings = () => {
   const { refreshData } = useTournament();
   const navigate = useNavigate();
 
+  const [squadFormat, setSquadFormat] = useState(() => storageService.getSquadFormat());
+  const [formatSavedToast, setFormatSavedToast] = useState(false);
+
+  const handleFormatSelect = (fmt) => {
+    setSquadFormat(fmt);
+    storageService.saveSquadFormat(fmt);
+    setFormatSavedToast(true);
+    setTimeout(() => setFormatSavedToast(false), 2500);
+  };
+
   // Custom Modal State
   const [modalConfig, setModalConfig] = useState({
     isOpen: false,
@@ -139,7 +149,14 @@ export const Settings = () => {
   };
 
   return (
-    <div style={{ padding: '32px 40px', maxWidth: 880, margin: '0 auto' }}>
+    <div style={{ 
+      padding: '24px 36px', 
+      width: '100%', 
+      boxSizing: 'border-box',
+      display: 'flex', 
+      flexDirection: 'column', 
+      gap: 20 
+    }}>
 
       {/* Broadcast Confirm Modal */}
       <ConfirmModal
@@ -154,193 +171,399 @@ export const Settings = () => {
         isAlert={modalConfig.isAlert}
       />
 
-      <div style={{ marginBottom: 32, paddingBottom: 20, borderBottom: '1px solid var(--border-subtle)' }}>
-        <div style={{ fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: 700, color: 'var(--spl-blue-light)', letterSpacing: '0.25em', marginBottom: 8, textTransform: 'uppercase' }}>
-          SYSTEM CONFIGURATION & BACKUPS
+      {/* ── TOAST NOTIFICATION ── */}
+      {formatSavedToast && (
+        <div style={{
+          position: 'fixed',
+          bottom: 24,
+          right: 24,
+          zIndex: 9999,
+          background: 'rgba(15, 23, 42, 0.95)',
+          border: '1px solid #38BDF8',
+          borderRadius: 10,
+          padding: '14px 20px',
+          boxShadow: '0 10px 25px rgba(0,0,0,0.5), 0 0 20px rgba(56,189,248,0.3)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+          backdropFilter: 'blur(12px)',
+        }}>
+          <CheckCircle2 style={{ width: 20, height: 20, color: '#38BDF8' }} />
+          <div>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: 13, fontWeight: 800, color: '#fff', textTransform: 'uppercase' }}>
+              Format Synchronized
+            </div>
+            <div style={{ fontFamily: 'var(--font-body)', fontSize: 12.5, color: '#94a3b8' }}>
+              Squad strength set to <strong>{squadFormat.toUpperCase()}</strong>. Projector displays updated in real-time.
+            </div>
+          </div>
         </div>
-        <h1 style={{ fontFamily: 'var(--font-broadcast)', fontSize: 'clamp(32px, 4vw, 48px)', color: '#fff', lineHeight: 0.95, textTransform: 'uppercase' }}>
-          Settings & Data
-        </h1>
-      </div>
+      )}
 
-
-      {/* Data management */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 36 }}>
-        {/* Export */}
-        <button
-          onClick={handleExportJSON}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 20,
-            background: 'var(--spl-panel)', border: '1px solid var(--border-subtle)',
-            borderRadius: 10, padding: '22px 24px', cursor: 'pointer', textAlign: 'left',
-            transition: 'border-color 0.15s, background 0.15s, transform 0.1s',
-          }}
-          onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--spl-blue)'; e.currentTarget.style.background = 'var(--spl-elevated)'; }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border-subtle)'; e.currentTarget.style.background = 'var(--spl-panel)'; }}
-        >
-          <div style={{
-            width: 52, height: 52, borderRadius: 8, flexShrink: 0,
-            background: 'rgba(26,86,219,0.15)', border: '1px solid rgba(26,86,219,0.3)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
-            <Download className="w-6 h-6" style={{ color: 'var(--spl-blue-light)' }} />
-          </div>
+      {/* ── BROADCAST HEADER ── */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 16, borderBottom: '1px solid var(--border-subtle)', flexWrap: 'wrap', gap: 14 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <div style={{ width: 4, height: 36, borderRadius: 2, background: 'var(--spl-blue-light, #38BDF8)' }} />
           <div>
-            <div style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 700, color: '#fff', letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: 4 }}>
-              Export Complete Backup (.JSON)
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: 800, color: '#38BDF8', letterSpacing: '0.22em', textTransform: 'uppercase' }}>
+              SYSTEM CONFIGURATION & PLATFORM ENGINE
             </div>
-            <div style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'var(--text-secondary)' }}>
-              Download all tournament configuration, clubs, player rosters, and auction history into a backup JSON file.
-            </div>
+            <h1 style={{ fontFamily: 'var(--font-broadcast)', fontSize: 30, color: '#fff', textTransform: 'uppercase', lineHeight: 1, margin: '3px 0 0', letterSpacing: '0.03em' }}>
+              Settings & Tournament Control
+            </h1>
           </div>
-        </button>
-
-        {/* Import */}
-        <label
-          style={{
-            display: 'flex', alignItems: 'center', gap: 20,
-            background: 'var(--spl-panel)', border: '1px solid var(--border-subtle)',
-            borderRadius: 10, padding: '22px 24px', cursor: 'pointer',
-            transition: 'border-color 0.15s, background 0.15s, transform 0.1s',
-          }}
-          onMouseEnter={e => { e.currentTarget.style.borderColor = '#22C55E'; e.currentTarget.style.background = 'var(--spl-elevated)'; }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border-subtle)'; e.currentTarget.style.background = 'var(--spl-panel)'; }}
-        >
-          <div style={{
-            width: 52, height: 52, borderRadius: 8, flexShrink: 0,
-            background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.3)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
-            <Upload className="w-6 h-6" style={{ color: '#22C55E' }} />
-          </div>
-          <div>
-            <div style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 700, color: '#fff', letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: 4 }}>
-              Import Tournament JSON Backup
-            </div>
-            <div style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'var(--text-secondary)' }}>
-              Restore tournament settings, clubs, and squad rosters from a previously exported backup file.
-            </div>
-          </div>
-          <input type="file" accept=".json" onChange={handleImportJSON} style={{ display: 'none' }} />
-        </label>
-
-        {/* Card Customization */}
-        <button
-          onClick={() => navigate('/admin/card-customization')}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 20,
-            background: 'var(--spl-panel)', border: '1px solid var(--border-subtle)',
-            borderRadius: 10, padding: '22px 24px', cursor: 'pointer', textAlign: 'left',
-            transition: 'border-color 0.15s, background 0.15s, transform 0.1s',
-          }}
-          onMouseEnter={e => { e.currentTarget.style.borderColor = '#A855F7'; e.currentTarget.style.background = 'var(--spl-elevated)'; }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border-subtle)'; e.currentTarget.style.background = 'var(--spl-panel)'; }}
-        >
-          <div style={{
-            width: 52, height: 52, borderRadius: 8, flexShrink: 0,
-            background: 'rgba(168, 85, 247, 0.15)', border: '1px solid rgba(168, 85, 247, 0.3)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
-            <Palette className="w-6 h-6" style={{ color: '#A855F7' }} />
-          </div>
-          <div>
-            <div style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 700, color: '#fff', letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: 4 }}>
-              Player Card Customization
-            </div>
-            <div style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'var(--text-secondary)' }}>
-              100% customize the primary card theme design, gradients, borders, and typography.
-            </div>
-          </div>
-        </button>
-
-        {/* Projector Customization */}
-        <button
-          onClick={() => navigate('/admin/projector-customization')}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 20,
-            background: 'var(--spl-panel)', border: '1px solid var(--border-subtle)',
-            borderRadius: 10, padding: '22px 24px', cursor: 'pointer', textAlign: 'left',
-            transition: 'border-color 0.15s, background 0.15s, transform 0.1s',
-          }}
-          onMouseEnter={e => { e.currentTarget.style.borderColor = '#0EA5E9'; e.currentTarget.style.background = 'var(--spl-elevated)'; }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border-subtle)'; e.currentTarget.style.background = 'var(--spl-panel)'; }}
-        >
-          <div style={{
-            width: 52, height: 52, borderRadius: 8, flexShrink: 0,
-            background: 'rgba(14, 165, 233, 0.15)', border: '1px solid rgba(14, 165, 233, 0.3)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
-            <Tv className="w-6 h-6" style={{ color: '#0EA5E9' }} />
-          </div>
-          <div>
-            <div style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 700, color: '#fff', letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: 4 }}>
-              Projector Screen Customization
-            </div>
-            <div style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'var(--text-secondary)' }}>
-              Customize the live screen background image, filter gradients, opacity, and ambient shadows.
-            </div>
-          </div>
-        </button>
-      </div>
-
-      {/* Demo Data Zone */}
-      <div style={{ marginBottom: 36 }}>
-        <button
-          onClick={handleLoadMockData}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 20, width: '100%',
-            background: 'var(--spl-panel)', border: '1px solid var(--border-subtle)',
-            borderRadius: 10, padding: '22px 24px', cursor: 'pointer', textAlign: 'left',
-            transition: 'border-color 0.15s, background 0.15s, transform 0.1s',
-          }}
-          onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--spl-blue)'; e.currentTarget.style.background = 'var(--spl-elevated)'; }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border-subtle)'; e.currentTarget.style.background = 'var(--spl-panel)'; }}
-        >
-          <div style={{
-            width: 52, height: 52, borderRadius: 8, flexShrink: 0,
-            background: 'rgba(234, 179, 8, 0.15)', border: '1px solid rgba(234, 179, 8, 0.3)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
-            <Users className="w-6 h-6" style={{ color: '#EAB308' }} />
-          </div>
-          <div>
-            <div style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 700, color: '#fff', letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: 4 }}>
-              Load Realistic Demo Data
-            </div>
-            <div style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'var(--text-secondary)' }}>
-              Populate your database with top-tier clubs and world-class players for testing and demonstration.
-            </div>
-          </div>
-        </button>
-      </div>
-
-      {/* Danger zone */}
-      <div style={{
-        background: 'rgba(220,38,38,0.06)',
-        border: '1px solid rgba(220,38,38,0.25)',
-        borderRadius: 10, padding: '24px 28px',
-        display: 'flex', flexDirection: 'column', gap: 16
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <AlertTriangle className="w-5 h-5" style={{ color: '#EF4444' }} />
-          <span style={{ fontFamily: 'var(--font-display)', fontSize: 13, fontWeight: 700, color: '#EF4444', letterSpacing: '0.15em' }}>
-            DANGER ZONE
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 16px', borderRadius: 20, background: 'rgba(56,189,248,0.08)', border: '1px solid rgba(56,189,248,0.25)' }}>
+          <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+          <span style={{ fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: 800, color: '#38BDF8', letterSpacing: '0.12em' }}>
+            ACTIVE SQUAD STRENGTH: <strong style={{ color: '#fff' }}>{squadFormat.toUpperCase()}</strong>
           </span>
         </div>
-        <p style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'var(--text-secondary)', margin: 0, lineHeight: 1.6 }}>
-          Perform complete database resets or wipe all system data. This will wipe all teams, players, bids, and transfer history.
-        </p>
+      </div>
 
-        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+      {/* ── 1. MATCH FORMAT & TACTICAL PITCH FORMATION (100% Width Responsive Grid) ── */}
+      <div style={{ background: 'var(--spl-panel)', border: '1px solid var(--border-subtle)', borderRadius: 12, padding: '18px 22px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            <span style={{ fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: 800, color: '#38BDF8', letterSpacing: '0.18em', textTransform: 'uppercase' }}>
+              MATCH FORMAT & SQUAD STRENGTH
+            </span>
+            <span style={{ fontSize: 12.5, color: 'var(--text-muted)' }}>• Controls field slot layout on both Projector Signing Reveal and Squad Showcase</span>
+          </div>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+          {[
+            {
+              id: '11s',
+              name: '11s Standard',
+              formation: '4-3-3 ATTACK',
+              slots: '11 Pitch Slots (4-3-3)',
+              desc: 'Standard 11-a-side pitch with GK, 4 Defenders, 3 Midfielders, and 3 Attackers.',
+              accent: '#38BDF8',
+            },
+            {
+              id: '7s',
+              name: '7s Arena',
+              formation: '2-1-2-1 DIAMOND',
+              slots: '7 Pitch Slots (2-1-2-1)',
+              desc: '7-a-side arena tactical pitch with GK, 2 Defenders, 1 Holding Mid, 2 Attack Mids, and 1 Striker.',
+              accent: '#22C55E',
+            },
+            {
+              id: '5s',
+              name: '5s Box / Futsal',
+              formation: '2-2 BOX',
+              slots: '5 Pitch Slots (2-2)',
+              desc: '5-a-side fast-paced box formation with GK, 2 Defenders, and 2 Strikers.',
+              accent: '#F59E0B',
+            },
+          ].map(opt => {
+            const isSelected = squadFormat === opt.id;
+            return (
+              <div
+                key={opt.id}
+                onClick={() => handleFormatSelect(opt.id)}
+                style={{
+                  background: isSelected ? 'rgba(15, 23, 42, 0.95)' : 'rgba(255, 255, 255, 0.02)',
+                  border: isSelected ? `2px solid ${opt.accent}` : '1px solid rgba(255,255,255,0.08)',
+                  borderRadius: 10,
+                  padding: '16px 18px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  boxShadow: isSelected ? `0 0 20px ${opt.accent}25, 0 4px 12px rgba(0,0,0,0.3)` : '0 2px 8px rgba(0,0,0,0.2)',
+                  transition: 'all 0.18s ease',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                  <div style={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: 10,
+                    background: isSelected ? `${opt.accent}25` : 'rgba(255,255,255,0.05)',
+                    border: `1px solid ${isSelected ? opt.accent : 'rgba(255,255,255,0.1)'}`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontFamily: 'var(--font-broadcast)',
+                    fontSize: 20,
+                    fontWeight: 900,
+                    color: isSelected ? opt.accent : '#94a3b8',
+                    flexShrink: 0
+                  }}>
+                    {opt.id.toUpperCase()}
+                  </div>
+                  <div>
+                    <div style={{ fontFamily: 'var(--font-broadcast)', fontSize: 18, color: '#fff', lineHeight: 1.1, letterSpacing: '0.02em' }}>
+                      {opt.formation}
+                    </div>
+                    <div style={{ fontFamily: 'var(--font-display)', fontSize: 11, fontWeight: 700, color: opt.accent, letterSpacing: '0.12em', textTransform: 'uppercase', marginTop: 3 }}>
+                      {opt.slots}
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{
+                  padding: '6px 14px',
+                  borderRadius: 6,
+                  background: isSelected ? opt.accent : 'rgba(255,255,255,0.06)',
+                  color: isSelected ? '#0f172a' : '#94a3b8',
+                  fontSize: 11,
+                  fontWeight: 900,
+                  fontFamily: 'var(--font-display)',
+                  letterSpacing: '0.12em',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 5,
+                  flexShrink: 0
+                }}>
+                  {isSelected && <CheckCircle2 size={13} />}
+                  {isSelected ? 'ACTIVE' : 'SELECT'}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ── 2. DUAL-COLUMN MANAGEMENT MATRIX (Width 100%, 50% / 50% Columns) ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18 }}>
+        
+        {/* LEFT COLUMN: Studio & Display Customization + Demo Data */}
+        <div style={{
+          background: 'var(--spl-panel)',
+          border: '1px solid var(--border-subtle)',
+          borderRadius: 12,
+          padding: '18px 22px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 14
+        }}>
+          <div style={{ fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: 800, color: '#A855F7', letterSpacing: '0.18em', textTransform: 'uppercase', marginBottom: 2 }}>
+            STUDIO & DISPLAY CUSTOMIZATION
+          </div>
+
+          {/* Card Customization */}
           <button
-            onClick={handleClearAll}
-            className="btn-danger"
-            style={{ padding: '11px 22px', fontSize: 13, gap: 8, background: '#dc2626', color: '#fff' }}
+            onClick={() => navigate('/admin/card-customization')}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 16,
+              background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)',
+              borderRadius: 10, padding: '14px 18px', cursor: 'pointer', textAlign: 'left',
+              transition: 'all 0.15s ease',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = '#A855F7'; e.currentTarget.style.background = 'var(--spl-elevated)'; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.07)'; e.currentTarget.style.background = 'rgba(255,255,255,0.02)'; }}
           >
-            <Trash2 className="w-4 h-4" />
-            Clear All System Data
+            <div style={{
+              width: 44, height: 44, borderRadius: 10, flexShrink: 0,
+              background: 'rgba(168, 85, 247, 0.15)', border: '1px solid rgba(168, 85, 247, 0.3)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <Palette className="w-5 h-5" style={{ color: '#A855F7' }} />
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 800, color: '#fff', letterSpacing: '0.04em', textTransform: 'uppercase', lineHeight: 1.2 }}>
+                Player Card Customization
+              </div>
+              <div style={{ fontFamily: 'var(--font-body)', fontSize: 12.5, color: 'var(--text-secondary)', marginTop: 3 }}>
+                Customize card themes, gradients, border glow, stat badges, and typography
+              </div>
+            </div>
+            <span style={{ fontSize: 11, fontFamily: 'var(--font-display)', fontWeight: 800, color: '#A855F7', background: 'rgba(168, 85, 247, 0.12)', border: '1px solid rgba(168, 85, 247, 0.25)', padding: '6px 12px', borderRadius: 6, flexShrink: 0 }}>
+              OPEN STUDIO
+            </span>
+          </button>
+
+          {/* Projector Customization */}
+          <button
+            onClick={() => navigate('/admin/projector-customization')}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 16,
+              background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)',
+              borderRadius: 10, padding: '14px 18px', cursor: 'pointer', textAlign: 'left',
+              transition: 'all 0.15s ease',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = '#0EA5E9'; e.currentTarget.style.background = 'var(--spl-elevated)'; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.07)'; e.currentTarget.style.background = 'rgba(255,255,255,0.02)'; }}
+          >
+            <div style={{
+              width: 44, height: 44, borderRadius: 10, flexShrink: 0,
+              background: 'rgba(14, 165, 233, 0.15)', border: '1px solid rgba(14, 165, 233, 0.3)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <Tv className="w-5 h-5" style={{ color: '#0EA5E9' }} />
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 800, color: '#fff', letterSpacing: '0.04em', textTransform: 'uppercase', lineHeight: 1.2 }}>
+                Projector Screen Customization
+              </div>
+              <div style={{ fontFamily: 'var(--font-body)', fontSize: 12.5, color: 'var(--text-secondary)', marginTop: 3 }}>
+                Customize live stadium backgrounds, theme filters, ambient shadows, and opacity
+              </div>
+            </div>
+            <span style={{ fontSize: 11, fontFamily: 'var(--font-display)', fontWeight: 800, color: '#0EA5E9', background: 'rgba(14, 165, 233, 0.12)', border: '1px solid rgba(14, 165, 233, 0.25)', padding: '6px 12px', borderRadius: 6, flexShrink: 0 }}>
+              OPEN STUDIO
+            </span>
+          </button>
+
+          {/* Load Realistic Demo Data */}
+          <button
+            onClick={handleLoadMockData}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 16,
+              background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)',
+              borderRadius: 10, padding: '14px 18px', cursor: 'pointer', textAlign: 'left',
+              transition: 'all 0.15s ease',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = '#EAB308'; e.currentTarget.style.background = 'var(--spl-elevated)'; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.07)'; e.currentTarget.style.background = 'rgba(255,255,255,0.02)'; }}
+          >
+            <div style={{
+              width: 44, height: 44, borderRadius: 10, flexShrink: 0,
+              background: 'rgba(234, 179, 8, 0.15)', border: '1px solid rgba(234, 179, 8, 0.3)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <Users className="w-5 h-5" style={{ color: '#EAB308' }} />
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 800, color: '#fff', letterSpacing: '0.04em', textTransform: 'uppercase', lineHeight: 1.2 }}>
+                Load Demo Clubs & Players
+              </div>
+              <div style={{ fontFamily: 'var(--font-body)', fontSize: 12.5, color: 'var(--text-secondary)', marginTop: 3 }}>
+                Populate your database with top-tier clubs, managers, and world-class players
+              </div>
+            </div>
+            <span style={{ fontSize: 11, fontFamily: 'var(--font-display)', fontWeight: 800, color: '#EAB308', background: 'rgba(234, 179, 8, 0.12)', border: '1px solid rgba(234, 179, 8, 0.25)', padding: '6px 12px', borderRadius: 6, flexShrink: 0 }}>
+              LOAD DATA
+            </span>
           </button>
         </div>
+
+        {/* RIGHT COLUMN: Backups & Danger Zone */}
+        <div style={{
+          background: 'var(--spl-panel)',
+          border: '1px solid var(--border-subtle)',
+          borderRadius: 12,
+          padding: '18px 22px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 14
+        }}>
+          <div style={{ fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: 800, color: 'var(--spl-blue-light, #38BDF8)', letterSpacing: '0.18em', textTransform: 'uppercase', marginBottom: 2 }}>
+            BACKUPS & DATA INTEGRITY
+          </div>
+
+          {/* Export JSON */}
+          <button
+            onClick={handleExportJSON}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 16,
+              background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)',
+              borderRadius: 10, padding: '14px 18px', cursor: 'pointer', textAlign: 'left',
+              transition: 'all 0.15s ease',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--spl-blue)'; e.currentTarget.style.background = 'var(--spl-elevated)'; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.07)'; e.currentTarget.style.background = 'rgba(255,255,255,0.02)'; }}
+          >
+            <div style={{
+              width: 44, height: 44, borderRadius: 10, flexShrink: 0,
+              background: 'rgba(26,86,219,0.15)', border: '1px solid rgba(26,86,219,0.3)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <Download className="w-5 h-5" style={{ color: 'var(--spl-blue-light)' }} />
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 800, color: '#fff', letterSpacing: '0.04em', textTransform: 'uppercase', lineHeight: 1.2 }}>
+                Export Complete Backup (.JSON)
+              </div>
+              <div style={{ fontFamily: 'var(--font-body)', fontSize: 12.5, color: 'var(--text-secondary)', marginTop: 3 }}>
+                Download tournament configuration, clubs, player rosters, and auction history
+              </div>
+            </div>
+            <span style={{ fontSize: 11, fontFamily: 'var(--font-display)', fontWeight: 800, color: 'var(--spl-blue-light)', background: 'rgba(56,189,248,0.12)', border: '1px solid rgba(56,189,248,0.25)', padding: '6px 12px', borderRadius: 6, flexShrink: 0 }}>
+              EXPORT
+            </span>
+          </button>
+
+          {/* Import JSON */}
+          <label
+            style={{
+              display: 'flex', alignItems: 'center', gap: 16,
+              background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)',
+              borderRadius: 10, padding: '14px 18px', cursor: 'pointer', textAlign: 'left',
+              transition: 'all 0.15s ease',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = '#22C55E'; e.currentTarget.style.background = 'var(--spl-elevated)'; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.07)'; e.currentTarget.style.background = 'rgba(255,255,255,0.02)'; }}
+          >
+            <div style={{
+              width: 44, height: 44, borderRadius: 10, flexShrink: 0,
+              background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.3)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <Upload className="w-5 h-5" style={{ color: '#22C55E' }} />
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 800, color: '#fff', letterSpacing: '0.04em', textTransform: 'uppercase', lineHeight: 1.2 }}>
+                Import Tournament JSON Backup
+              </div>
+              <div style={{ fontFamily: 'var(--font-body)', fontSize: 12.5, color: 'var(--text-secondary)', marginTop: 3 }}>
+                Restore tournament settings, clubs, and squad rosters from a backup file
+              </div>
+            </div>
+            <span style={{ fontSize: 11, fontFamily: 'var(--font-display)', fontWeight: 800, color: '#22C55E', background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.25)', padding: '6px 12px', borderRadius: 6, flexShrink: 0 }}>
+              IMPORT
+            </span>
+            <input type="file" accept=".json" onChange={handleImportJSON} style={{ display: 'none' }} />
+          </label>
+
+          {/* Danger Zone: Clear System Data */}
+          <div
+            style={{
+              display: 'flex', alignItems: 'center', gap: 16,
+              background: 'rgba(220,38,38,0.06)', border: '1px solid rgba(220,38,38,0.25)',
+              borderRadius: 10, padding: '14px 18px',
+            }}
+          >
+            <div style={{
+              width: 44, height: 44, borderRadius: 10, flexShrink: 0,
+              background: 'rgba(220,38,38,0.15)', border: '1px solid rgba(220,38,38,0.3)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <Trash2 className="w-5 h-5" style={{ color: '#EF4444' }} />
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 800, color: '#EF4444', letterSpacing: '0.04em', textTransform: 'uppercase', lineHeight: 1.2 }}>
+                Reset & Wipe System Data
+              </div>
+              <div style={{ fontFamily: 'var(--font-body)', fontSize: 12.5, color: 'var(--text-secondary)', marginTop: 3 }}>
+                Permanently wipes all teams, players, bids, and transfer history
+              </div>
+            </div>
+            <button
+              onClick={handleClearAll}
+              className="btn-danger"
+              style={{
+                padding: '8px 16px',
+                fontSize: 11,
+                fontFamily: 'var(--font-display)',
+                fontWeight: 800,
+                letterSpacing: '0.08em',
+                background: '#dc2626',
+                color: '#fff',
+                borderRadius: 6,
+                cursor: 'pointer',
+                flexShrink: 0
+              }}
+            >
+              WIPE DATA
+            </button>
+          </div>
+        </div>
+
       </div>
     </div>
   );

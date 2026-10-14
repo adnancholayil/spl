@@ -86,6 +86,9 @@ export const auctionService = {
       const topBid = remainingBids[0];
       nextCurrentBid = topBid.amount;
       nextLeadingTeamId = topBid.teamId;
+    } else {
+      const player = players.find(p => p.id === state.currentPlayerId);
+      nextCurrentBid = player ? player.basePrice : 0;
     }
 
     const updatedState = this.updateState({

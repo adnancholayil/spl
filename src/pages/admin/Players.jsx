@@ -9,6 +9,7 @@ import { playerService } from '../../services/playerService';
 import { storageService } from '../../services/storageService';
 import { createRealisticPlayerPortrait } from '../../utils/fifaPlayerGenerator';
 import { ConfirmModal } from '../../components/common/ConfirmModal';
+import { compressImageDataUrl } from '../../utils/imageCompressor';
 
 const getPosColor = (pos) => {
   const p = (pos || '').toUpperCase();
@@ -78,9 +79,18 @@ export const Players = () => {
     setShowModal(true);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const finalData = { ...formData };
+
+    // Automatically compress large base64 images if not already compressed
+    if (finalData.photoUrl && finalData.photoUrl.startsWith('data:image') && finalData.photoUrl.length > 60000) {
+      finalData.photoUrl = await compressImageDataUrl(finalData.photoUrl, 500, 0.82);
+    }
+    if (finalData.presentationPng && finalData.presentationPng.startsWith('data:image') && finalData.presentationPng.length > 60000) {
+      finalData.presentationPng = await compressImageDataUrl(finalData.presentationPng, 500, 0.82);
+    }
+
     if (editingPlayer) updatePlayer(editingPlayer.id, finalData);
     else addPlayer(finalData);
     setShowModal(false);
@@ -410,99 +420,196 @@ export const Players = () => {
         </div>
       )}
 
-      {/* ── ADD / EDIT MODAL ── */}
+      {/* ── ADD / EDIT MODAL (Expanded 2-Column Studio Layout with No Scrolling) ── */}
       {showModal && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 50, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-          <div style={{ background: 'var(--spl-panel)', border: '1px solid var(--border-default)', borderRadius: 10, padding: '28px 30px', maxWidth: 480, width: '100%', maxHeight: '90vh', overflowY: 'auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-              <h3 style={{ fontFamily: 'var(--font-broadcast)', fontSize: 24, color: '#fff', letterSpacing: '0.02em' }}>
-                {editingPlayer ? 'EDIT PLAYER' : 'REGISTER PLAYER'}
-              </h3>
-              <button onClick={() => setShowModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 4 }}>
+          <div style={{ 
+            background: 'var(--spl-panel)', 
+            border: '1px solid var(--border-default)', 
+            borderRadius: 12, 
+            padding: '24px 28px', 
+            maxWidth: 920, 
+            width: '100%', 
+            maxHeight: '94vh',
+            boxShadow: '0 25px 60px rgba(0,0,0,0.85)',
+            display: 'flex',
+            flexDirection: 'column'
+          }}>
+            {/* Modal Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18, paddingBottom: 14, borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{ width: 4, height: 26, borderRadius: 2, background: 'var(--spl-gold-light, #f59e0b)' }} />
+                <div>
+                  <h3 style={{ fontFamily: 'var(--font-broadcast)', fontSize: 24, color: '#fff', letterSpacing: '0.03em', lineHeight: 1 }}>
+                    {editingPlayer ? 'EDIT PLAYER' : 'REGISTER PLAYER'}
+                  </h3>
+                  <div style={{ fontFamily: 'var(--font-display)', fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.15em', textTransform: 'uppercase', marginTop: 3 }}>
+                    {editingPlayer ? 'Modify player profile, card photo & auction attributes' : 'Add new player to the tournament transfer & auction pool'}
+                  </div>
+                </div>
+              </div>
+              <button 
+                onClick={() => setShowModal(false)} 
+                style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, cursor: 'pointer', color: 'var(--text-muted)', padding: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s' }}
+                onMouseEnter={e => { e.currentTarget.style.color = '#fff'; e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; }}
+                onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; }}
+              >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              <PlayerImageUploader
-                photoUrl={formData.photoUrl}
-                presentationPng={formData.presentationPng}
-                photoScale={formData.photoScale || 1}
-                photoOffsetX={formData.photoOffsetX || 0}
-                photoOffsetY={formData.photoOffsetY || 0}
-                onChangePhoto={newUrl => setFormData(prev => ({ ...prev, photoUrl: newUrl }))}
-                onChangePresentationPng={newCutout => setFormData(prev => ({ ...prev, presentationPng: newCutout }))}
-                onChangePhotoScale={newScale => setFormData(prev => ({ ...prev, photoScale: newScale }))}
-                onChangePhotoOffsetX={newX => setFormData(prev => ({ ...prev, photoOffsetX: newX }))}
-                onChangePhotoOffsetY={newY => setFormData(prev => ({ ...prev, photoOffsetY: newY }))}
-                playerName={formData.name}
-                playerPosition={formData.position}
-              />
-
-              {[
-                { label: 'Full Name', key: 'name', type: 'text', required: true },
-              ].map(field => (
-                <div key={field.key}>
-                  <label style={{ fontFamily: 'var(--font-display)', fontSize: 9, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.2em', display: 'block', marginBottom: 5 }}>
-                    {field.label}
-                  </label>
-                  <input
-                    type={field.type}
-                    value={formData[field.key]}
-                    onChange={e => setFormData({ ...formData, [field.key]: e.target.value })}
-                    required={field.required}
-                    className="input-field"
-                    style={{ padding: '8px 12px' }}
-                  />
-                </div>
-              ))}
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                <div>
-                  <label style={{ fontFamily: 'var(--font-display)', fontSize: 9, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.2em', display: 'block', marginBottom: 5 }}>Jersey #</label>
-                  <input type="text" value={formData.number} onChange={e => setFormData({ ...formData, number: e.target.value })} required className="input-field" style={{ padding: '8px 12px' }} />
-                </div>
-                <div>
-                  <label style={{ fontFamily: 'var(--font-display)', fontSize: 9, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.2em', display: 'block', marginBottom: 5 }}>Position</label>
-                  <select value={formData.position} onChange={e => setFormData({ ...formData, position: e.target.value })} className="input-field" style={{ padding: '8px 12px' }}>
-                    {['ST','LW','RW','AM','CM','DM','CAM','CDM','CB','LB','RB','GK'].map(p => (
-                      <option key={p} value={p}>{p}</option>
-                    ))}
-                  </select>
-                </div>
+            {/* Modal Form with 2-Column Studio Layout */}
+            <form onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: 'minmax(420px, 440px) 1fr', gap: 24, alignItems: 'stretch' }}>
+              {/* Left Column: Live Card Studio & Photo Alignment */}
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <PlayerImageUploader
+                  photoUrl={formData.photoUrl}
+                  presentationPng={formData.presentationPng}
+                  photoScale={formData.photoScale || 1}
+                  photoOffsetX={formData.photoOffsetX || 0}
+                  photoOffsetY={formData.photoOffsetY || 0}
+                  onChangePhoto={newUrl => setFormData(prev => ({ ...prev, photoUrl: newUrl }))}
+                  onChangePresentationPng={newCutout => setFormData(prev => ({ ...prev, presentationPng: newCutout }))}
+                  onChangePhotoScale={newScale => setFormData(prev => ({ ...prev, photoScale: newScale }))}
+                  onChangePhotoOffsetX={newX => setFormData(prev => ({ ...prev, photoOffsetX: newX }))}
+                  onChangePhotoOffsetY={newY => setFormData(prev => ({ ...prev, photoOffsetY: newY }))}
+                  playerName={formData.name}
+                  playerPosition={formData.position}
+                />
               </div>
 
-              <div>
-                <label style={{ fontFamily: 'var(--font-display)', fontSize: 9, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.2em', display: 'block', marginBottom: 5 }}>Base Price</label>
-                <input type="number" value={formData.basePrice} onChange={e => setFormData({ ...formData, basePrice: parseInt(e.target.value, 10) })} required className="input-field" style={{ padding: '8px 12px' }} />
-              </div>
+              {/* Right Column: Player Information & Form Actions */}
+              <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: 12 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  {/* Full Name */}
+                  <div>
+                    <label style={{ fontFamily: 'var(--font-display)', fontSize: 9, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.2em', display: 'block', marginBottom: 5 }}>
+                      FULL NAME
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.name}
+                      onChange={e => setFormData({ ...formData, name: e.target.value })}
+                      required
+                      placeholder="e.g. Lionel Messi"
+                      className="input-field"
+                      style={{ padding: '8px 12px' }}
+                    />
+                  </div>
 
-              {/* Optional fields */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
-                <div>
-                  <label style={{ fontFamily: 'var(--font-display)', fontSize: 9, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.2em', display: 'block', marginBottom: 5 }}>Age</label>
-                  <input type="number" value={formData.age} onChange={e => setFormData({ ...formData, age: e.target.value })} className="input-field" style={{ padding: '8px 12px' }} placeholder="Optional" />
-                </div>
-                <div>
-                  <label style={{ fontFamily: 'var(--font-display)', fontSize: 9, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.2em', display: 'block', marginBottom: 5 }}>Height</label>
-                  <input type="text" value={formData.height} onChange={e => setFormData({ ...formData, height: e.target.value })} className="input-field" style={{ padding: '8px 12px' }} placeholder="e.g. 6'1" />
-                </div>
-                <div>
-                  <label style={{ fontFamily: 'var(--font-display)', fontSize: 9, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.2em', display: 'block', marginBottom: 5 }}>Foot</label>
-                  <select value={formData.preferredFoot} onChange={e => setFormData({ ...formData, preferredFoot: e.target.value })} className="input-field" style={{ padding: '8px 12px' }}>
-                    <option value="">—</option>
-                    <option value="Right">Right</option>
-                    <option value="Left">Left</option>
-                    <option value="Both">Both</option>
-                  </select>
-                </div>
-              </div>
+                  {/* Jersey # & Position */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                    <div>
+                      <label style={{ fontFamily: 'var(--font-display)', fontSize: 9, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.2em', display: 'block', marginBottom: 5 }}>
+                        JERSEY #
+                      </label>
+                      <input 
+                        type="text" 
+                        value={formData.number} 
+                        onChange={e => setFormData({ ...formData, number: e.target.value })} 
+                        required 
+                        placeholder="10"
+                        className="input-field" 
+                        style={{ padding: '8px 12px' }} 
+                      />
+                    </div>
+                    <div>
+                      <label style={{ fontFamily: 'var(--font-display)', fontSize: 9, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.2em', display: 'block', marginBottom: 5 }}>
+                        POSITION
+                      </label>
+                      <select 
+                        value={formData.position} 
+                        onChange={e => setFormData({ ...formData, position: e.target.value })} 
+                        className="input-field" 
+                        style={{ padding: '8px 12px' }}
+                      >
+                        {['ST','LW','RW','AM','CM','DM','CAM','CDM','CB','LB','RB','GK'].map(p => (
+                          <option key={p} value={p}>{p}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
 
-              <div style={{ display: 'flex', gap: 10, paddingTop: 4 }}>
-                <button type="button" onClick={() => setShowModal(false)} className="btn-ghost" style={{ flex: 1, padding: '10px 0', fontSize: 13 }}>Cancel</button>
-                <button type="submit" className="btn-primary" style={{ flex: 1, padding: '10px 0', fontSize: 13 }}>
-                  {editingPlayer ? 'Save Changes' : 'Register Player'}
-                </button>
+                  {/* Base Price */}
+                  <div>
+                    <label style={{ fontFamily: 'var(--font-display)', fontSize: 9, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.2em', display: 'block', marginBottom: 5 }}>
+                      BASE PRICE ({tournament?.currency || '₹'})
+                    </label>
+                    <input 
+                      type="number" 
+                      value={formData.basePrice} 
+                      onChange={e => setFormData({ ...formData, basePrice: parseInt(e.target.value, 10) || 0 })} 
+                      required 
+                      className="input-field" 
+                      style={{ padding: '8px 12px' }} 
+                    />
+                  </div>
+
+                  {/* Optional Attributes: Age, Height, Foot */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
+                    <div>
+                      <label style={{ fontFamily: 'var(--font-display)', fontSize: 9, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.2em', display: 'block', marginBottom: 5 }}>
+                        AGE
+                      </label>
+                      <input 
+                        type="number" 
+                        value={formData.age} 
+                        onChange={e => setFormData({ ...formData, age: e.target.value })} 
+                        className="input-field" 
+                        style={{ padding: '8px 12px' }} 
+                        placeholder="Optional" 
+                      />
+                    </div>
+                    <div>
+                      <label style={{ fontFamily: 'var(--font-display)', fontSize: 9, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.2em', display: 'block', marginBottom: 5 }}>
+                        HEIGHT
+                      </label>
+                      <input 
+                        type="text" 
+                        value={formData.height} 
+                        onChange={e => setFormData({ ...formData, height: e.target.value })} 
+                        className="input-field" 
+                        style={{ padding: '8px 12px' }} 
+                        placeholder="e.g. 6'1" 
+                      />
+                    </div>
+                    <div>
+                      <label style={{ fontFamily: 'var(--font-display)', fontSize: 9, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.2em', display: 'block', marginBottom: 5 }}>
+                        FOOT
+                      </label>
+                      <select 
+                        value={formData.preferredFoot} 
+                        onChange={e => setFormData({ ...formData, preferredFoot: e.target.value })} 
+                        className="input-field" 
+                        style={{ padding: '8px 12px' }}
+                      >
+                        <option value="">—</option>
+                        <option value="Right">Right</option>
+                        <option value="Left">Left</option>
+                        <option value="Both">Both</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Form Action Buttons */}
+                <div style={{ display: 'flex', gap: 10, paddingTop: 6, marginTop: 'auto' }}>
+                  <button 
+                    type="button" 
+                    onClick={() => setShowModal(false)} 
+                    className="btn-ghost" 
+                    style={{ flex: 1, padding: '10px 0', fontSize: 13 }}
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    type="submit" 
+                    className="btn-primary" 
+                    style={{ flex: 1, padding: '10px 0', fontSize: 13 }}
+                  >
+                    {editingPlayer ? 'Save Changes' : 'Register Player'}
+                  </button>
+                </div>
               </div>
             </form>
           </div>

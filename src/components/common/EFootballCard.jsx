@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { formatCurrency } from '../../utils/currency';
 import { storageService } from '../../services/storageService';
+import { CardStudioTransformOverlay } from './CardStudioTransformOverlay';
 
 /**
  * Pro-Level EA FC 24 Ultimate Team Player Card Component
@@ -15,8 +16,13 @@ export const EFootballCard = ({
   onClick,
   showPrice = false,
   highlight = false,
+  disableShadow = false,
   customThemeOverride = null,
   isStudio = false,
+  selectedElement = null,
+  onSelectElement = null,
+  onUpdateTheme = null,
+  onCommitHistory = null,
 }) => {
   if (!player) return null;
 
@@ -26,7 +32,7 @@ export const EFootballCard = ({
   const photoOffsetY = player.photoOffsetY !== undefined ? parseInt(player.photoOffsetY, 10) : 0;
 
   const heroImage = player.presentationPng || player.photoUrl || player.photo;
-  const ovr = player.overallRating || 98;
+  const ovr = player.overallRating || player.rating || player.ovr || (player.stats ? Math.round(Object.values(player.stats).reduce((a,b)=>a+b,0)/Object.values(player.stats).length) : 98);
   const position = (player.position || 'RW').toUpperCase();
   const name = player.name || 'PLAYER';
   
@@ -38,28 +44,34 @@ export const EFootballCard = ({
   const clubLogo = player.clubLogo || '/assets/logo.png';
   const isDefaultLogo = !player.clubLogo || player.clubLogo === '/assets/logo.png';
 
-  // Auto-assign SILVER theme for Goalkeepers (GK) if needed
-  const effectiveTheme = (position === 'GK' && theme === 'GOLD') ? 'SILVER' : theme;
+  const isGK = position === 'GK';
+  const effectiveTheme = theme;
 
   // Scale map
-  const scaleMap = { sm: 0.65, md: 0.85, lg: 1.1, xl: 1.35 };
-  const scale = scaleMap[size] || scaleMap.md;
+  const scaleMap = { pitch: 0.52, xs: 0.45, sm: 0.65, md: 0.85, lg: 1.1, xl: 1.35 };
+  const scale = typeof size === 'number' ? size : (scaleMap[size] || scaleMap.md);
   const cardWidth = 320 * scale;
   const cardHeight = 440 * scale;
 
   const [customTheme, setCustomTheme] = useState(() => storageService.getCardTheme());
+  const [gkCustomTheme, setGkCustomTheme] = useState(() => storageService.getGkCardTheme());
+  const svgRef = useRef(null);
 
   useEffect(() => {
-    const handleUpdate = () => setCustomTheme(storageService.getCardTheme());
+    const handleUpdate = () => {
+      setCustomTheme(storageService.getCardTheme());
+      setGkCustomTheme(storageService.getGkCardTheme());
+    };
     window.addEventListener('card-theme-updated', handleUpdate);
     return () => window.removeEventListener('card-theme-updated', handleUpdate);
   }, []);
 
-  const activeCustomTheme = customThemeOverride || customTheme;
+  const defaultThemeForPlayer = isGK ? gkCustomTheme : customTheme;
+  const activeCustomTheme = customThemeOverride || defaultThemeForPlayer;
 
   // Theme configuration matching EA FC 24 reference cards
   const themeConfig = {
-    GOLD: activeCustomTheme, // Override GOLD with our customizable theme
+    GOLD: activeCustomTheme, // Customizable theme (Outfield or GK)
     SILVER: {
       bgGrad1: '#ffffff', bgGrad2: '#cbd5e1', bgGrad3: '#94a3b8', bgGrad4: '#1e293b',
       border1: '#ffffff', border2: '#e2e8f0', border3: '#334155',
@@ -89,9 +101,32 @@ export const EFootballCard = ({
       accent: '#38bdf8',
     },
   };
-  const cfg = themeConfig[effectiveTheme] || themeConfig.GOLD;
+  const cfg = {
+    ...activeCustomTheme,
+    ...(effectiveTheme !== 'GOLD' && themeConfig[effectiveTheme] ? themeConfig[effectiveTheme] : {})
+  };
 
-  const idSuffix = useMemo(() => `${player.id || 'p'}-${effectiveTheme}-${Math.floor(Math.random()*1000)}`, [player.id, effectiveTheme]);
+  const rayColor1 = cfg.border2 || '#f59e0b';
+  const rayColor2 = cfg.border1 || '#fbbf24';
+  const fxIntensity = (cfg.fxIntensity ?? 100) / 100;
+  const effectsOn = cfg.enableEffects !== false;
+
+  // Granular Sheen & Glint Animation Parameters (Speed, Size, Opacity, Lag)
+  const sheenSpeed = cfg.fxSheenSpeed !== undefined ? Number(cfg.fxSheenSpeed) : 3.5;
+  const sheenLag = cfg.fxSheenLag !== undefined ? Number(cfg.fxSheenLag) : 1.5;
+  const sheenSize = cfg.fxSheenSize !== undefined ? Number(cfg.fxSheenSize) : 220;
+  const sheenOpacity = (cfg.fxSheenOpacity !== undefined ? Number(cfg.fxSheenOpacity) : 85) / 100;
+  const totalSheenCycle = Math.max(0.8, Number((sheenSpeed + sheenLag).toFixed(2)));
+  const sweepPercent = Math.min(99, Math.max(15, Math.round((sheenSpeed / totalSheenCycle) * 100)));
+
+  const glintSpeed = cfg.fxGlintSpeed !== undefined ? Number(cfg.fxGlintSpeed) : 2.6;
+  const glintLag = cfg.fxGlintLag !== undefined ? Number(cfg.fxGlintLag) : 1.2;
+  const glintScale = (cfg.fxGlintSize !== undefined ? Number(cfg.fxGlintSize) : 100) / 100;
+  const glintOpacity = (cfg.fxGlintOpacity !== undefined ? Number(cfg.fxGlintOpacity) : 90) / 100;
+  const totalGlintCycle = Math.max(1.0, Number((glintSpeed + glintLag).toFixed(2)));
+  const glintActivePercent = Math.min(95, Math.max(20, Math.round((glintSpeed / totalGlintCycle) * 100)));
+
+  const idSuffix = useMemo(() => `${player.id || 'p'}-${isGK ? 'gk' : 'out'}-${effectiveTheme}-${Math.floor(Math.random()*1000)}`, [player.id, isGK, effectiveTheme]);
 
   // Card Shapes
   let cardPath = "M 80 15 Q 160 5 240 15 L 305 55 L 305 345 L 160 405 L 15 345 L 15 55 Z"; // Default eafc24
@@ -121,10 +156,55 @@ export const EFootballCard = ({
       style={{
         width: cardWidth,
         height: cardHeight,
-        filter: 'drop-shadow(0 10px 15px rgba(0, 0, 0, 0.7)) drop-shadow(0 4px 6px rgba(0, 0, 0, 0.5))',
+        filter: disableShadow ? 'none' : 'drop-shadow(0 10px 15px rgba(0, 0, 0, 0.7)) drop-shadow(0 4px 6px rgba(0, 0, 0, 0.5))',
       }}
     >
+      {/* ── REAL CARD VISUAL EFFECTS (Backdrop rays, particles & pulse) ── */}
+      {effectsOn && (
+        <>
+          {cfg.fxBgRays !== false && (
+            <div
+              className="absolute inset-0 pointer-events-none -z-10 flex items-center justify-center overflow-visible"
+              style={{ transform: 'scale(1.35)' }}
+            >
+              <div
+                style={{
+                  width: '180%',
+                  height: '180%',
+                  position: 'absolute',
+                  background: `conic-gradient(from 0deg at 50% 50%, ${rayColor1}45 0deg, transparent 35deg, ${rayColor2}70 90deg, transparent 125deg, ${rayColor1}45 180deg, transparent 215deg, ${rayColor2}70 270deg, transparent 305deg, ${rayColor1}45 360deg)`,
+                  animation: 'splFc24RaySpin 10s linear infinite',
+                  borderRadius: '50%',
+                  filter: 'blur(8px)',
+                  opacity: fxIntensity,
+                }}
+              />
+            </div>
+          )}
+
+          {cfg.fxBgParticles !== false && (
+            <div className="absolute inset-0 pointer-events-none -z-10 overflow-visible" style={{ opacity: fxIntensity }}>
+              <div className="spl-particle-1 absolute" style={{ bottom: '15%', left: '15%', width: 6, height: 6, borderRadius: '50%', background: '#fff', boxShadow: `0 0 8px ${rayColor1}, 0 0 16px ${rayColor2}` }} />
+              <div className="spl-particle-2 absolute" style={{ bottom: '8%', right: '20%', width: 8, height: 8, borderRadius: '50%', background: '#fff', boxShadow: `0 0 10px ${rayColor2}, 0 0 20px #ffffff` }} />
+              <div className="spl-particle-3 absolute" style={{ bottom: '25%', left: '48%', width: 5, height: 5, borderRadius: '50%', background: '#fff', boxShadow: `0 0 8px ${rayColor1}, 0 0 14px ${rayColor2}` }} />
+            </div>
+          )}
+
+          {cfg.fxBgPulse !== false && (
+            <div
+              className="absolute -inset-5 pointer-events-none -z-10 rounded-3xl spl-bg-pulse"
+              style={{
+                background: `radial-gradient(circle at 50% 50%, ${rayColor1}50 0%, ${rayColor2}25 50%, transparent 75%)`,
+                filter: 'blur(22px)',
+                opacity: fxIntensity,
+              }}
+            />
+          )}
+        </>
+      )}
+
       <svg
+        ref={svgRef}
         viewBox="0 0 1280 1760"
         width={cardWidth}
         height={cardHeight}
@@ -154,6 +234,106 @@ export const EFootballCard = ({
             <stop offset="0%" stopColor="#ffffff" stopOpacity="0.4" />
             <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
           </radialGradient>
+
+          {/* Dynamic Specular Sheen Beam */}
+          <linearGradient id={`sheen-beam-${idSuffix}`} x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#ffffff" stopOpacity="0" />
+            <stop offset="38%" stopColor="#ffffff" stopOpacity="0.12" />
+            <stop offset="50%" stopColor="#ffffff" stopOpacity={Math.min(1, Math.max(0.2, sheenOpacity * 1.15))} />
+            <stop offset="62%" stopColor="#ffffff" stopOpacity="0.12" />
+            <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
+          </linearGradient>
+
+          {/* Dynamic keyframes for Sheen & Glints (Custom Speed, Size, Opacity, and Lag) */}
+          <style>{`
+            @keyframes sheenAnim-${idSuffix} {
+              0% {
+                transform: translateX(-160%) skewX(-25deg);
+                opacity: 0;
+              }
+              ${Math.max(4, Math.round(sweepPercent * 0.2))}% {
+                opacity: ${Number((sheenOpacity * fxIntensity).toFixed(3))};
+              }
+              ${Math.max(10, Math.round(sweepPercent * 0.55))}% {
+                opacity: ${Number((sheenOpacity * fxIntensity).toFixed(3))};
+              }
+              ${Math.max(16, Math.round(sweepPercent * 0.88))}% {
+                opacity: ${Number((sheenOpacity * fxIntensity * 0.5).toFixed(3))};
+              }
+              ${Math.max(20, sweepPercent)}% {
+                transform: translateX(280%) skewX(-25deg);
+                opacity: 0;
+              }
+              100% {
+                transform: translateX(280%) skewX(-25deg);
+                opacity: 0;
+              }
+            }
+            .sheen-run-${idSuffix} {
+              animation: sheenAnim-${idSuffix} ${totalSheenCycle}s ease-in-out infinite;
+              mix-blend-mode: overlay;
+              pointer-events: none;
+            }
+            @keyframes glintStar1-${idSuffix} {
+              0% {
+                opacity: 0.1;
+                transform: scale(${0.5 * glintScale}) rotate(0deg);
+              }
+              ${Math.round(glintActivePercent * 0.5)}% {
+                opacity: ${Number((glintOpacity * fxIntensity).toFixed(3))};
+                transform: scale(${1.3 * glintScale}) rotate(90deg);
+                filter: drop-shadow(0 0 6px #ffffff) drop-shadow(0 0 12px rgba(255, 255, 255, 0.8));
+              }
+              ${glintActivePercent}% {
+                opacity: 0;
+                transform: scale(${0.4 * glintScale}) rotate(180deg);
+              }
+              100% {
+                opacity: 0;
+                transform: scale(${0.4 * glintScale}) rotate(180deg);
+              }
+            }
+            .glint-run1-${idSuffix} {
+              animation: glintStar1-${idSuffix} ${totalGlintCycle}s ease-in-out infinite;
+              transform-origin: center center;
+            }
+            @keyframes glintStar2-${idSuffix} {
+              0% {
+                opacity: 0;
+                transform: scale(${0.4 * glintScale}) rotate(0deg);
+              }
+              ${Math.round(glintActivePercent * 0.3)}% {
+                opacity: 0;
+                transform: scale(${0.4 * glintScale}) rotate(0deg);
+              }
+              ${Math.round(glintActivePercent * 0.7)}% {
+                opacity: ${Number((glintOpacity * fxIntensity).toFixed(3))};
+                transform: scale(${1.25 * glintScale}) rotate(90deg);
+                filter: drop-shadow(0 0 6px #ffffff) drop-shadow(0 0 12px rgba(255, 255, 255, 0.8));
+              }
+              ${glintActivePercent}% {
+                opacity: 0;
+                transform: scale(${0.4 * glintScale}) rotate(180deg);
+              }
+              100% {
+                opacity: 0;
+                transform: scale(${0.4 * glintScale}) rotate(180deg);
+              }
+            }
+            .glint-run2-${idSuffix} {
+              animation: glintStar2-${idSuffix} ${totalGlintCycle}s ease-in-out infinite;
+              transform-origin: center center;
+            }
+          `}</style>
+
+          {/* Rainbow Holographic Foil */}
+          <linearGradient id={`holo-foil-${idSuffix}`} x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#ff0080" stopOpacity="0.25" />
+            <stop offset="25%" stopColor="#7928ca" stopOpacity="0.2" />
+            <stop offset="50%" stopColor="#0070f3" stopOpacity="0.25" />
+            <stop offset="75%" stopColor="#00dfd8" stopOpacity="0.2" />
+            <stop offset="100%" stopColor="#ff4d4d" stopOpacity="0.25" />
+          </linearGradient>
 
           {/* Geometric Texture (Subtle triangles) */}
           <pattern id={`texture-geometric-${idSuffix}`} width="60" height="60" patternUnits="userSpaceOnUse" patternTransform="rotate(30)">
@@ -208,6 +388,7 @@ export const EFootballCard = ({
             <path d={photoClipPath} />
           </clipPath>
 
+
           {/* Alpha mask for player photo (fades smoothly at the bottom) */}
           <linearGradient id={`photo-fade-${idSuffix}`} x1="0%" y1="0%" x2="0%" y2="100%">
             <stop offset="0%" stopColor="#ffffff" stopOpacity="1" />
@@ -259,45 +440,79 @@ export const EFootballCard = ({
         {/* 4. Metallic Light Flare Overlay */}
         <use href={`#card-shape-${idSuffix}`} fill={`url(#flare-${idSuffix})`} style={{ mixBlendMode: 'overlay' }} />
 
-        
-
-          {/* PLAYER PHOTO (Using pure SVG mask, but now protected by 4x global scale) */}
-          <g clipPath={`url(#card-clip-${idSuffix})`} mask={`url(#photo-mask-${idSuffix})`}>
-            {/* Global Image Area Offset */}
-            <g transform={`translate(${cfg.layoutImageX ?? 0}, ${cfg.layoutImageY ?? -10})`}>
-              {/* Studio mode bounding box */}
-              {isStudio && (
-                <rect 
-                  x="0" 
-                  y="0" 
-                  width={cfg.layoutImageW ?? 320} 
-                  height={cfg.layoutImageH ?? 320} 
-                  fill="rgba(255, 255, 255, 0.1)" 
-                  stroke="rgba(255, 255, 255, 0.5)" 
-                  strokeWidth="2" 
-                  strokeDasharray="5,5" 
+        {/* PLAYER PHOTO (Using pure SVG mask, protected by 4x global scale) */}
+        <g clipPath={`url(#card-clip-${idSuffix})`} mask={`url(#photo-mask-${idSuffix})`}>
+          {/* Global Image Area Offset */}
+          <g transform={`translate(${cfg.layoutImageX ?? 0}, ${cfg.layoutImageY ?? -10})`}>
+            {/* Per-Player Image Alignment & Scale + Visual Effects */}
+            <g
+              className={`
+                ${effectsOn && cfg.fxPlayerParallax !== false ? 'spl-player-parallax' : ''}
+                ${effectsOn && cfg.fxPlayerGlow !== false ? 'spl-player-rim-glow' : ''}
+                ${effectsOn && cfg.fxPlayerHolo ? 'spl-player-holo' : ''}
+              `.trim()}
+              style={{ '--player-glow-color': cfg.border2 || '#f59e0b' }}
+              transform={`translate(${(cfg.layoutImageW ?? 320) / 2}, ${(cfg.layoutImageH ?? 320) / 2}) scale(${photoScale}) translate(-${(cfg.layoutImageW ?? 320) / 2}, -${(cfg.layoutImageH ?? 320) / 2}) translate(${photoOffsetX}, ${photoOffsetY})`}
+            >
+              {heroImage ? (
+                <image
+                  href={heroImage}
+                  x="0"
+                  y="0"
+                  width={cfg.layoutImageW ?? 320}
+                  height={cfg.layoutImageH ?? 320}
+                  preserveAspectRatio="xMidYMin slice"
                 />
+              ) : (
+                <g opacity="0.3">
+                  <circle cx={(cfg.layoutImageW ?? 320) / 2} cy={(cfg.layoutImageH ?? 320) / 2} r={(cfg.layoutImageW ?? 320) * 0.2} fill={cfg.textDark} />
+                  <path d={`M${(cfg.layoutImageW ?? 320) * 0.2} ${(cfg.layoutImageH ?? 320) * 0.9} Q ${(cfg.layoutImageW ?? 320) / 2} ${(cfg.layoutImageH ?? 320) * 0.4} ${(cfg.layoutImageW ?? 320) * 0.8} ${(cfg.layoutImageH ?? 320) * 0.9} Z`} fill={cfg.textDark} />
+                </g>
               )}
-              {/* Per-Player Image Alignment & Scale */}
-              <g transform={`translate(${(cfg.layoutImageW ?? 320) / 2}, ${(cfg.layoutImageH ?? 320) / 2}) scale(${photoScale}) translate(-${(cfg.layoutImageW ?? 320) / 2}, -${(cfg.layoutImageH ?? 320) / 2}) translate(${photoOffsetX}, ${photoOffsetY})`}>
-                {heroImage ? (
-                  <image
-                    href={heroImage}
-                    x="0"
-                    y="0"
-                    width={cfg.layoutImageW ?? 320}
-                    height={cfg.layoutImageH ?? 320}
-                    preserveAspectRatio="xMidYMin slice"
-                  />
-                ) : (
-                  <g opacity="0.3">
-                    <circle cx={(cfg.layoutImageW ?? 320) / 2} cy={(cfg.layoutImageH ?? 320) / 2} r={(cfg.layoutImageW ?? 320) * 0.2} fill={cfg.textDark} />
-                    <path d={`M${(cfg.layoutImageW ?? 320) * 0.2} ${(cfg.layoutImageH ?? 320) * 0.9} Q ${(cfg.layoutImageW ?? 320) / 2} ${(cfg.layoutImageH ?? 320) * 0.4} ${(cfg.layoutImageW ?? 320) * 0.8} ${(cfg.layoutImageH ?? 320) * 0.9} Z`} fill={cfg.textDark} />
-                  </g>
-                )}
-              </g>
             </g>
           </g>
+        </g>
+
+        {/* ── CARD SURFACE & TOP EFFECTS ── */}
+        {effectsOn && (
+          <g clipPath={`url(#card-clip-${idSuffix})`}>
+            {/* Diagonal Glass Sheen Sweep */}
+            {cfg.fxSurfaceSheen !== false && (
+              <rect
+                x="-160"
+                y="-100"
+                width={sheenSize}
+                height="700"
+                fill={`url(#sheen-beam-${idSuffix})`}
+                className={`sheen-run-${idSuffix}`}
+                style={{ pointerEvents: 'none', mixBlendMode: 'overlay' }}
+              />
+            )}
+
+            {/* Holographic Rainbow Foil */}
+            {cfg.fxHoloFoil && (
+              <use
+                href={`#card-shape-${idSuffix}`}
+                fill={`url(#holo-foil-${idSuffix})`}
+                style={{ pointerEvents: 'none', mixBlendMode: 'color-dodge', opacity: fxIntensity * 0.7 }}
+              />
+            )}
+
+            {/* Diamond Glint Stars */}
+            {cfg.fxGlintStars !== false && (
+              <g style={{ pointerEvents: 'none' }}>
+                <g transform="translate(265, 55)" className={`glint-run1-${idSuffix}`}>
+                  <path d="M 0 -8 Q 0 0 8 0 Q 0 0 0 8 Q 0 0 -8 0 Q 0 0 0 -8 Z" fill="#ffffff" />
+                  <circle cx="0" cy="0" r="2.5" fill="#ffffff" />
+                </g>
+                <g transform="translate(55, 340)" className={`glint-run2-${idSuffix}`}>
+                  <path d="M 0 -7 Q 0 0 7 0 Q 0 0 0 7 Q 0 0 -7 0 Q 0 0 0 7 Z" fill="#ffffff" />
+                  <circle cx="0" cy="0" r="2" fill="#ffffff" />
+                </g>
+              </g>
+            )}
+          </g>
+        )}
 
         {/* Content Clipped to Card */}
         <g clipPath={`url(#card-clip-${idSuffix})`}>
@@ -317,32 +532,87 @@ export const EFootballCard = ({
             <g transform={`translate(${cfg.layoutRatingX ?? 55}, ${cfg.layoutRatingY ?? 90})`}>
               {cfg.showRating !== false && (
                 <>
-                  <text x="0" y="0" fontFamily="var(--font-broadcast), 'Bebas Neue', Impact, sans-serif" fontSize={cfg.layoutRatingSize ?? 52} fontWeight="bold" fill={cfg.textDark} textAnchor="middle" style={{ letterSpacing: '0px' }}>
+                  <text 
+                    x="0" 
+                    y="0" 
+                    fontFamily="var(--font-broadcast), 'Bebas Neue', Impact, sans-serif" 
+                    fontSize={cfg.layoutRatingSize ?? 52} 
+                    fontWeight="bold" 
+                    fill={cfg.textDark} 
+                    textAnchor="middle" 
+                    style={{ letterSpacing: '0px' }}
+                  >
                     {ovr}
                   </text>
-                  <text x="0" y="25" fontFamily="'DIN Pro', var(--font-display), Arial, sans-serif" fontSize={cfg.layoutPositionSize ?? 18} fontWeight="800" fill={cfg.textDark} textAnchor="middle" style={{ letterSpacing: '0px' }}>
+                  <text 
+                    x={cfg.layoutPositionX ?? 0} 
+                    y={cfg.layoutPositionGapY ?? 25} 
+                    fontFamily="'DIN Pro', var(--font-display), Arial, sans-serif" 
+                    fontSize={cfg.layoutPositionSize ?? 18} 
+                    fontWeight="800" 
+                    fill={cfg.textDark} 
+                    textAnchor="middle" 
+                    style={{ letterSpacing: '0px' }}
+                  >
                     {position}
                   </text>
                 </>
               )}
               
               {/* Country and Club logos */}
-              {cfg.showLogos !== false && (
-                <g transform={`scale(${(cfg.layoutLogoScale ?? 100) / 100})`}>
-                  <image href={countryFlag} x="-18" y="40" width="36" height="24" preserveAspectRatio="xMidYMid meet" />
-                  <image href={clubLogo} x="-14" y="72" width="28" height="28" preserveAspectRatio="xMidYMid meet" style={{ filter: isDefaultLogo ? 'drop-shadow(0px 1px 1px rgba(0,0,0,0.5))' : 'none' }} />
-                  {isDefaultLogo && (
-                    <text x="0" y="89" fontFamily="var(--font-display), 'Arial Black', sans-serif" fontSize="6.5" fontWeight="900" fill="#ffffff" textAnchor="middle" style={{ letterSpacing: '0.5px', filter: 'drop-shadow(0px 1px 2px rgba(0,0,0,0.8))' }}>SPL</text>
-                  )}
-                </g>
-              )}
+              {cfg.showLogos !== false && (() => {
+                const scaleRatio = (cfg.layoutLogoScale ?? 100) / 100;
+                const flagW = (cfg.layoutFlagWidth ?? 36) * scaleRatio;
+                const flagH = (cfg.layoutFlagHeight ?? 24) * scaleRatio;
+                const clubSize = (cfg.layoutClubLogoSize ?? 28) * scaleRatio;
+                const positionY = cfg.showRating !== false ? (cfg.layoutPositionGapY ?? 25) : 0;
+                const logosStartY = positionY + (cfg.layoutLogosGapY ?? 15);
+                const clubLogoY = logosStartY + flagH + (cfg.layoutClubLogoGapY ?? 8);
+                const logosX = cfg.layoutLogosX ?? 0;
+
+                return (
+                  <g>
+                    <image 
+                      href={countryFlag} 
+                      x={logosX - (flagW / 2)} 
+                      y={logosStartY} 
+                      width={flagW} 
+                      height={flagH} 
+                      preserveAspectRatio="xMidYMid meet" 
+                    />
+                    <image 
+                      href={clubLogo} 
+                      x={logosX - (clubSize / 2)} 
+                      y={clubLogoY} 
+                      width={clubSize} 
+                      height={clubSize} 
+                      preserveAspectRatio="xMidYMid meet" 
+                      style={{ filter: isDefaultLogo ? 'drop-shadow(0px 1px 1px rgba(0,0,0,0.5))' : 'none' }} 
+                    />
+                    {isDefaultLogo && (
+                      <text 
+                        x={logosX} 
+                        y={clubLogoY + (clubSize * 0.6)} 
+                        fontFamily="var(--font-display), 'Arial Black', sans-serif" 
+                        fontSize={Math.max(4, clubSize * 0.23)} 
+                        fontWeight="900" 
+                        fill="#ffffff" 
+                        textAnchor="middle" 
+                        style={{ letterSpacing: '0.5px', filter: 'drop-shadow(0px 1px 2px rgba(0,0,0,0.8))' }}
+                      >
+                        SPL
+                      </text>
+                    )}
+                  </g>
+                );
+              })()}
             </g>
           )}
 
           {/* PLAYER NAME */}
           {cfg.showName !== false && (
             <text 
-              x="160" 
+              x={cfg.layoutNameX ?? 160} 
               y={cfg.layoutNameY ?? 280} 
               fontFamily="var(--font-broadcast), 'Bebas Neue', Impact, sans-serif" 
               fontSize={name.length > 12 ? Math.max((cfg.layoutNameFontSize ?? 40) - 6, 24) : (cfg.layoutNameFontSize ?? 40)} 
@@ -357,41 +627,111 @@ export const EFootballCard = ({
           
           {cfg.showStats !== false && (
             <>
-              <line x1="60" y1={(cfg.layoutNameY ?? 280) + 10} x2="260" y2={(cfg.layoutNameY ?? 280) + 10} stroke={cfg.border2} strokeWidth="1" strokeOpacity="0.5" />
+              <line 
+                x1={(cfg.layoutNameX ?? 160) - 100} 
+                y1={(cfg.layoutNameY ?? 280) + 10} 
+                x2={(cfg.layoutNameX ?? 160) + 100} 
+                y2={(cfg.layoutNameY ?? 280) + 10} 
+                stroke={cfg.border2} 
+                strokeWidth="1" 
+                strokeOpacity="0.5" 
+              />
 
-              {/* STATS GRID (2 columns, 3 rows) */}
-              <g transform={`translate(160, ${cfg.layoutStatsY ?? 315})`}>
-                {/* Left Column */}
-                <g transform={`translate(-${cfg.layoutStatsGapX ?? 40}, 0)`}>
-                  <text x="-5" y="0" fontFamily="'DIN Pro', var(--font-display), Arial, sans-serif" fontSize={cfg.layoutStatNumSize ?? 18} fontWeight="800" fill={cfg.textDark} textAnchor="end">{stats.pac}</text>
-                  <text x="5" y="0" fontFamily="'DIN Pro', var(--font-display), Arial, sans-serif" fontSize={cfg.layoutStatLabelSize ?? 18} fontWeight="400" fill={cfg.textDark} textAnchor="start">PAC</text>
-                  
-                  <text x="-5" y={cfg.layoutStatsGapY ?? 30} fontFamily="'DIN Pro', var(--font-display), Arial, sans-serif" fontSize={cfg.layoutStatNumSize ?? 18} fontWeight="800" fill={cfg.textDark} textAnchor="end">{stats.sho}</text>
-                  <text x="5" y={cfg.layoutStatsGapY ?? 30} fontFamily="'DIN Pro', var(--font-display), Arial, sans-serif" fontSize={cfg.layoutStatLabelSize ?? 18} fontWeight="400" fill={cfg.textDark} textAnchor="start">SHO</text>
-                  
-                  <text x="-5" y={(cfg.layoutStatsGapY ?? 30) * 2} fontFamily="'DIN Pro', var(--font-display), Arial, sans-serif" fontSize={cfg.layoutStatNumSize ?? 18} fontWeight="800" fill={cfg.textDark} textAnchor="end">{stats.pas}</text>
-                  <text x="5" y={(cfg.layoutStatsGapY ?? 30) * 2} fontFamily="'DIN Pro', var(--font-display), Arial, sans-serif" fontSize={cfg.layoutStatLabelSize ?? 18} fontWeight="400" fill={cfg.textDark} textAnchor="start">PAS</text>
-                </g>
-                
-                {/* Center Divider */}
-                <line x1="0" y1="-15" x2="0" y2={((cfg.layoutStatsGapY ?? 30) * 2) + 5} stroke={cfg.border2} strokeWidth="1" strokeOpacity="0.5" />
+              {/* STATS GRID (2 columns, 3 rows) — Automatic Outfield vs Goalkeeper labels */}
+              {(() => {
+                const s = {
+                  l1Val: isGK ? (stats.div ?? stats.pac ?? 85) : (stats.pac ?? 80),
+                  l1Lbl: isGK ? 'DIV' : 'PAC',
+                  l2Val: isGK ? (stats.han ?? stats.sho ?? 84) : (stats.sho ?? 80),
+                  l2Lbl: isGK ? 'HAN' : 'SHO',
+                  l3Val: isGK ? (stats.kic ?? stats.pas ?? 82) : (stats.pas ?? 80),
+                  l3Lbl: isGK ? 'KIC' : 'PAS',
+                  r1Val: isGK ? (stats.ref ?? stats.dri ?? 88) : (stats.dri ?? 80),
+                  r1Lbl: isGK ? 'REF' : 'DRI',
+                  r2Val: isGK ? (stats.spd ?? stats.def ?? 55) : (stats.def ?? 80),
+                  r2Lbl: isGK ? 'SPD' : 'DEF',
+                  r3Val: isGK ? (stats.pos ?? stats.phy ?? 87) : (stats.phy ?? 80),
+                  r3Lbl: isGK ? 'POS' : 'PHY',
+                };
 
-                {/* Right Column */}
-                <g transform={`translate(${cfg.layoutStatsGapX ?? 40}, 0)`}>
-                  <text x="-5" y="0" fontFamily="'DIN Pro', var(--font-display), Arial, sans-serif" fontSize={cfg.layoutStatNumSize ?? 18} fontWeight="800" fill={cfg.textDark} textAnchor="end">{stats.dri}</text>
-                  <text x="5" y="0" fontFamily="'DIN Pro', var(--font-display), Arial, sans-serif" fontSize={cfg.layoutStatLabelSize ?? 18} fontWeight="400" fill={cfg.textDark} textAnchor="start">DRI</text>
-                  
-                  <text x="-5" y={cfg.layoutStatsGapY ?? 30} fontFamily="'DIN Pro', var(--font-display), Arial, sans-serif" fontSize={cfg.layoutStatNumSize ?? 18} fontWeight="800" fill={cfg.textDark} textAnchor="end">{stats.def}</text>
-                  <text x="5" y={cfg.layoutStatsGapY ?? 30} fontFamily="'DIN Pro', var(--font-display), Arial, sans-serif" fontSize={cfg.layoutStatLabelSize ?? 18} fontWeight="400" fill={cfg.textDark} textAnchor="start">DEF</text>
-                  
-                  <text x="-5" y={(cfg.layoutStatsGapY ?? 30) * 2} fontFamily="'DIN Pro', var(--font-display), Arial, sans-serif" fontSize={cfg.layoutStatNumSize ?? 18} fontWeight="800" fill={cfg.textDark} textAnchor="end">{stats.phy}</text>
-                  <text x="5" y={(cfg.layoutStatsGapY ?? 30) * 2} fontFamily="'DIN Pro', var(--font-display), Arial, sans-serif" fontSize={cfg.layoutStatLabelSize ?? 18} fontWeight="400" fill={cfg.textDark} textAnchor="start">PHY</text>
-                </g>
-              </g>
+                return (
+                  <g transform={`translate(${cfg.layoutStatsX ?? 160}, ${cfg.layoutStatsY ?? 315})`}>
+                    {/* Left Column */}
+                    <g transform={`translate(-${cfg.layoutStatsGapX ?? 40}, 0)`}>
+                      <text x="-5" y="0" fontFamily="'DIN Pro', var(--font-display), Arial, sans-serif" fontSize={cfg.layoutStatNumSize ?? 18} fontWeight="800" fill={cfg.textDark} textAnchor="end">{s.l1Val}</text>
+                      <text x="5" y="0" fontFamily="'DIN Pro', var(--font-display), Arial, sans-serif" fontSize={cfg.layoutStatLabelSize ?? 18} fontWeight="400" fill={cfg.textDark} textAnchor="start">{s.l1Lbl}</text>
+                      
+                      <text x="-5" y={cfg.layoutStatsGapY ?? 30} fontFamily="'DIN Pro', var(--font-display), Arial, sans-serif" fontSize={cfg.layoutStatNumSize ?? 18} fontWeight="800" fill={cfg.textDark} textAnchor="end">{s.l2Val}</text>
+                      <text x="5" y={cfg.layoutStatsGapY ?? 30} fontFamily="'DIN Pro', var(--font-display), Arial, sans-serif" fontSize={cfg.layoutStatLabelSize ?? 18} fontWeight="400" fill={cfg.textDark} textAnchor="start">{s.l2Lbl}</text>
+                      
+                      <text x="-5" y={(cfg.layoutStatsGapY ?? 30) * 2} fontFamily="'DIN Pro', var(--font-display), Arial, sans-serif" fontSize={cfg.layoutStatNumSize ?? 18} fontWeight="800" fill={cfg.textDark} textAnchor="end">{s.l3Val}</text>
+                      <text x="5" y={(cfg.layoutStatsGapY ?? 30) * 2} fontFamily="'DIN Pro', var(--font-display), Arial, sans-serif" fontSize={cfg.layoutStatLabelSize ?? 18} fontWeight="400" fill={cfg.textDark} textAnchor="start">{s.l3Lbl}</text>
+                    </g>
+                    
+                    {/* Center Divider */}
+                    <line x1="0" y1="-15" x2="0" y2={((cfg.layoutStatsGapY ?? 30) * 2) + 5} stroke={cfg.border2} strokeWidth="1" strokeOpacity="0.5" />
+
+                    {/* Right Column */}
+                    <g transform={`translate(${cfg.layoutStatsGapX ?? 40}, 0)`}>
+                      <text x="-5" y="0" fontFamily="'DIN Pro', var(--font-display), Arial, sans-serif" fontSize={cfg.layoutStatNumSize ?? 18} fontWeight="800" fill={cfg.textDark} textAnchor="end">{s.r1Val}</text>
+                      <text x="5" y="0" fontFamily="'DIN Pro', var(--font-display), Arial, sans-serif" fontSize={cfg.layoutStatLabelSize ?? 18} fontWeight="400" fill={cfg.textDark} textAnchor="start">{s.r1Lbl}</text>
+                      
+                      <text x="-5" y={cfg.layoutStatsGapY ?? 30} fontFamily="'DIN Pro', var(--font-display), Arial, sans-serif" fontSize={cfg.layoutStatNumSize ?? 18} fontWeight="800" fill={cfg.textDark} textAnchor="end">{s.r2Val}</text>
+                      <text x="5" y={cfg.layoutStatsGapY ?? 30} fontFamily="'DIN Pro', var(--font-display), Arial, sans-serif" fontSize={cfg.layoutStatLabelSize ?? 18} fontWeight="400" fill={cfg.textDark} textAnchor="start">{s.r2Lbl}</text>
+                      
+                      <text x="-5" y={(cfg.layoutStatsGapY ?? 30) * 2} fontFamily="'DIN Pro', var(--font-display), Arial, sans-serif" fontSize={cfg.layoutStatNumSize ?? 18} fontWeight="800" fill={cfg.textDark} textAnchor="end">{s.r3Val}</text>
+                      <text x="5" y={(cfg.layoutStatsGapY ?? 30) * 2} fontFamily="'DIN Pro', var(--font-display), Arial, sans-serif" fontSize={cfg.layoutStatLabelSize ?? 18} fontWeight="400" fill={cfg.textDark} textAnchor="start">{s.r3Lbl}</text>
+                    </g>
+                  </g>
+                );
+              })()}
             </>
           )}
-          
         </g>
+
+        {/* Border FX: Perimeter Gleam Tracer */}
+        {effectsOn && cfg.fxBorderGleam !== false && (
+          <use
+            href={`#card-shape-${idSuffix}`}
+            fill="none"
+            stroke={cfg.border1 || '#ffffff'}
+            strokeWidth="3.5"
+            className="spl-border-gleam-line"
+            style={{
+              '--border-gleam-color': cfg.border2 || '#f59e0b',
+              mixBlendMode: 'screen',
+              pointerEvents: 'none',
+            }}
+          />
+        )}
+
+        {/* Border FX: Pulsing Neon Edge */}
+        {effectsOn && cfg.fxBorderPulse && (
+          <use
+            href={`#card-shape-${idSuffix}`}
+            fill="none"
+            stroke={cfg.border2 || '#38bdf8'}
+            strokeWidth="4"
+            className="spl-border-pulse"
+            style={{
+              mixBlendMode: 'screen',
+              pointerEvents: 'none',
+            }}
+          />
+        )}
+
+        {/* Canva & Photoshop-style interactive transform layer in studio mode */}
+        {isStudio && (
+          <CardStudioTransformOverlay
+            cfg={cfg}
+            player={player}
+            svgRef={svgRef}
+            selectedElement={selectedElement}
+            onSelectElement={onSelectElement}
+            onUpdateTheme={onUpdateTheme}
+            onCommitHistory={onCommitHistory}
+          />
+        )}
         </g>
       </svg>
     </div>

@@ -1,15 +1,22 @@
 import React, { useState } from 'react';
 import { useTournament } from '../../context/TournamentContext';
+import { storageService } from '../../services/storageService';
 import { Save, Sparkles } from 'lucide-react';
 
 export const TournamentSetup = () => {
   const { tournament, updateTournament } = useTournament();
-  const [formData, setFormData] = useState({ ...tournament });
+  const [formData, setFormData] = useState({ 
+    ...tournament,
+    squadFormat: tournament?.squadFormat || storageService.getSquadFormat()
+  });
   const [savedMsg, setSavedMsg] = useState('');
 
   const handleSubmit = (e) => {
     e.preventDefault();
     updateTournament(formData);
+    if (formData.squadFormat) {
+      storageService.saveSquadFormat(formData.squadFormat);
+    }
     setSavedMsg('Tournament settings updated successfully!');
     setTimeout(() => setSavedMsg(''), 3000);
   };
@@ -57,6 +64,21 @@ export const TournamentSetup = () => {
           <div>
             <label className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 block mb-1">Min Bid Increment</label>
             <input type="number" value={formData.minIncrement || 100} onChange={(e) => setFormData({ ...formData, minIncrement: parseInt(e.target.value, 10) })} required className="input-field py-2.5 px-3 w-full" />
+          </div>
+          <div>
+            <label className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 block mb-1">Squad Strength & Match Format</label>
+            <select 
+              value={formData.squadFormat || '11s'} 
+              onChange={(e) => {
+                const newFmt = e.target.value;
+                setFormData({ ...formData, squadFormat: newFmt });
+              }} 
+              className="input-field py-2.5 px-3 w-full bg-[#0a0d1d] text-white border border-slate-700 rounded-lg cursor-pointer"
+            >
+              <option value="11s">11s (4-3-3 Attack Formation)</option>
+              <option value="7s">7s (2-1-2-1 Diamond Formation)</option>
+              <option value="5s">5s (2-2 Box Formation)</option>
+            </select>
           </div>
         </div>
 
