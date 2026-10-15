@@ -984,13 +984,28 @@ const SoldStage = ({ player, winningTeam, finalPrice, tournament, settings }) =>
             
             {/* EPIC SOLD STAMP */}
             <motion.div
-               initial={{ scale: 4, opacity: 0, rotate: 0 }}
-               animate={{ scale: 1, opacity: 1, rotate: -8 }}
+               initial={{ scale: 4, opacity: 0, rotate: -6, x: '-50%', y: '-50%' }}
+               animate={{ scale: 1, opacity: 1, rotate: -6, x: '-50%', y: '-50%' }}
                transition={{ type: 'spring', stiffness: 150, damping: 10, delay: 0.8 }}
-               className="absolute inset-0 flex items-center justify-center pointer-events-none z-50"
+               style={{
+                 position: 'absolute',
+                 top: '53.5%',
+                 left: '50%',
+                 transformOrigin: 'center center',
+               }}
+               className="pointer-events-none z-50 flex items-center justify-center"
             >
-               <div className="relative flex flex-col items-center justify-center px-8 py-3 bg-black/60 backdrop-blur-md border-y-[6px] border-red-600 shadow-[0_15px_40px_rgba(0,0,0,0.8)] min-w-[320px]">
-                 <span className="text-white font-black text-[120px] tracking-[0.3em] pl-[0.3em] uppercase drop-shadow-[0_0_15px_rgba(220,38,38,0.8)] leading-none" style={{ fontFamily: 'var(--font-broadcast)' }}>
+               <div 
+                 className="w-[344px] h-[74px] bg-black/80 backdrop-blur-md border-y-[3.5px] border-red-600 flex items-center justify-center shadow-[0_0_20px_rgba(220,38,38,0.5),0_15px_35px_rgba(0,0,0,0.9)]"
+               >
+                 <span 
+                   className="text-white font-black text-[66px] uppercase drop-shadow-[0_0_15px_rgba(220,38,38,0.9)] leading-none select-none text-center" 
+                   style={{ 
+                     fontFamily: 'var(--font-broadcast)',
+                     letterSpacing: '0.2em',
+                     marginRight: '-0.2em',
+                   }}
+                 >
                    SOLD
                  </span>
                </div>
@@ -1080,7 +1095,7 @@ const DynamicSignature = ({ playerName = 'Player Signature' }) => {
 };
 
 // ── 5. SIGNING STAGE (OFFICIAL UNVEILING CEREMONY) ─────────────────────
-const SigningStage = ({ player, winningTeam, finalPrice, tournament, settings }) => {
+const SigningStage = ({ stage = 'SIGNING', player, winningTeam, finalPrice, tournament, settings }) => {
   const [viewMode, setViewMode] = useState('pitch'); // 'pitch' by default
   const [squadFormat, setSquadFormat] = useState(() => storageService.getSquadFormat());
   const [teamSquad, setTeamSquad] = useState([]);
@@ -1090,12 +1105,14 @@ const SigningStage = ({ player, winningTeam, finalPrice, tournament, settings })
 
   // Sound fanfare on signing unveiling
   useEffect(() => {
-    try {
-      soundEngine.playRevealSound();
-    } catch (e) {
-      console.error('Audio play error:', e);
+    if (stage === 'SIGNING') {
+      try {
+        soundEngine.playRevealSound();
+      } catch (e) {
+        console.error('Audio play error:', e);
+      }
     }
-  }, []);
+  }, [stage]);
 
   // Sync squad format live
   useEffect(() => {
@@ -1140,6 +1157,7 @@ const SigningStage = ({ player, winningTeam, finalPrice, tournament, settings })
     return (
       <div className="w-full h-full relative overflow-hidden bg-slate-950">
         <TacticalPitchSquad
+          stage={stage}
           team={winningTeam}
           squad={teamSquad}
           format={squadFormat}
@@ -1569,21 +1587,17 @@ export const PlayerCardShowcase = ({
         </motion.div>
       )}
 
-      {stage === 'SOLD' && player && (
-        <motion.div key={`sold-${player.id}`} className="w-full h-full" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-          <SoldStage
-            player={player}
-            winningTeam={winningTeam || leadingTeam}
-            finalPrice={finalPrice || currentBid}
-            tournament={tournament}
-            settings={settings}
-          />
-        </motion.div>
-      )}
-
-      {stage === 'SIGNING' && player && (
-        <motion.div key={`signing-${player.id}`} className="w-full h-full" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+      {(stage === 'SOLD' || stage === 'SIGNING') && player && (
+        <motion.div
+          key={`deal-showcase-${player.id}`}
+          className="w-full h-full"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.3 }}
+        >
           <SigningStage
+            stage={stage}
             player={player}
             winningTeam={winningTeam || leadingTeam}
             finalPrice={finalPrice || currentBid}

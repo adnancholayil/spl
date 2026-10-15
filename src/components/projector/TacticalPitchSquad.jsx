@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { EFootballCard } from '../common/EFootballCard';
 import { Shield, Users } from 'lucide-react';
 import { soundEngine } from '../../services/soundService';
+import { formatCurrency } from '../../utils/currency';
 
 /**
  * ─────────────────────────────────────────────────────────────────────────────
@@ -110,49 +111,46 @@ export const getPlayerRating = (player) => {
 
 /**
  * ─────────────────────────────────────────────────────────────────────────────
- * REAL-WORLD BROADCAST TEAM OVERALL CARD
- * Clean, minimalist, modern television broadcast card
+ * MINIMALIST SHARP-EDGED BROADCAST OVERALL CARD
+ * Clean, compact, sharp-edged typography with crisp hairline gold accent
  * ─────────────────────────────────────────────────────────────────────────────
  */
 const EAFCOvrBadge = ({ rating = 98 }) => {
   return (
     <div className="relative select-none flex items-center justify-center">
-      {/* Clean Glassmorphic Broadcast Card */}
+      {/* Clean Compact Sharp-Edged Glassmorphic Card */}
       <div 
-        className="w-[80px] h-[86px] rounded-2xl relative overflow-hidden flex flex-col items-center justify-between p-2.5 bg-slate-950/85 border border-white/20 backdrop-blur-xl shadow-[0_12px_32px_rgba(0,0,0,0.85)] group transition-all"
+        className="w-[64px] h-[72px] md:w-[68px] md:h-[76px] rounded-none relative overflow-hidden flex flex-col items-center justify-between p-2 bg-slate-950/90 border border-white/20 backdrop-blur-md shadow-2xl transition-all duration-200 hover:border-amber-400/60"
       >
-        {/* Top Metallic Gold Accent Line */}
-        <div className="absolute top-0 inset-x-0 h-[2.5px] bg-gradient-to-r from-transparent via-amber-400 to-transparent opacity-90" />
+        {/* Top Sharp Gold Line */}
+        <div className="absolute top-0 inset-x-0 h-[2.5px] bg-gradient-to-r from-amber-500 via-amber-300 to-amber-500 z-10" />
 
-        {/* Soft Glass Sheen Reflection */}
-        <div className="absolute -top-6 -right-6 w-16 h-16 bg-white/10 rounded-full blur-md pointer-events-none transform -rotate-45" />
-
-        {/* Top Label: OVR */}
+        {/* Minimal Clean Label: OVR */}
         <div className="z-10 mt-0.5">
           <span 
-            className="text-[10px] font-black uppercase tracking-[0.25em] text-amber-400 leading-none pl-[0.25em]"
+            className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] text-amber-400 leading-none pl-[0.1em]"
             style={{ fontFamily: 'var(--font-display)' }}
           >
             OVR
           </span>
         </div>
 
-        {/* Big Bold Clean Rating Number */}
+        {/* Bold Clean Rating Number */}
         <div className="z-10 flex items-center justify-center my-auto">
           <motion.span 
             key={rating}
-            initial={{ scale: 0.9, opacity: 0.8 }}
+            initial={{ scale: 0.95, opacity: 0.8 }}
             animate={{ scale: 1, opacity: 1 }}
-            transition={{ duration: 0.25, ease: 'easeOut' }}
-            className="text-4xl font-black text-white leading-none tracking-tight drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]"
+            transition={{ duration: 0.2 }}
+            className="text-3xl md:text-[32px] font-black text-white leading-none tracking-tight drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]"
             style={{ fontFamily: 'var(--font-broadcast)' }}
           >
             {rating}
           </motion.span>
         </div>
 
-        {/* Bottom Accent Pip */}
-        <div className="z-10 w-7 h-[2px] rounded-full bg-gradient-to-r from-transparent via-amber-400/80 to-transparent mb-0.5" />
+        {/* Bottom Minimal Hairline Pip */}
+        <div className="z-10 w-5 h-[1.5px] bg-amber-400/80 mb-0.5" />
       </div>
     </div>
   );
@@ -211,15 +209,18 @@ const EmptyPitchSlot = ({ slot }) => {
  * ─────────────────────────────────────────────────────────────────────────────
  */
 export const TacticalPitchSquad = ({
+  stage = 'SIGNING',
   team,
   squad = [],
   format = '11s',
   signingPlayer = null,
   isSigningAnimation = false,
+  finalPrice = 0,
   tournament = null,
 }) => {
   const currentFormation = FORMATIONS[format] || FORMATIONS['11s'];
   const teamColor = team?.primaryColor || '#22c55e';
+  const isSoldView = stage === 'SOLD';
 
   // Signing Animation State:
   // Starts at center in normal size, pauses briefly, then smoothly glides directly to target slot!
@@ -352,11 +353,9 @@ export const TacticalPitchSquad = ({
     };
   }, [currentFormation, squad, signingPlayer, isSlotted]);
 
-  // Smooth & Clean Signing Animation:
-  // 1. Starts at Center in Normal Size (showcase size: size="xl", 432x594)
-  // 2. Pauses 1.2s at center so card is clearly admired
-  // 3. Smoothly glides & scales directly down into target slot (1.35s duration)
-  // 4. Cleanly locks into formation slot, position pill fades in below
+  // Seamless SOLD ➔ SIGNING Animation Workflow:
+  // In SOLD view: card remains stationary at center with the SOLD celebration overlay and stamp.
+  // In SIGNING view: SOLD elements dissolve (700ms), then card smoothly glides & scales into formation slot (1.35s).
   useEffect(() => {
     if (!isSigningAnimation || !signingPlayer) {
       setIsMoving(false);
@@ -364,15 +363,22 @@ export const TacticalPitchSquad = ({
       return;
     }
 
+    if (isSoldView) {
+      setIsSlotted(false);
+      setIsMoving(false);
+      return;
+    }
+
+    // Entering SIGNING view:
+    // Keep stationary at center for 700ms to allow SOLD stamp & overlay to dissolve cleanly
     setIsSlotted(false);
     setIsMoving(false);
 
-    // After 1.2s at center, trigger smooth glide to target slot
     const tMove = setTimeout(() => {
       setIsMoving(true);
-    }, 1200);
+    }, 700);
 
-    // When card arrives at slot (1.2s pause + 1.35s flight = 2.55s), lock cleanly into slot
+    // After flight arrives (700ms + 1350ms = 2050ms), lock card cleanly into slot
     const tLock = setTimeout(() => {
       setIsSlotted(true);
       try {
@@ -380,24 +386,24 @@ export const TacticalPitchSquad = ({
       } catch (e) {
         console.error(e);
       }
-    }, 2550);
+    }, 2050);
 
     return () => {
       clearTimeout(tMove);
       clearTimeout(tLock);
     };
-  }, [isSigningAnimation, signingPlayer?.id]);
+  }, [isSigningAnimation, signingPlayer?.id, isSoldView]);
 
   // Replay helper function
   const replayAnimation = () => {
-    if (!isSigningAnimation || !signingPlayer) return;
+    if (!isSigningAnimation || !signingPlayer || isSoldView) return;
     setIsSlotted(false);
     setIsMoving(false);
-    setTimeout(() => setIsMoving(true), 1200);
+    setTimeout(() => setIsMoving(true), 600);
     setTimeout(() => {
       setIsSlotted(true);
       try { soundEngine.playSoldFanfare(); } catch (err) {}
-    }, 2550);
+    }, 1950);
   };
 
   // Replay shortcut on 'r' / 'R' key for testing or re-showcasing
@@ -409,7 +415,7 @@ export const TacticalPitchSquad = ({
     };
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
-  }, [isSigningAnimation, signingPlayer]);
+  }, [isSigningAnimation, signingPlayer, isSoldView]);
 
   return (
     <div 
@@ -425,26 +431,30 @@ export const TacticalPitchSquad = ({
       />
 
       {/* ── 2. CLEAN TOP HEADER (LEFT: LOGO + NAME + FORMATION | RIGHT: OVR ONLY) ── */}
-      <div className="absolute top-0 inset-x-0 z-30 px-8 py-4 flex items-center justify-between">
-        
-        {/* Left: Club Crest + Team Name (Clean, refined size) + Formation */}
-        <div className="flex items-center gap-3.5">
-          <div className="w-16 h-16 flex items-center justify-center shrink-0">
+      <motion.div 
+        animate={{ opacity: isSoldView ? 0 : 1, y: isSoldView ? -15 : 0 }}
+        transition={{ duration: 0.4, ease: 'easeOut' }}
+        className="absolute top-0 inset-x-0 z-30 px-8 py-4 flex items-center justify-between"
+        style={{ pointerEvents: isSoldView ? 'none' : 'auto' }}
+      >
+        {/* Left: Club Crest + Team Name + Formation (Balanced broadcast size) */}
+        <div className="flex items-center gap-3.5 md:gap-4">
+          <div className="w-[72px] h-[72px] md:w-[76px] md:h-[76px] flex items-center justify-center shrink-0">
             {team?.logoUrl ? (
               <img src={team.logoUrl} alt={team.name} className="w-full h-full object-contain drop-shadow-[0_4px_12px_rgba(0,0,0,0.85)]" />
             ) : (
-              <Shield className="w-14 h-14 drop-shadow-[0_4px_12px_rgba(0,0,0,0.85)]" style={{ color: teamColor }} />
+              <Shield className="w-14 h-14 md:w-16 md:h-16 drop-shadow-[0_4px_12px_rgba(0,0,0,0.85)]" style={{ color: teamColor }} />
             )}
           </div>
           <div className="flex flex-col justify-center">
             <h1 
-              className="text-2xl md:text-3xl font-normal uppercase text-white tracking-wider leading-none drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]"
+              className="text-2xl md:text-3xl lg:text-[32px] font-normal uppercase text-white tracking-wider leading-none drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]"
               style={{ fontFamily: 'var(--font-broadcast)', fontWeight: 500 }}
             >
               {team?.name || 'MY TEAM'}
             </h1>
             <div 
-              className="text-sm md:text-base font-bold uppercase tracking-wider text-slate-300 leading-none mt-1 drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)]"
+              className="text-xs md:text-sm lg:text-[14px] font-bold uppercase tracking-[0.16em] text-slate-300 leading-none mt-1 drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)]"
               style={{ fontFamily: 'var(--font-display)' }}
             >
               {currentFormation.label}
@@ -462,12 +472,17 @@ export const TacticalPitchSquad = ({
             att={attRating}
             mid={midRating}
             def={defRating}
+            teamColor={teamColor}
           />
         </div>
-      </div>
+      </motion.div>
 
       {/* ── 3. FORMATION SLOTS ON FIELD ── */}
-      <div className="absolute inset-0 z-10 pointer-events-none">
+      <motion.div 
+        animate={{ opacity: isSoldView ? 0 : 1 }}
+        transition={{ duration: 0.4, ease: 'easeOut' }}
+        className="absolute inset-0 z-10 pointer-events-none"
+      >
         {currentFormation.slots.map(slot => {
           const isTarget = isSigningAnimation && targetSlotObj?.id === slot.id;
           const playerInSlot = assignedSlots[slot.id];
@@ -498,7 +513,125 @@ export const TacticalPitchSquad = ({
             </div>
           );
         })}
-      </div>
+      </motion.div>
+
+      {/* ── SOLD CELEBRATION OVERLAY (Smoothly dissolves when entering SIGNING) ── */}
+      <AnimatePresence>
+        {isSoldView && (
+          <motion.div
+            key="sold-celebration-container"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0, transition: { duration: 0.35, ease: 'easeIn' } }}
+            className="absolute inset-0 z-30 pointer-events-none select-none"
+          >
+            {/* Massive Team Logo Ambient Background Aura */}
+            {team?.logoUrl && (
+              <div className="absolute inset-0 flex items-center justify-center opacity-[0.08] mix-blend-screen pointer-events-none z-0">
+                <motion.img
+                  initial={{ scale: 0.6, opacity: 0 }}
+                  animate={{ scale: 1.6, opacity: 1 }}
+                  transition={{ duration: 1.5, ease: 'easeOut' }}
+                  src={team.logoUrl}
+                  className="w-[850px] h-[850px] object-contain blur-[2px]"
+                />
+              </div>
+            )}
+
+            {/* Ambient Color Glow */}
+            <div
+              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] blur-[160px] -z-10 rounded-full opacity-25 pointer-events-none"
+              style={{ backgroundColor: teamColor }}
+            />
+
+            {/* TOP HEADER: OFFICIAL TRANSFER TO [TEAM] */}
+            <motion.div
+              initial={{ y: -50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: -40, opacity: 0, transition: { duration: 0.35, ease: 'easeIn' } }}
+              transition={{ delay: 0.1, duration: 0.6 }}
+              className="absolute top-6 md:top-8 inset-x-0 flex flex-col items-center pointer-events-none text-center px-4 z-20"
+            >
+              <div
+                className="text-xs md:text-sm tracking-[0.45em] text-amber-400 uppercase mb-1.5 font-black drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]"
+                style={{ fontFamily: 'var(--font-display)' }}
+              >
+                Official Transfer To
+              </div>
+              <div
+                className="text-4xl md:text-6xl lg:text-7xl font-black uppercase tracking-wider drop-shadow-[0_4px_20px_rgba(0,0,0,0.95)] leading-none text-white"
+                style={{ fontFamily: 'var(--font-broadcast)' }}
+              >
+                {team?.name || 'NEW CLUB'}
+              </div>
+            </motion.div>
+
+            {/* LEFT: FINAL TRANSFER FEE (Vertically centered at 50% alongside card) */}
+            <div
+              style={{
+                position: 'absolute',
+                left: 'calc(50% - 370px)',
+                top: '50%',
+                transform: 'translate(-50%, -50%)',
+              }}
+              className="pointer-events-none z-30 select-none flex flex-col items-center justify-center max-w-[420px]"
+            >
+              <motion.div
+                initial={{ x: -30, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                exit={{ x: -30, opacity: 0, transition: { duration: 0.35, ease: 'easeIn' } }}
+                transition={{ delay: 0.2, type: 'spring', stiffness: 90, damping: 18 }}
+                className="flex flex-col items-center text-center"
+              >
+                <div
+                  className="text-xs md:text-sm font-black text-amber-400/90 uppercase tracking-[0.35em] mb-2 drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]"
+                  style={{ fontFamily: 'var(--font-display)' }}
+                >
+                  Final Transfer Fee
+                </div>
+                <div
+                  className="text-6xl md:text-7xl lg:text-8xl xl:text-[92px] font-black text-white tracking-normal drop-shadow-[0_20px_50px_rgba(0,0,0,0.95)] leading-none whitespace-nowrap"
+                  style={{ fontFamily: 'var(--font-broadcast)' }}
+                >
+                  {formatCurrency(finalPrice, tournament?.currency)}
+                </div>
+              </motion.div>
+            </div>
+
+            {/* RIGHT: CLUB CREST (Vertically centered at 50%, refined balanced size) */}
+            <div
+              style={{
+                position: 'absolute',
+                left: 'calc(50% + 350px)',
+                top: '50%',
+                transform: 'translate(-50%, -50%)',
+              }}
+              className="pointer-events-none z-30 select-none flex items-center justify-center"
+            >
+              <motion.div
+                initial={{ x: 30, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                exit={{ x: 30, opacity: 0, transition: { duration: 0.35, ease: 'easeIn' } }}
+                transition={{ delay: 0.2, type: 'spring', stiffness: 90, damping: 18 }}
+                className="flex items-center justify-center"
+              >
+                {team?.logoUrl ? (
+                  <img
+                    src={team.logoUrl}
+                    alt={team.name}
+                    className="w-28 h-28 md:w-32 md:h-32 lg:w-36 lg:h-36 xl:w-40 xl:h-40 object-contain drop-shadow-[0_20px_45px_rgba(0,0,0,0.9)]"
+                  />
+                ) : (
+                  <Shield
+                    className="w-28 h-28 md:w-32 md:h-32 lg:w-36 lg:h-36 xl:w-40 xl:h-40 drop-shadow-[0_20px_45px_rgba(0,0,0,0.9)]"
+                    style={{ color: teamColor }}
+                  />
+                )}
+              </motion.div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ── 4. SMOOTH SIGNING CARD: STARTS AT CENTER IN CLEAN COMPACT SIZE -> GOES TO SQUAD POSITION ── */}
       <AnimatePresence>
@@ -520,7 +653,7 @@ export const TacticalPitchSquad = ({
                     top: `${targetSlotObj.y}%`,
                     x: '-50%',
                     y: '-50%',
-                    scale: 0.65, // Scales 256x352 down to exact 166.4x228.8 pitch card size (0.52 / 0.80)
+                    scale: 0.52 / 1.35, // Scales 432x594 (size="xl") down to exact 166.4x228.8 pitch card size (size="pitch")
                     opacity: 1,
                   }
                 : {
@@ -528,7 +661,7 @@ export const TacticalPitchSquad = ({
                     top: '50%',
                     x: '-50%',
                     y: '-50%',
-                    scale: 1, // Compact, elegant center size
+                    scale: 1, // Grand showcase size matching the old SOLD and SIGNING card size (size="xl")
                     opacity: 1,
                   }
             }
@@ -537,7 +670,7 @@ export const TacticalPitchSquad = ({
               transition: { duration: 0.08 }
             }}
             transition={{
-              duration: 1.3,
+              duration: 1.35,
               ease: [0.22, 1, 0.36, 1], // Buttery smooth natural deceleration
             }}
             style={{
@@ -546,21 +679,64 @@ export const TacticalPitchSquad = ({
             }}
             className="z-40 pointer-events-none"
           >
-            {/* The Authentic Player Card in Compact First View Size (256x352, no bg shadow) */}
-            <EFootballCard
-              player={{ ...signingPlayer, clubLogo: team?.logoUrl || signingPlayer.clubLogo }}
-              size={0.80}
-              disableShadow={true}
-            />
+            {/* The Authentic Player Card in Grand Showcase Size (size="xl", matching old view) */}
+            <div className="relative">
+              <EFootballCard
+                player={{ ...signingPlayer, clubLogo: team?.logoUrl || signingPlayer.clubLogo }}
+                size="xl"
+                highlight={true}
+                disableShadow={true}
+              />
+
+              {/* EPIC SOLD STAMP BANNER (Visible on card during SOLD stage, dissolves upon entering SIGNING) */}
+              <AnimatePresence>
+                {isSoldView && (
+                  <motion.div
+                    key="sold-stamp-banner"
+                    initial={{ scale: 2.2, opacity: 0, rotate: -8, x: '-50%', y: '-50%' }}
+                    animate={{ scale: 1, opacity: 1, rotate: -8, x: '-50%', y: '-50%' }}
+                    exit={{ scale: 0.6, opacity: 0, x: '-50%', y: '-50%', transition: { duration: 0.3, ease: 'easeIn' } }}
+                    transition={{ type: 'spring', stiffness: 160, damping: 13 }}
+                    style={{
+                      position: 'absolute',
+                      top: '55.5%',
+                      left: '50%',
+                      transformOrigin: 'center center',
+                    }}
+                    className="pointer-events-none z-50 flex items-center justify-center"
+                  >
+                    {/* Double-bordered Official Auction Stamp Badge */}
+                    <div 
+                      className="w-[330px] h-[64px] p-1 bg-gradient-to-r from-red-950/95 via-black/95 to-red-950/95 backdrop-blur-md border-[2.5px] border-red-500 rounded-sm flex items-center justify-center shadow-[0_0_28px_rgba(220,38,38,0.7),0_15px_35px_rgba(0,0,0,0.95)]"
+                    >
+                      <div className="w-full h-full border border-red-400/40 rounded-[2px] flex items-center justify-center px-4">
+                        <span 
+                          className="text-white font-black text-[50px] uppercase drop-shadow-[0_0_14px_rgba(239,68,68,0.95)] leading-none select-none text-center" 
+                          style={{ 
+                            fontFamily: 'var(--font-broadcast)',
+                            letterSpacing: '0.22em',
+                            marginRight: '-0.22em',
+                          }}
+                        >
+                          SOLD
+                        </span>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
 
       {/* ── 5. RIGHT SIDEBAR: SUBSTITUTES / BENCH CARDS (TOP TO BOTTOM) ── */}
       {benchPlayers.length > 0 && (
-        <div 
+        <motion.div 
+          animate={{ opacity: isSoldView ? 0 : 1, x: isSoldView ? 30 : 0 }}
+          transition={{ duration: 0.4, ease: 'easeOut' }}
           className="absolute top-[112px] right-6 z-30 flex flex-col items-center gap-3.5 max-h-[calc(100vh-130px)] overflow-y-auto pointer-events-auto py-1"
-          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', pointerEvents: isSoldView ? 'none' : 'auto' }}
         >
           {/* Section Header Pill */}
           <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-950/85 border border-white/20 backdrop-blur-md shadow-xl select-none">
@@ -600,56 +776,61 @@ export const TacticalPitchSquad = ({
               </motion.div>
             ))}
           </div>
-        </div>
+        </motion.div>
       )}
 
-      {/* ── 6. LEFT BOTTOM: BROADCAST MANAGER CARD (Rendered ONLY when manager image is available) ── */}
+      {/* ── 6. LEFT BOTTOM: MINIMAL & CLEAN SHARP-EDGED MANAGER CARD ── */}
       {hasManagerPhoto && (
-        <div className="absolute bottom-6 left-8 z-30 select-none pointer-events-auto">
+        <motion.div 
+          animate={{ opacity: isSoldView ? 0 : 1, y: isSoldView ? 20 : 0 }}
+          transition={{ duration: 0.4, ease: 'easeOut' }}
+          className="absolute bottom-6 left-8 z-30 select-none pointer-events-auto"
+          style={{ pointerEvents: isSoldView ? 'none' : 'auto' }}
+        >
           <div 
-            className="w-[170px] h-[248px] md:w-[185px] md:h-[270px] rounded-2xl relative overflow-hidden flex flex-col justify-between bg-slate-950/90 border border-white/20 backdrop-blur-xl shadow-[0_20px_45px_rgba(0,0,0,0.9)] group transition-all duration-300 hover:scale-[1.03] hover:border-amber-400/50"
+            className="w-[170px] h-[252px] md:w-[185px] md:h-[272px] rounded-none relative overflow-hidden flex flex-col justify-between bg-slate-950/90 border border-white/20 backdrop-blur-md shadow-2xl transition-all duration-300 hover:border-amber-400/60"
           >
-            {/* Top Gold Accent Bar */}
-            <div className="absolute top-0 inset-x-0 h-[3px] bg-gradient-to-r from-transparent via-amber-400 to-transparent opacity-95 z-20" />
+            {/* Top Sharp Gold Line */}
+            <div className="absolute top-0 inset-x-0 h-[3px] bg-gradient-to-r from-amber-500 via-amber-300 to-amber-500 z-20" />
 
-            {/* Manager Photo */}
+            {/* Manager Photo Area */}
             <div className="relative w-full flex-1 overflow-hidden bg-gradient-to-b from-slate-900 to-slate-950 flex items-center justify-center">
               <img 
                 src={team.managerPhotoUrl} 
                 alt={team.managerName || 'Manager'} 
                 onError={() => setManagerImgFailed(true)}
-                className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
+                className="w-full h-full object-cover object-top transition-transform duration-300 hover:scale-105"
               />
 
-              {/* Subtle Bottom Gradient Fade into Info Plate */}
-              <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-slate-950 via-slate-950/85 to-transparent pointer-events-none z-10" />
+              {/* Clean Bottom Gradient Fade into Info Plate */}
+              <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-slate-950 via-slate-950/80 to-transparent pointer-events-none z-10" />
 
-              {/* Club Logo Badge on Top-Left */}
+              {/* Clean Floating Club Logo on Top-Left */}
               {team?.logoUrl && (
-                <div className="absolute top-3 left-3 z-20 w-8 h-8 rounded-full bg-black/70 border border-white/25 p-1 flex items-center justify-center shadow-lg">
+                <div className="absolute top-3 left-3 z-20 w-8 h-8 flex items-center justify-center drop-shadow-[0_4px_10px_rgba(0,0,0,0.9)]">
                   <img src={team.logoUrl} alt={team.name} className="w-full h-full object-contain" />
                 </div>
               )}
             </div>
 
-            {/* Lower Third Broadcast Info Plate */}
-            <div className="z-20 px-3.5 py-2.5 bg-slate-950/95 border-t border-white/10 flex flex-col items-center text-center">
+            {/* Clean Minimalist Lower-Third Nameplate */}
+            <div className="z-20 px-3 py-2.5 bg-slate-950/95 border-t border-white/10 flex flex-col items-center text-center">
               <span 
-                className="text-[10px] md:text-[11px] font-black uppercase tracking-[0.25em] text-amber-400 leading-none pl-[0.25em]"
+                className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.25em] text-amber-400 leading-none pl-[0.25em]"
                 style={{ fontFamily: 'var(--font-display)' }}
               >
                 MANAGER
               </span>
               <div 
-                className="text-sm md:text-base font-black uppercase text-white tracking-wider leading-tight mt-1 truncate max-w-full drop-shadow-[0_2px_5px_rgba(0,0,0,0.9)]"
-                style={{ fontFamily: 'var(--font-display)' }}
+                className="text-sm md:text-base font-black uppercase text-white tracking-wider leading-tight mt-1 truncate max-w-full drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]"
+                style={{ fontFamily: 'var(--font-broadcast)' }}
                 title={team?.managerName || 'HEAD COACH'}
               >
                 {team?.managerName || 'HEAD COACH'}
               </div>
             </div>
           </div>
-        </div>
+        </motion.div>
       )}
 
     </div>

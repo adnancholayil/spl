@@ -173,14 +173,23 @@ export const ProjectorScreen = () => {
                   <PlayerCardShowcase stage="BIDDING" player={activePlayer} tournament={tournament} teams={teams} currentBid={auctionState?.currentBid} leadingTeam={leadingTeam} bidHistory={auctionState?.bidHistory} settings={projectorSettings} />
                 </motion.div>
               )}
-              {stage === 'SOLD' && activePlayer && (
-                <motion.div key={`sold-${activePlayer.id}`} className="w-full h-full absolute inset-0" initial={{ x: -1000, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ opacity: 0, scale: 0.95 }} transition={{ type: 'spring', stiffness: 150, damping: 20 }}>
-                  <PlayerCardShowcase stage="SOLD" player={activePlayer} tournament={tournament} winningTeam={winningTeam} finalPrice={finalPrice} settings={projectorSettings} />
-                </motion.div>
-              )}
-              {stage === 'SIGNING' && activePlayer && (
-                <motion.div key={`signing-${activePlayer.id}`} className="w-full h-full absolute inset-0" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.05 }} transition={{ duration: 0.5, ease: 'easeOut' }}>
-                  <PlayerCardShowcase stage="SIGNING" player={activePlayer} tournament={tournament} winningTeam={winningTeam} finalPrice={finalPrice} settings={projectorSettings} />
+              {(stage === 'SOLD' || stage === 'SIGNING') && activePlayer && (
+                <motion.div
+                  key={`deal-${activePlayer.id}`}
+                  className="w-full h-full absolute inset-0"
+                  initial={{ opacity: 0, scale: 0.98 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ duration: 0.35, ease: 'easeOut' }}
+                >
+                  <PlayerCardShowcase
+                    stage={stage}
+                    player={activePlayer}
+                    tournament={tournament}
+                    winningTeam={winningTeam}
+                    finalPrice={finalPrice}
+                    settings={projectorSettings}
+                  />
                 </motion.div>
               )}
               {stage === 'UNSOLD' && activePlayer && (
