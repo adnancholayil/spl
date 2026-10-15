@@ -19,20 +19,20 @@ export const FORMATIONS = {
     totalSlots: 11,
     slots: [
       // Attackers (Top Row in perspective)
-      { id: 'st',  label: 'ST',  role: 'ST',  x: 50, y: 16 },
-      { id: 'lw',  label: 'LW',  role: 'LW',  x: 30, y: 20 },
-      { id: 'rw',  label: 'RW',  role: 'RW',  x: 70, y: 20 },
+      { id: 'st', label: 'ST', role: 'ST', x: 50, y: 16 },
+      { id: 'lw', label: 'LW', role: 'LW', x: 30, y: 20 },
+      { id: 'rw', label: 'RW', role: 'RW', x: 70, y: 20 },
       // Midfielders (Middle Row)
       { id: 'cam', label: 'CAM', role: 'CAM', x: 50, y: 39 },
-      { id: 'lcm', label: 'CM',  role: 'CM',  x: 29, y: 44 },
-      { id: 'rcm', label: 'CM',  role: 'CM',  x: 71, y: 44 },
+      { id: 'lcm', label: 'CM', role: 'CM', x: 29, y: 44 },
+      { id: 'rcm', label: 'CM', role: 'CM', x: 71, y: 44 },
       // Defenders (Back Row)
-      { id: 'lcb', label: 'CB',  role: 'CB',  x: 39, y: 68 },
-      { id: 'rcb', label: 'CB',  role: 'CB',  x: 61, y: 68 },
-      { id: 'lb',  label: 'LB',  role: 'LB',  x: 18, y: 65 },
-      { id: 'rb',  label: 'RB',  role: 'RB',  x: 82, y: 65 },
+      { id: 'lcb', label: 'CB', role: 'CB', x: 39, y: 68 },
+      { id: 'rcb', label: 'CB', role: 'CB', x: 61, y: 68 },
+      { id: 'lb', label: 'LB', role: 'LB', x: 18, y: 65 },
+      { id: 'rb', label: 'RB', role: 'RB', x: 82, y: 65 },
       // Goalkeeper (Bottom)
-      { id: 'gk',  label: 'GK',  role: 'GK',  x: 50, y: 84 },
+      { id: 'gk', label: 'GK', role: 'GK', x: 50, y: 84 },
     ]
   },
   '7s': {
@@ -42,17 +42,17 @@ export const FORMATIONS = {
     totalSlots: 7,
     slots: [
       // Attacker (Top Row)
-      { id: 'st',  label: 'ST',  role: 'ST',  x: 50, y: 17 },
+      { id: 'st', label: 'ST', role: 'ST', x: 50, y: 17 },
       // Upper Midfielders (Row 2)
-      { id: 'lcm', label: 'LCM', role: 'CM',  x: 28, y: 35 },
-      { id: 'rcm', label: 'RCM', role: 'CM',  x: 72, y: 35 },
+      { id: 'lcm', label: 'LCM', role: 'CM', x: 28, y: 35 },
+      { id: 'rcm', label: 'RCM', role: 'CM', x: 72, y: 35 },
       // Central Anchor / Holding Midfielder (Row 3)
       { id: 'cdm', label: 'CDM', role: 'CDM', x: 50, y: 52 },
       // Defenders (Row 4 - open central corridor)
-      { id: 'lcb', label: 'LCB', role: 'CB',  x: 30, y: 69 },
-      { id: 'rcb', label: 'RCB', role: 'CB',  x: 70, y: 69 },
+      { id: 'lcb', label: 'LCB', role: 'CB', x: 30, y: 69 },
+      { id: 'rcb', label: 'RCB', role: 'CB', x: 70, y: 69 },
       // Goalkeeper (Bottom Row - 100% visible and unblocked)
-      { id: 'gk',  label: 'GK',  role: 'GK',  x: 50, y: 85 },
+      { id: 'gk', label: 'GK', role: 'GK', x: 50, y: 85 },
     ]
   },
   '5s': {
@@ -62,13 +62,13 @@ export const FORMATIONS = {
     totalSlots: 5,
     slots: [
       // Attackers
-      { id: 'ls',  label: 'LS',  role: 'ST',  x: 36, y: 23 },
-      { id: 'rs',  label: 'RS',  role: 'ST',  x: 64, y: 23 },
+      { id: 'ls', label: 'LS', role: 'ST', x: 36, y: 23 },
+      { id: 'rs', label: 'RS', role: 'ST', x: 64, y: 23 },
       // Defenders
-      { id: 'lcb', label: 'LCB', role: 'CB',  x: 34, y: 64 },
-      { id: 'rcb', label: 'RCB', role: 'CB',  x: 66, y: 64 },
+      { id: 'lcb', label: 'LCB', role: 'CB', x: 34, y: 64 },
+      { id: 'rcb', label: 'RCB', role: 'CB', x: 66, y: 64 },
       // Goalkeeper
-      { id: 'gk',  label: 'GK',  role: 'GK',  x: 50, y: 84 },
+      { id: 'gk', label: 'GK', role: 'GK', x: 50, y: 84 },
     ]
   }
 };
@@ -119,7 +119,7 @@ const EAFCOvrBadge = ({ rating = 98 }) => {
   return (
     <div className="relative select-none flex items-center justify-center">
       {/* Clean Compact Sharp-Edged Glassmorphic Card */}
-      <div 
+      <div
         className="w-[64px] h-[72px] md:w-[68px] md:h-[76px] rounded-none relative overflow-hidden flex flex-col items-center justify-between p-2 bg-slate-950/90 border border-white/20 backdrop-blur-md shadow-2xl transition-all duration-200 hover:border-amber-400/60"
       >
         {/* Top Sharp Gold Line */}
@@ -127,7 +127,7 @@ const EAFCOvrBadge = ({ rating = 98 }) => {
 
         {/* Minimal Clean Label: OVR */}
         <div className="z-10 mt-0.5">
-          <span 
+          <span
             className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] text-amber-400 leading-none pl-[0.1em]"
             style={{ fontFamily: 'var(--font-display)' }}
           >
@@ -137,7 +137,7 @@ const EAFCOvrBadge = ({ rating = 98 }) => {
 
         {/* Bold Clean Rating Number */}
         <div className="z-10 flex items-center justify-center my-auto">
-          <motion.span 
+          <motion.span
             key={rating}
             initial={{ scale: 0.95, opacity: 0.8 }}
             animate={{ scale: 1, opacity: 1 }}
@@ -170,7 +170,7 @@ const SlottedPlayerCard = ({ player, slot, isNewlySlotted = false }) => {
       <EFootballCard player={player} size="pitch" disableShadow={true} />
 
       {/* Tactical Position Pill Badge */}
-      <motion.div 
+      <motion.div
         initial={isNewlySlotted ? { opacity: 0, y: -4 } : false}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35, ease: 'easeOut' }}
@@ -193,7 +193,7 @@ const EmptyPitchSlot = ({ slot }) => {
   return (
     <div className="flex items-center justify-center select-none pointer-events-none">
       {/* Position Pill */}
-      <div 
+      <div
         className="px-3 py-0.5 rounded-full bg-slate-950/80 border border-white/20 text-[10px] font-black text-white/75 uppercase tracking-wider shadow-md whitespace-nowrap"
         style={{ fontFamily: 'var(--font-display)' }}
       >
@@ -234,9 +234,9 @@ export const TacticalPitchSquad = ({
   }, [team?.managerPhotoUrl]);
 
   const hasManagerPhoto = Boolean(
-    team?.managerPhotoUrl && 
-    typeof team.managerPhotoUrl === 'string' && 
-    team.managerPhotoUrl.trim() !== '' && 
+    team?.managerPhotoUrl &&
+    typeof team.managerPhotoUrl === 'string' &&
+    team.managerPhotoUrl.trim() !== '' &&
     !managerImgFailed
   );
 
@@ -402,7 +402,7 @@ export const TacticalPitchSquad = ({
     setTimeout(() => setIsMoving(true), 600);
     setTimeout(() => {
       setIsSlotted(true);
-      try { soundEngine.playSoldFanfare(); } catch (err) {}
+      try { soundEngine.playSoldFanfare(); } catch (err) { }
     }, 1950);
   };
 
@@ -418,20 +418,20 @@ export const TacticalPitchSquad = ({
   }, [isSigningAnimation, signingPlayer, isSoldView]);
 
   return (
-    <div 
+    <div
       onClick={replayAnimation}
       className="w-full h-full relative overflow-hidden bg-slate-950 text-white select-none cursor-default"
     >
-      
+
       {/* ── 1. FULL-SCREEN 3D STADIUM PITCH BACKGROUND ── */}
-      <img 
-        src="/assets/tactical_pitch_3d.jpg" 
+      <img
+        src="/assets/tactical_pitch_3d.jpg"
         alt="3D Tactical Stadium Pitch"
         className="absolute inset-0 w-full h-full object-cover z-0 pointer-events-none"
       />
 
       {/* ── 2. CLEAN TOP HEADER (LEFT: LOGO + NAME + FORMATION | RIGHT: OVR ONLY) ── */}
-      <motion.div 
+      <motion.div
         animate={{ opacity: isSoldView ? 0 : 1, y: isSoldView ? -15 : 0 }}
         transition={{ duration: 0.4, ease: 'easeOut' }}
         className="absolute top-0 inset-x-0 z-30 px-8 py-4 flex items-center justify-between"
@@ -447,13 +447,13 @@ export const TacticalPitchSquad = ({
             )}
           </div>
           <div className="flex flex-col justify-center">
-            <h1 
+            <h1
               className="text-2xl md:text-3xl lg:text-[32px] font-normal uppercase text-white tracking-wider leading-none drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]"
               style={{ fontFamily: 'var(--font-broadcast)', fontWeight: 500 }}
             >
               {team?.name || 'MY TEAM'}
             </h1>
-            <div 
+            <div
               className="text-xs md:text-sm lg:text-[14px] font-bold uppercase tracking-[0.16em] text-slate-300 leading-none mt-1 drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)]"
               style={{ fontFamily: 'var(--font-display)' }}
             >
@@ -467,8 +467,8 @@ export const TacticalPitchSquad = ({
 
         {/* Right: OVERALL RATING CARD */}
         <div className="flex items-center">
-          <EAFCOvrBadge 
-            rating={totalOvr} 
+          <EAFCOvrBadge
+            rating={totalOvr}
             att={attRating}
             mid={midRating}
             def={defRating}
@@ -478,7 +478,7 @@ export const TacticalPitchSquad = ({
       </motion.div>
 
       {/* ── 3. FORMATION SLOTS ON FIELD ── */}
-      <motion.div 
+      <motion.div
         animate={{ opacity: isSoldView ? 0 : 1 }}
         transition={{ duration: 0.4, ease: 'easeOut' }}
         className="absolute inset-0 z-10 pointer-events-none"
@@ -649,21 +649,21 @@ export const TacticalPitchSquad = ({
             animate={
               isMoving
                 ? {
-                    left: `${targetSlotObj.x}%`,
-                    top: `${targetSlotObj.y}%`,
-                    x: '-50%',
-                    y: '-50%',
-                    scale: 0.52 / 1.35, // Scales 432x594 (size="xl") down to exact 166.4x228.8 pitch card size (size="pitch")
-                    opacity: 1,
-                  }
+                  left: `${targetSlotObj.x}%`,
+                  top: `${targetSlotObj.y}%`,
+                  x: '-50%',
+                  y: '-50%',
+                  scale: 0.52 / 1.35, // Scales 432x594 (size="xl") down to exact 166.4x228.8 pitch card size (size="pitch")
+                  opacity: 1,
+                }
                 : {
-                    left: '50%',
-                    top: '50%',
-                    x: '-50%',
-                    y: '-50%',
-                    scale: 1, // Grand showcase size matching the old SOLD and SIGNING card size (size="xl")
-                    opacity: 1,
-                  }
+                  left: '50%',
+                  top: '50%',
+                  x: '-50%',
+                  y: '-50%',
+                  scale: 1, // Grand showcase size matching the old SOLD and SIGNING card size (size="xl")
+                  opacity: 1,
+                }
             }
             exit={{
               opacity: 0,
@@ -693,34 +693,32 @@ export const TacticalPitchSquad = ({
                 {isSoldView && (
                   <motion.div
                     key="sold-stamp-banner"
-                    initial={{ scale: 2.2, opacity: 0, rotate: -8, x: '-50%', y: '-50%' }}
-                    animate={{ scale: 1, opacity: 1, rotate: -8, x: '-50%', y: '-50%' }}
+                    initial={{ scale: 1.8, opacity: 0, x: '-50%', y: '-50%' }}
+                    animate={{ scale: 1, opacity: 1, x: '-50%', y: '-50%' }}
                     exit={{ scale: 0.6, opacity: 0, x: '-50%', y: '-50%', transition: { duration: 0.3, ease: 'easeIn' } }}
-                    transition={{ type: 'spring', stiffness: 160, damping: 13 }}
+                    transition={{ type: 'spring', stiffness: 180, damping: 15 }}
                     style={{
                       position: 'absolute',
-                      top: '55.5%',
+                      top: '55%',
                       left: '50%',
                       transformOrigin: 'center center',
                     }}
-                    className="pointer-events-none z-50 flex items-center justify-center"
+                    className="pointer-events-none z-50 flex items-center justify-center w-full"
                   >
-                    {/* Double-bordered Official Auction Stamp Badge */}
-                    <div 
-                      className="w-[330px] h-[64px] p-1 bg-gradient-to-r from-red-950/95 via-black/95 to-red-950/95 backdrop-blur-md border-[2.5px] border-red-500 rounded-sm flex items-center justify-center shadow-[0_0_28px_rgba(220,38,38,0.7),0_15px_35px_rgba(0,0,0,0.95)]"
+                    <div
+                      style={{ width: '391.5px' }}
+                      className="h-[74px] bg-black/80 backdrop-blur-md border-y-[3.5px] border-red-600 flex items-center justify-center shadow-[0_0_25px_rgba(220,38,38,0.7),0_15px_35px_rgba(0,0,0,0.95)]"
                     >
-                      <div className="w-full h-full border border-red-400/40 rounded-[2px] flex items-center justify-center px-4">
-                        <span 
-                          className="text-white font-black text-[50px] uppercase drop-shadow-[0_0_14px_rgba(239,68,68,0.95)] leading-none select-none text-center" 
-                          style={{ 
-                            fontFamily: 'var(--font-broadcast)',
-                            letterSpacing: '0.22em',
-                            marginRight: '-0.22em',
-                          }}
-                        >
-                          SOLD
-                        </span>
-                      </div>
+                      <span
+                        className="text-white font-black text-[64px] uppercase drop-shadow-[0_0_15px_rgba(220,38,38,0.95)] leading-none select-none text-center"
+                        style={{
+                          fontFamily: 'var(--font-broadcast)',
+                          letterSpacing: '0.22em',
+                          marginRight: '-0.22em',
+                        }}
+                      >
+                        SOLD
+                      </span>
                     </div>
                   </motion.div>
                 )}
@@ -732,7 +730,7 @@ export const TacticalPitchSquad = ({
 
       {/* ── 5. RIGHT SIDEBAR: SUBSTITUTES / BENCH CARDS (TOP TO BOTTOM) ── */}
       {benchPlayers.length > 0 && (
-        <motion.div 
+        <motion.div
           animate={{ opacity: isSoldView ? 0 : 1, x: isSoldView ? 30 : 0 }}
           transition={{ duration: 0.4, ease: 'easeOut' }}
           className="absolute top-[112px] right-6 z-30 flex flex-col items-center gap-3.5 max-h-[calc(100vh-130px)] overflow-y-auto pointer-events-auto py-1"
@@ -741,7 +739,7 @@ export const TacticalPitchSquad = ({
           {/* Section Header Pill */}
           <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-950/85 border border-white/20 backdrop-blur-md shadow-xl select-none">
             <Users className="w-3.5 h-3.5 text-emerald-400" />
-            <span 
+            <span
               className="text-[10px] font-black uppercase tracking-widest text-slate-200"
               style={{ fontFamily: 'var(--font-display)' }}
             >
@@ -767,7 +765,7 @@ export const TacticalPitchSquad = ({
                 />
 
                 {/* Sub Position Pill */}
-                <div 
+                <div
                   className="mt-1 px-2.5 py-0.5 rounded-full bg-slate-950/90 border border-white/25 text-[9px] font-black text-white uppercase tracking-wider shadow-md whitespace-nowrap pointer-events-none"
                   style={{ fontFamily: 'var(--font-display)' }}
                 >
@@ -781,13 +779,13 @@ export const TacticalPitchSquad = ({
 
       {/* ── 6. LEFT BOTTOM: MINIMAL & CLEAN SHARP-EDGED MANAGER CARD ── */}
       {hasManagerPhoto && (
-        <motion.div 
+        <motion.div
           animate={{ opacity: isSoldView ? 0 : 1, y: isSoldView ? 20 : 0 }}
           transition={{ duration: 0.4, ease: 'easeOut' }}
           className="absolute bottom-6 left-8 z-30 select-none pointer-events-auto"
           style={{ pointerEvents: isSoldView ? 'none' : 'auto' }}
         >
-          <div 
+          <div
             className="w-[170px] h-[252px] md:w-[185px] md:h-[272px] rounded-none relative overflow-hidden flex flex-col justify-between bg-slate-950/90 border border-white/20 backdrop-blur-md shadow-2xl transition-all duration-300 hover:border-amber-400/60"
           >
             {/* Top Sharp Gold Line */}
@@ -795,9 +793,9 @@ export const TacticalPitchSquad = ({
 
             {/* Manager Photo Area */}
             <div className="relative w-full flex-1 overflow-hidden bg-gradient-to-b from-slate-900 to-slate-950 flex items-center justify-center">
-              <img 
-                src={team.managerPhotoUrl} 
-                alt={team.managerName || 'Manager'} 
+              <img
+                src={team.managerPhotoUrl}
+                alt={team.managerName || 'Manager'}
                 onError={() => setManagerImgFailed(true)}
                 className="w-full h-full object-cover object-top transition-transform duration-300 hover:scale-105"
               />
@@ -815,13 +813,13 @@ export const TacticalPitchSquad = ({
 
             {/* Clean Minimalist Lower-Third Nameplate */}
             <div className="z-20 px-3 py-2.5 bg-slate-950/95 border-t border-white/10 flex flex-col items-center text-center">
-              <span 
+              <span
                 className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.25em] text-amber-400 leading-none pl-[0.25em]"
                 style={{ fontFamily: 'var(--font-display)' }}
               >
                 MANAGER
               </span>
-              <div 
+              <div
                 className="text-sm md:text-base font-black uppercase text-white tracking-wider leading-tight mt-1 truncate max-w-full drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]"
                 style={{ fontFamily: 'var(--font-broadcast)' }}
                 title={team?.managerName || 'HEAD COACH'}
