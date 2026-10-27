@@ -14,8 +14,8 @@ export const AuctionProvider = ({ children }) => {
   useEffect(() => {
     // Listen for cross-tab broadcast state changes
     const unsubscribe = broadcastBus.subscribe((msg) => {
-      if (msg.type === 'AUCTION_STATE_UPDATED') {
-        setAuctionState(msg.payload);
+      if (msg.type === 'AUCTION_STATE_UPDATED' || msg.type === 'TRANSFERS_RESET' || msg.type === 'AUCTION_HISTORY_UPDATED') {
+        setAuctionState(auctionService.getState());
         refreshData();
       }
     });

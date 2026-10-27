@@ -66,6 +66,17 @@ export const TournamentSetup = () => {
             <input type="number" value={formData.minIncrement || 100} onChange={(e) => setFormData({ ...formData, minIncrement: parseInt(e.target.value, 10) })} required className="input-field py-2.5 px-3 w-full" />
           </div>
           <div>
+            <label className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 block mb-1">Currency Symbol</label>
+            <input 
+              type="text" 
+              value={formData.currency || '$'} 
+              onChange={(e) => setFormData({ ...formData, currency: e.target.value })} 
+              required 
+              placeholder="$" 
+              className="input-field py-2.5 px-3 w-full" 
+            />
+          </div>
+          <div>
             <label className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 block mb-1">Squad Strength & Match Format</label>
             <select 
               value={formData.squadFormat || '11s'} 

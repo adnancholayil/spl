@@ -439,11 +439,19 @@ export const TacticalPitchSquad = ({
       >
         {/* Left: Club Crest + Team Name + Formation (Balanced broadcast size) */}
         <div className="flex items-center gap-3.5 md:gap-4">
-          <div className="w-[72px] h-[72px] md:w-[76px] md:h-[76px] flex items-center justify-center shrink-0">
+          <div 
+            className="w-[72px] h-[72px] md:w-[76px] md:h-[76px] rounded-2xl flex items-center justify-center shrink-0 p-2 shadow-xl"
+            style={{
+              background: 'rgba(11, 15, 25, 0.75)',
+              backdropFilter: 'blur(12px)',
+              border: '1.5px solid rgba(255, 255, 255, 0.15)',
+              boxShadow: '0 8px 24px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.12)'
+            }}
+          >
             {team?.logoUrl ? (
-              <img src={team.logoUrl} alt={team.name} className="w-full h-full object-contain drop-shadow-[0_4px_12px_rgba(0,0,0,0.85)]" />
+              <img src={team.logoUrl} alt={team.name} className="w-full h-full object-contain drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)]" />
             ) : (
-              <Shield className="w-14 h-14 md:w-16 md:h-16 drop-shadow-[0_4px_12px_rgba(0,0,0,0.85)]" style={{ color: teamColor }} />
+              <Shield className="w-12 h-12 md:w-14 md:h-14 drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)]" style={{ color: teamColor }} />
             )}
           </div>
           <div className="flex flex-col justify-center">

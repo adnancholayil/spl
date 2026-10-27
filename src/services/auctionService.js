@@ -221,5 +221,129 @@ export const auctionService = {
     });
 
     return resetState;
+  },
+
+  resetAllTransfers() {
+    // 1. Clear auction history ledger
+    storageService.saveAuctionHistory([]);
+
+    // 2. Reset all players that were SOLD or UNSOLD back to UPCOMING
+    const players = storageService.getPlayers();
+    const updatedPlayers = players.map(p => {
+      if (p.status === 'SOLD' || p.status === 'UNSOLD' || p.teamId || p.soldPrice) {
+        return {
+          ...p,
+          status: 'UPCOMING',
+          teamId: null,
+          soldPrice: 0
+        };
+      }
+      return p;
+    });
+    storageService.savePlayers(updatedPlayers);
+
+    // 3. Reset all team budgets & spent counters back to startingBudget
+    const teams = storageService.getTeams();
+    const tournament = storageService.getTournament();
+    const defaultBudget = tournament?.defaultBudget || 5000;
+    const updatedTeams = teams.map(t => {
+      const starting = (typeof t.startingBudget === 'number' && t.startingBudget > 0)
+        ? t.startingBudget
+        : ((typeof t.currentBalance === 'number' && typeof t.totalSpent === 'number' && (t.currentBalance + t.totalSpent) > 0)
+            ? t.currentBalance + t.totalSpent
+            : defaultBudget);
+      return {
+        ...t,
+        startingBudget: starting,
+        currentBalance: starting,
+        totalSpent: 0,
+        playersBought: 0
+      };
+    });
+    storageService.saveTeams(updatedTeams);
+
+    // 4. Reset live auction state to IDLE
+    const resetState = this.updateState({
+      stage: 'IDLE',
+      currentPlayerId: null,
+      currentBid: 0,
+      leadingTeamId: null,
+      bidHistory: [],
+      timer: 10
+    });
+
+    try {
+      soundEngine.playFeedbackTone();
+    } catch (_) {}
+
+    try {
+      window.dispatchEvent(new Event('history-updated'));
+      window.dispatchEvent(new Event('teams-updated'));
+      window.dispatchEvent(new Event('players-updated'));
+      window.dispatchEvent(new Event('storage'));
+      broadcastBus.publish('TRANSFERS_RESET', {});
+    } catch (e) {
+      console.warn('Error dispatching transfer reset events:', e);
+    }
+
+    return { success: true, state: resetState };
+  },
+
+  revertTransferById(historyId) {
+    const history = storageService.getAuctionHistory();
+    const targetRecord = history.find(h => h.id === historyId);
+    if (!targetRecord) throw new Error('Transfer record not found');
+
+    const remainingHistory = history.filter(h => h.id !== historyId);
+    storageService.saveAuctionHistory(remainingHistory);
+
+    // Reset player back to UPCOMING
+    if (targetRecord.playerId) {
+      const players = storageService.getPlayers();
+      const player = players.find(p => p.id === targetRecord.playerId);
+      if (player) {
+        player.status = 'UPCOMING';
+        player.teamId = null;
+        player.soldPrice = 0;
+        storageService.savePlayers(players);
+      }
+    }
+
+    // Refund team budget if SOLD
+    if (targetRecord.status === 'SOLD' && targetRecord.teamId) {
+      const teams = storageService.getTeams();
+      const team = teams.find(t => t.id === targetRecord.teamId);
+      if (team) {
+        team.currentBalance += (targetRecord.finalPrice || 0);
+        team.totalSpent = Math.max(0, (team.totalSpent || 0) - (targetRecord.finalPrice || 0));
+        team.playersBought = Math.max(0, (team.playersBought || 1) - 1);
+        storageService.saveTeams(teams);
+      }
+    }
+
+    // If live auction was currently showing this player, reset to IDLE
+    const state = storageService.getAuctionState();
+    if (state.currentPlayerId === targetRecord.playerId) {
+      this.updateState({
+        stage: 'IDLE',
+        currentPlayerId: null,
+        currentBid: 0,
+        leadingTeamId: null,
+        bidHistory: []
+      });
+    }
+
+    try {
+      soundEngine.playFeedbackTone();
+    } catch (_) {}
+
+    try {
+      window.dispatchEvent(new Event('history-updated'));
+      window.dispatchEvent(new Event('teams-updated'));
+      window.dispatchEvent(new Event('players-updated'));
+      window.dispatchEvent(new Event('storage'));
+    } catch (e) {}
+
+    return { success: true, record: targetRecord };
   }
 };

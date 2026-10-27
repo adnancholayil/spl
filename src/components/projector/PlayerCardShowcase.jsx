@@ -7,7 +7,7 @@ import { SPLLogo } from '../common/SPLLogo';
 import { storageService } from '../../services/storageService';
 import { soundEngine } from '../../services/soundService';
 import { TacticalPitchSquad } from './TacticalPitchSquad';
-import { Trophy, Shield, TrendingUp, Clock, Award, Users, Flame, Sparkles, FileText, Star, CheckCircle2 } from 'lucide-react';
+import { Trophy, Shield, TrendingUp, Clock, Award, Users, Flame, Sparkles, FileText, Star, CheckCircle2, Radio, MapPin, Coins, Layers, Zap } from 'lucide-react';
 
 /**
  * High-End PlayerCardShowcase Component
@@ -25,74 +25,137 @@ const formatTime = (isoString) => {
   }
 };
 
-// ── 1. IDLE STAGE ─────────────────────────────────────────────────────────
-const IdleStage = ({ tournament, teams }) => (
-  <div className="w-full h-full">
-    <div className="relative z-10 w-full h-full flex flex-col items-center justify-center p-10 select-none">
+// ── 1. IDLE STAGE (CLEAN, MINIMAL & FLAT DESIGN) ─────────────────────────
+const IdleStage = ({ tournament, settings = {} }) => {
+  const showLogo = settings?.showLogoOnHomeMedia !== false;
+  const showBadge = settings?.logoBackgroundBadge !== false;
+  const sponsors = Array.isArray(settings?.sponsors) ? settings.sponsors : [];
+  const showSponsors = settings?.showSponsors && sponsors.length > 0;
+  const tournamentName = tournament?.name || 'SUPER PREMIER LEAGUE 2026';
 
-      {/* Center Hero Banner */}
+  // 3-second auto-cycle state for sponsor cards (shows 3 cards at a time)
+  const [cycleIndex, setCycleIndex] = useState(0);
+
+  useEffect(() => {
+    if (!showSponsors || sponsors.length <= 3) {
+      setCycleIndex(0);
+      return;
+    }
+    const interval = setInterval(() => {
+      setCycleIndex((prev) => (prev + 3) % sponsors.length);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [showSponsors, sponsors.length]);
+
+  // Compute up to 3 visible cards
+  const visibleSponsors = useMemo(() => {
+    if (sponsors.length <= 3) return sponsors;
+    const cards = [];
+    for (let i = 0; i < 3; i++) {
+      const idx = (cycleIndex + i) % sponsors.length;
+      cards.push(sponsors[idx]);
+    }
+    return cards;
+  }, [sponsors, cycleIndex]);
+
+  if (!showLogo) {
+    return null;
+  }
+
+  return (
+    <div className="relative z-10 w-full h-full flex flex-col items-center justify-center p-8 select-none">
       <motion.div
-        initial={{ scale: 0.85, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        transition={{ duration: 0.8 }}
-        className="text-center my-auto flex flex-col items-center gap-4"
+        initial={{ opacity: 0, scale: 0.96 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.5, ease: 'easeOut' }}
+        className="flex flex-col items-center text-center max-w-5xl px-4"
       >
-        <div className="p-4 bg-slate-900/60 rounded-full border border-amber-400/30 backdrop-blur-md shadow-2xl">
-          <SPLLogo size={140} />
+        {/* League Logo with High-Contrast Broadcast Background Badge */}
+        <div className="mb-6 md:mb-8 flex items-center justify-center">
+          {showBadge ? (
+            <div
+              className="flex items-center justify-center rounded-full p-5 sm:p-6 md:p-7 relative transition-all duration-300"
+              style={{
+                background: 'radial-gradient(circle at 50% 35%, rgba(15, 23, 42, 0.92) 0%, rgba(8, 12, 22, 0.97) 100%)',
+                backdropFilter: 'blur(20px)',
+                WebkitBackdropFilter: 'blur(20px)',
+                border: '2px solid rgba(255, 255, 255, 0.22)',
+                boxShadow: '0 24px 60px rgba(0, 0, 0, 0.85), inset 0 1px 1px rgba(255, 255, 255, 0.3), 0 0 40px rgba(0, 0, 0, 0.5)',
+              }}
+            >
+              <SPLLogo size={160} showGlow={false} />
+            </div>
+          ) : (
+            <SPLLogo size={170} showGlow={false} />
+          )}
         </div>
-        <h1
-          className="text-white text-6xl md:text-8xl tracking-wider font-extrabold uppercase drop-shadow-2xl"
-          style={{ fontFamily: 'var(--font-broadcast)' }}
-        >
-          {tournament?.name || 'SUPER PREMIER LEAGUE'}
-        </h1>
-        <div className="inline-flex items-center gap-2 px-6 py-2 bg-blue-600/20 border border-blue-400/40 rounded-full">
-          <Flame className="w-5 h-5 text-amber-400" />
-          <span className="text-base text-amber-300 tracking-widest uppercase font-extrabold" style={{ fontFamily: 'var(--font-display)' }}>
-            Season {tournament?.season || '2026'} • Official Draft & Bidding Arena
-          </span>
-        </div>
-      </motion.div>
 
-      {/* Franchise Grid */}
-      {teams && teams.length > 0 && (
-        <div className="w-full max-w-6xl bg-slate-900/90 border border-white/15 backdrop-blur-xl rounded-2xl p-6 shadow-2xl">
-          <h4 className="text-xs font-extrabold text-slate-400 uppercase tracking-widest mb-4 text-center" style={{ fontFamily: 'var(--font-display)' }}>
-            Participating Franchises ({teams.length})
-          </h4>
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-            {teams.map((t) => (
-              <div
-                key={t.id}
-                className="bg-black/50 border border-white/10 rounded-xl p-3 flex items-center gap-3 shadow-lg"
-                style={{ borderLeft: `4px solid ${t.primaryColor || '#3b82f6'}` }}
+        {/* Clean, Flat Tournament Title */}
+        <h1
+          className="text-white text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black uppercase tracking-wider"
+          style={{
+            fontFamily: 'var(--font-broadcast)',
+            letterSpacing: '0.06em',
+            lineHeight: 1,
+            textShadow: '0 4px 24px rgba(0, 0, 0, 0.9), 0 2px 8px rgba(0, 0, 0, 0.8)'
+          }}
+        >
+          {tournamentName}
+        </h1>
+
+        {/* Sharp ATM-Style Sponsor Cards (Max 3, 3s Cycle, Zero Text, No Shadows, No Hover) */}
+        {showSponsors && (
+          <div className="mt-8 md:mt-10 min-h-[120px] flex items-center justify-center">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={`sponsors-cycle-${cycleIndex}`}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.35, ease: 'easeInOut' }}
+                className="flex items-center justify-center gap-4 md:gap-5 flex-wrap"
               >
-                {t.logoUrl ? (
-                  <img src={t.logoUrl} alt={t.name} className="w-10 h-10 object-contain" />
-                ) : (
-                  <Shield className="w-8 h-8" style={{ color: t.primaryColor }} />
-                )}
-                <div className="min-w-0">
-                  <div className="text-sm font-bold text-white uppercase truncate" style={{ fontFamily: 'var(--font-display)' }}>
-                    {t.name}
+                {visibleSponsors.map((sp, idx) => (
+                  <div
+                    key={`${sp.id || idx}-${idx}`}
+                    className="relative overflow-hidden shrink-0"
+                    style={{
+                      width: 'clamp(150px, 15vw, 210px)',
+                      aspectRatio: '85.6 / 53.98',
+                      borderRadius: 0,
+                      border: '1px solid rgba(255, 255, 255, 0.25)',
+                      background: '#0B0F19',
+                      boxShadow: 'none',
+                    }}
+                  >
+                    {sp.imageUrl && (
+                      <img
+                        src={sp.imageUrl}
+                        alt="Sponsor Card"
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover',
+                          borderRadius: 0,
+                          display: 'block'
+                        }}
+                      />
+                    )}
                   </div>
-                  <div className="text-xs text-amber-300 font-extrabold" style={{ fontFamily: 'var(--font-display)' }}>
-                    {formatCurrency(t.currentBalance, '₹')}
-                  </div>
-                </div>
-              </div>
-            ))}
+                ))}
+              </motion.div>
+            </AnimatePresence>
           </div>
-        </div>
-      )}
+        )}
+      </motion.div>
     </div>
-  </div>
-);
+  );
+};
 
 
 
 // ── MYSTERY CARD BACK COMPONENT (FOR SUSPENSE REVEAL) ────────────────────
-export const MysteryCardBack = ({ size = 'xl', customTheme = null, isStudio = false, selectedElement = null, onSelectElement = null }) => {
+export const MysteryCardBack = ({ size = 'xl', customTheme = null, isStudio = false, selectedElement = null, onSelectElement = null, centerVisual = false }) => {
   const [storedTheme, setStoredTheme] = useState(() => storageService.getCardTheme());
 
   useEffect(() => {
@@ -109,6 +172,24 @@ export const MysteryCardBack = ({ size = 'xl', customTheme = null, isStudio = fa
   const scale = scaleMap[size] || scaleMap.xl;
   const cardWidth = 320 * scale;
   const cardHeight = 440 * scale;
+
+  // Calculate vertical offset to ensure card is centered in 320x440 viewBox
+  const getCardShapeOffsetY = (shape) => {
+    switch (shape) {
+      case 'shield':
+        return -7.5;
+      case 'classic':
+      case 'notched':
+        return 10;
+      case 'hex':
+      case 'cyber':
+        return 5;
+      case 'eafc24':
+      default:
+        return 15;
+    }
+  };
+  const visualOffsetY = centerVisual ? getCardShapeOffsetY(cfg?.cardShape) : 0;
   
   let cardPath = "M 80 15 Q 160 5 240 15 L 305 55 L 305 345 L 160 405 L 15 345 L 15 55 Z";
   if (cfg?.cardShape === 'shield') {
@@ -321,6 +402,7 @@ export const MysteryCardBack = ({ size = 'xl', customTheme = null, isStudio = fa
           </pattern>
         </defs>
 
+        <g transform={visualOffsetY ? `translate(0, ${visualOffsetY})` : undefined}>
         {/* ── LAYER 1: Deep background ── */}
         <use href="#mys-shape" fill="url(#mys-bg)" />
 
@@ -563,6 +645,7 @@ export const MysteryCardBack = ({ size = 'xl', customTheme = null, isStudio = fa
             }}
           />
         )}
+        </g>
       </svg>
     </div>
   );
@@ -620,76 +703,70 @@ const IntroStage = ({ player, tournament, settings }) => {
   const CARD_H = Math.round(440 * 1.35);
 
   return (
-    <div className="w-full h-full">
-      <div
-        onClick={handleSkip}
-        className="relative z-10 w-full h-full flex flex-col items-center justify-center select-none"
-        style={{ cursor: flipped ? 'default' : 'pointer' }}
+    <div
+      onClick={handleSkip}
+      className="relative z-10 w-full h-full flex items-center justify-center select-none"
+      style={{ cursor: flipped ? 'default' : 'pointer' }}
+    >
+      <motion.div
+        initial={{ scale: 0.88, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+        style={{ perspective: 1200 }}
+        className="flex items-center justify-center"
       >
-
-        {/* ── CENTER: 3D card flip container ── */}
-        <div className="flex-1 flex items-center justify-center">
-          {/*
-            perspective wrapper — required for 3D depth.
-            Inner card-flipper rotates from 0 → 180deg.
-            Both faces are absolutely stacked; backface-visibility:hidden
-            hides the non-active face.
-          */}
-          <motion.div
-            initial={{ scale: 0.88, opacity: 0, y: 20 }}
-            animate={{ scale: 1, opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-            style={{ perspective: 1200 }}
+        {/* Flipper — this is what rotates */}
+        <motion.div
+          animate={{ rotateY: flipped ? 180 : 0 }}
+          transition={{ duration: 1.05, ease: [0.4, 0, 0.2, 1] }}
+          style={{
+            width: CARD_W,
+            height: CARD_H,
+            position: 'relative',
+            transformStyle: 'preserve-3d',
+          }}
+          className="flex items-center justify-center"
+        >
+          {/* ── BACK FACE (mystery card) ── */}
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              backfaceVisibility: 'hidden',
+              WebkitBackfaceVisibility: 'hidden',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
           >
-            {/* Flipper — this is what rotates */}
-            <motion.div
-              animate={{ rotateY: flipped ? 180 : 0 }}
-              transition={{ duration: 1.05, ease: [0.4, 0, 0.2, 1] }}
-              style={{
-                width: CARD_W,
-                height: CARD_H,
-                position: 'relative',
-                transformStyle: 'preserve-3d',
-              }}
-            >
+            <MysteryCardBack size="xl" centerVisual={true} />
+          </div>
 
-              {/* ── BACK FACE (mystery card) ── */}
-              <div
-                style={{
-                  position: 'absolute',
-                  inset: 0,
-                  backfaceVisibility: 'hidden',
-                  WebkitBackfaceVisibility: 'hidden',
-                }}
-              >
-                <MysteryCardBack size="xl" />
-              </div>
-
-              {/* ── FRONT FACE (player card) — pre-rotated 180° so it starts hidden ── */}
-              <div
-                style={{
-                  position: 'absolute',
-                  inset: 0,
-                  backfaceVisibility: 'hidden',
-                  WebkitBackfaceVisibility: 'hidden',
-                  transform: 'rotateY(180deg)',
-                }}
-              >
-                <div style={{ position: 'relative', width: CARD_W, height: CARD_H }}>
-                  <EFootballCard
-                    player={displayPlayer}
-                    size="xl"
-                    theme={cardTheme}
-                    highlight={false}
-                  />
-                </div>
-              </div>
-
-            </motion.div>
-          </motion.div>
-        </div>
-
-      </div>
+          {/* ── FRONT FACE (player card) — pre-rotated 180° so it starts hidden ── */}
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              backfaceVisibility: 'hidden',
+              WebkitBackfaceVisibility: 'hidden',
+              transform: 'rotateY(180deg)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <div style={{ position: 'relative', width: CARD_W, height: CARD_H, display: 'flex', alignItems: 'center', justifySelf: 'center', justifyContent: 'center' }}>
+              <EFootballCard
+                player={displayPlayer}
+                size="xl"
+                theme={cardTheme}
+                highlight={false}
+                centerVisual={true}
+              />
+            </div>
+          </div>
+        </motion.div>
+      </motion.div>
     </div>
   );
 };
@@ -757,6 +834,7 @@ const BiddingStage = ({
               size="xl"
               theme={cardTheme}
               highlight={true}
+              centerVisual={true}
             />
           </motion.div>
 
@@ -801,15 +879,25 @@ const BiddingStage = ({
               </span>
               {leadingTeam ? (
                 <div className="flex items-center justify-center gap-5">
-                  {leadingTeam.logoUrl ? (
-                    <img 
-                      src={leadingTeam.logoUrl} 
-                      alt={leadingTeam.name} 
-                      className="w-16 h-16 object-contain drop-shadow-2xl flex-shrink-0" 
-                    />
-                  ) : (
-                    <Shield className="w-14 h-14 flex-shrink-0" style={{ color: leadingTeam.primaryColor || '#38bdf8' }} />
-                  )}
+                  <div 
+                    className="w-16 h-16 rounded-2xl flex items-center justify-center p-2 flex-shrink-0 shadow-xl"
+                    style={{
+                      background: 'rgba(11, 15, 25, 0.75)',
+                      backdropFilter: 'blur(12px)',
+                      border: '1.5px solid rgba(255, 255, 255, 0.15)',
+                      boxShadow: '0 8px 24px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.12)'
+                    }}
+                  >
+                    {leadingTeam.logoUrl ? (
+                      <img 
+                        src={leadingTeam.logoUrl} 
+                        alt={leadingTeam.name} 
+                        className="w-full h-full object-contain" 
+                      />
+                    ) : (
+                      <Shield className="w-10 h-10" style={{ color: leadingTeam.primaryColor || '#38bdf8' }} />
+                    )}
+                  </div>
                   <span 
                     className="text-4xl lg:text-5xl text-white font-black tracking-widest uppercase drop-shadow-xl" 
                     style={{ fontFamily: 'var(--font-display)' }}
@@ -980,6 +1068,7 @@ const SoldStage = ({ player, winningTeam, finalPrice, tournament, settings }) =>
               size="xl"
               theme={cardTheme}
               highlight={true}
+              centerVisual={true}
             />
             
             {/* EPIC SOLD STAMP */}
@@ -989,7 +1078,7 @@ const SoldStage = ({ player, winningTeam, finalPrice, tournament, settings }) =>
                transition={{ type: 'spring', stiffness: 150, damping: 10, delay: 0.8 }}
                style={{
                  position: 'absolute',
-                 top: '53.5%',
+                 top: '50%',
                  left: '50%',
                  transformOrigin: 'center center',
                }}
@@ -1309,6 +1398,7 @@ const SigningStage = ({ stage = 'SIGNING', player, winningTeam, finalPrice, tour
                 size="xl"
                 theme={cardTheme}
                 highlight={true}
+                centerVisual={true}
               />
             </motion.div>
 
@@ -1532,6 +1622,7 @@ const UnsoldStage = ({ player, settings }) => {
             size="lg"
             theme={cardTheme}
             status="UNSOLD"
+            centerVisual={true}
           />
 
           <h2 className="text-5xl font-black text-red-500 uppercase tracking-widest" style={{ fontFamily: 'var(--font-broadcast)' }}>
@@ -1551,6 +1642,7 @@ export const PlayerCardShowcase = ({
   player,
   tournament,
   teams = [],
+  players = [],
   stage = 'IDLE',
   currentBid = 0,
   leadingTeam = null,
@@ -1563,7 +1655,7 @@ export const PlayerCardShowcase = ({
     <AnimatePresence mode="wait">
       {stage === 'IDLE' && (
         <motion.div key="idle" className="w-full h-full" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-          <IdleStage tournament={tournament} teams={teams} />
+          <IdleStage tournament={tournament} settings={settings} />
         </motion.div>
       )}
 

@@ -1,257 +1,344 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTournament } from '../../context/TournamentContext';
+import { useAuction } from '../../context/AuctionContext';
 import { formatCurrency } from '../../utils/currency';
 import { EFootballCard } from '../../components/common/EFootballCard';
-import { Gavel, ArrowRight, CheckCircle2, Clock, Users, TrendingUp } from 'lucide-react';
+import {
+  Gavel, ArrowRight, CheckCircle2, Clock, Users,
+  TrendingUp, Crown, Trophy, Shield, ArrowUpRight,
+  Radio, Sparkles, ChevronRight
+} from 'lucide-react';
 
 export const Dashboard = () => {
   const navigate = useNavigate();
   const { tournament, teams, players, history } = useTournament();
+  const { auctionState } = useAuction();
 
   const soldPlayers      = players.filter(p => p.status === 'SOLD');
   const remainingPlayers = players.filter(p => p.status === 'UPCOMING');
   const totalSpent       = teams.reduce((acc, t) => acc + (t.totalSpent || 0), 0);
   const highestBid       = history.length > 0 ? Math.max(...history.map(h => h.finalPrice || 0)) : 0;
   const topTeam          = [...teams].sort((a, b) => (b.totalSpent || 0) - (a.totalSpent || 0))[0];
-  const featuredPlayer   = remainingPlayers[0] || players[0];
+
+  // Active or upcoming featured player
+  const livePlayer = players.find(p => p.id === auctionState?.currentPlayerId);
+  const isAuctionLive = Boolean(livePlayer && auctionState?.status === 'BIDDING');
+  const featuredPlayer = livePlayer || remainingPlayers[0] || players[0];
+
+  const recentTransfers = history.filter(h => h.status === 'SOLD').slice(0, 6);
 
   return (
-    <div style={{ padding: '32px 40px', maxWidth: 1600, margin: '0 auto' }}>
+    <div className="h-full flex flex-col p-3 md:p-4.5 xl:p-5 overflow-hidden select-none w-full max-w-[1740px] mx-auto gap-3">
 
-      {/* ── TOURNAMENT HERO ── */}
-      <div style={{
-        position: 'relative',
-        borderRadius: 12,
-        overflow: 'hidden',
-        marginBottom: 32,
-        background: 'var(--spl-navy)',
-        border: '1px solid var(--border-subtle)',
-        padding: '36px 40px',
-        boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
-      }}>
-        {/* Subtle pitch lines background */}
-        <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', opacity: 0.05, pointerEvents: 'none' }}>
-          <svg width="100%" height="100%" viewBox="0 0 800 200" preserveAspectRatio="xMidYMid slice">
-            <line x1="0" y1="100" x2="800" y2="100" stroke="white" strokeWidth="1" />
-            <circle cx="400" cy="100" r="60" fill="none" stroke="white" strokeWidth="1" />
-            <circle cx="400" cy="100" r="2" fill="white" />
+      {/* ── 1. ULTRA-COMPACT TOURNAMENT HERO BAR ── */}
+      <div
+        className="relative rounded-xl overflow-hidden px-4 py-3 shrink-0 flex items-center justify-between gap-4 border border-white/10 shadow-lg"
+        style={{
+          background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.96) 0%, rgba(8, 12, 24, 0.98) 100%)',
+          backdropFilter: 'blur(20px)',
+        }}
+      >
+        {/* Subtle Pitch Vector Background */}
+        <div className="absolute inset-0 overflow-hidden opacity-5 pointer-events-none">
+          <svg width="100%" height="100%" viewBox="0 0 800 120" preserveAspectRatio="xMidYMid slice">
+            <line x1="0" y1="60" x2="800" y2="60" stroke="white" strokeWidth="1" />
+            <circle cx="400" cy="60" r="40" fill="none" stroke="white" strokeWidth="1" />
+            <circle cx="400" cy="60" r="2" fill="white" />
           </svg>
         </div>
 
-        <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 24, flexWrap: 'wrap' }}>
-          <div>
-            <div style={{
-              fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: 700,
-              color: 'var(--spl-blue-light)', letterSpacing: '0.25em', marginBottom: 10,
-            }}>
-              {tournament?.sport || 'FOOTBALL'} · {tournament?.season || 'SEASON 2026'}
-            </div>
-            <h1 style={{
-              fontFamily: 'var(--font-broadcast)',
-              fontSize: 'clamp(38px, 4.5vw, 64px)',
-              color: '#fff',
-              lineHeight: 0.95,
-              letterSpacing: '0.01em',
-              textTransform: 'uppercase',
-              marginBottom: 12,
-            }}>
-              {tournament?.name || 'SPL Tournament'}
-            </h1>
-            <div style={{
-              fontFamily: 'var(--font-body)', fontSize: 15,
-              color: 'var(--text-secondary)',
-            }}>
-              {tournament?.location || 'Stadium'} &nbsp;·&nbsp; Standard Budget:{' '}
-              <span style={{ color: 'var(--spl-gold-light)', fontWeight: 700 }}>
-                {formatCurrency(tournament?.defaultBudget, tournament?.currency)} per club
+        {/* Left: Tournament Details */}
+        <div className="relative z-10 flex items-center gap-3.5 min-w-0">
+          <div className="w-10 h-10 rounded-lg bg-blue-500/10 border border-blue-400/30 flex items-center justify-center shrink-0 shadow-inner">
+            <Trophy className="w-5 h-5 text-blue-400" />
+          </div>
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-400/30 leading-none">
+                {tournament?.sport || 'FOOTBALL'} · {tournament?.season || 'SEASON 2026'}
+              </span>
+              <span className="text-xs text-slate-400 truncate">
+                {tournament?.location || 'Super Stadium'}
               </span>
             </div>
+            <h1
+              style={{
+                fontFamily: 'var(--font-broadcast)',
+                fontSize: 'clamp(22px, 2.2vw, 30px)',
+                lineHeight: 1.1,
+                letterSpacing: '0.02em'
+              }}
+              className="text-white uppercase truncate drop-shadow-md mt-0.5"
+            >
+              {tournament?.name || 'SUPER PREMIER LEAGUE 2026'}
+            </h1>
+          </div>
+        </div>
+
+        {/* Right: Quick Stats & Primary Action */}
+        <div className="relative z-10 flex items-center gap-3 shrink-0">
+          {/* Budget Info Pill */}
+          <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-black/40 border border-white/10 text-xs">
+            <span className="text-slate-400">Budget:</span>
+            <span className="text-amber-300 font-bold tracking-wide">
+              {formatCurrency(tournament?.defaultBudget || 5000, tournament?.currency)}
+            </span>
+            <span className="text-slate-500 text-[10px]">/ club</span>
           </div>
 
+          {/* Primary Enter Auction CTA */}
           <button
             onClick={() => navigate('/admin/auction')}
-            className="btn-auction"
-            style={{ padding: '16px 36px', fontSize: 20, gap: 12, flexShrink: 0 }}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg font-bold transition-all shadow-lg hover:brightness-110 active:scale-95 group cursor-pointer"
+            style={{
+              background: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)',
+              fontFamily: 'var(--font-display)',
+              fontSize: '13px',
+              letterSpacing: '0.05em',
+              textTransform: 'uppercase',
+              color: '#ffffff',
+              boxShadow: '0 4px 18px rgba(234, 88, 12, 0.4)'
+            }}
           >
-            <Gavel className="w-6 h-6" />
-            Enter Live Auction
-            <ArrowRight className="w-5 h-5" />
+            <Gavel className="w-4 h-4 shrink-0 transition-transform group-hover:rotate-12" />
+            <span>Enter Live Auction</span>
+            <ArrowRight className="w-4 h-4 shrink-0 transition-transform group-hover:translate-x-1" />
           </button>
         </div>
       </div>
 
-      {/* ── MAIN GRID ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 340px', gap: 32, alignItems: 'start' }}>
+      {/* ── 2. HIGH-IMPACT 6-METRIC KPI RIBBON (SINGLE ROW) ── */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 shrink-0">
+        {[
+          {
+            label: 'Total Clubs',
+            value: teams.length,
+            sub: 'Registered',
+            icon: Users,
+            color: '#38bdf8',
+            bgGrad: 'linear-gradient(180deg, rgba(56, 189, 248, 0.1) 0%, rgba(15, 23, 42, 0.6) 100%)',
+          },
+          {
+            label: 'Players Sold',
+            value: soldPlayers.length,
+            sub: `${players.length ? Math.round((soldPlayers.length / players.length) * 100) : 0}% signed`,
+            icon: CheckCircle2,
+            color: '#22c55e',
+            bgGrad: 'linear-gradient(180deg, rgba(34, 197, 94, 0.1) 0%, rgba(15, 23, 42, 0.6) 100%)',
+          },
+          {
+            label: 'Remaining',
+            value: remainingPlayers.length,
+            sub: 'In draft pool',
+            icon: Clock,
+            color: '#f97316',
+            bgGrad: 'linear-gradient(180deg, rgba(249, 115, 22, 0.1) 0%, rgba(15, 23, 42, 0.6) 100%)',
+          },
+          {
+            label: 'Total Spent',
+            value: formatCurrency(totalSpent, tournament?.currency),
+            sub: 'Combined fees',
+            icon: TrendingUp,
+            color: '#facc15',
+            isCurrency: true,
+            bgGrad: 'linear-gradient(180deg, rgba(250, 204, 21, 0.1) 0%, rgba(15, 23, 42, 0.6) 100%)',
+          },
+          {
+            label: 'Highest Bid',
+            value: formatCurrency(highestBid, tournament?.currency),
+            sub: 'Record signing',
+            icon: Crown,
+            color: '#c084fc',
+            isCurrency: true,
+            bgGrad: 'linear-gradient(180deg, rgba(192, 132, 252, 0.1) 0%, rgba(15, 23, 42, 0.6) 100%)',
+          },
+          {
+            label: 'Top Spender',
+            value: topTeam?.name || '—',
+            sub: topTeam ? formatCurrency(topTeam.totalSpent || 0, tournament?.currency) : 'No spend yet',
+            icon: Trophy,
+            color: topTeam?.primaryColor || '#38bdf8',
+            isText: true,
+            bgGrad: `linear-gradient(180deg, ${topTeam?.primaryColor || '#38bdf8'}18 0%, rgba(15, 23, 42, 0.6) 100%)`,
+          },
+        ].map((stat, i) => {
+          const Icon = stat.icon;
+          return (
+            <div
+              key={i}
+              className="relative overflow-hidden rounded-xl border border-white/10 px-3.5 py-2.5 transition-all duration-200 hover:border-white/20 shadow-md flex flex-col justify-between"
+              style={{
+                background: stat.bgGrad,
+                backdropFilter: 'blur(12px)',
+                height: '76px',
+              }}
+            >
+              {/* Top Hairline Accent */}
+              <div
+                className="absolute top-0 inset-x-0 h-[2.5px]"
+                style={{ background: stat.color }}
+              />
 
-        {/* Left: Stats + Teams */}
-        <div>
-
-          {/* 4 Key Stats */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
-            {[
-              { label: 'Total Clubs',  value: teams.length,            icon: Users,        color: 'var(--spl-blue-light)' },
-              { label: 'Players Sold', value: soldPlayers.length,      icon: CheckCircle2, color: '#22C55E' },
-              { label: 'Remaining',    value: remainingPlayers.length,  icon: Clock,        color: 'var(--spl-orange)' },
-              { label: 'Total Spent',  value: formatCurrency(totalSpent, tournament?.currency), icon: TrendingUp, color: 'var(--spl-gold-light)', isLarge: true },
-            ].map((stat, i) => {
-              const Icon = stat.icon;
-              return (
-                <div key={i} style={{
-                  background: 'var(--spl-panel)',
-                  border: '1px solid var(--border-subtle)',
-                  borderRadius: 10,
-                  padding: '22px 24px',
-                  position: 'relative', overflow: 'hidden',
-                }}>
-                  <div style={{
-                    position: 'absolute', top: 0, left: 0, right: 0, height: 3,
-                    background: stat.color, opacity: 0.8,
-                  }} />
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                    <span style={{
-                      fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: 700,
-                      color: 'var(--text-secondary)', letterSpacing: '0.15em', textTransform: 'uppercase',
-                    }}>
-                      {stat.label}
-                    </span>
-                    <Icon className="w-5 h-5" style={{ color: stat.color, opacity: 0.85 }} />
-                  </div>
-                  <div style={{
-                    fontFamily: stat.isLarge ? 'var(--font-display)' : 'var(--font-broadcast)',
-                    fontSize: stat.isLarge ? 24 : 44,
-                    fontWeight: stat.isLarge ? 800 : 400,
-                    color: stat.color,
-                    lineHeight: 1,
-                    letterSpacing: stat.isLarge ? '-0.01em' : '0.01em',
-                  }}>
-                    {stat.value}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Financial highlights */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16, marginBottom: 24 }}>
-            <div style={{
-              background: 'var(--spl-panel)', border: '1px solid var(--border-subtle)',
-              borderRadius: 10, padding: '22px 24px',
-            }}>
-              <div style={{ fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '0.15em', marginBottom: 8, textTransform: 'uppercase' }}>
-                HIGHEST BID PLACED
+              {/* Title & Icon */}
+              <div className="flex items-center justify-between gap-1 leading-none">
+                <span className="text-[10.5px] font-bold text-slate-400 uppercase tracking-wider truncate">
+                  {stat.label}
+                </span>
+                <Icon className="w-3.5 h-3.5 shrink-0 opacity-80" style={{ color: stat.color }} />
               </div>
-              <div style={{ fontFamily: 'var(--font-broadcast)', fontSize: 34, color: 'var(--spl-gold-light)', lineHeight: 1 }}>
-                {formatCurrency(highestBid, tournament?.currency)}
+
+              {/* Metric Value */}
+              <div
+                style={{
+                  fontFamily: stat.isCurrency ? 'var(--font-display)' : (stat.isText ? 'var(--font-display)' : 'var(--font-broadcast)'),
+                  fontSize: stat.isText ? 15 : (stat.isCurrency ? 20 : 28),
+                  fontWeight: stat.isText ? 800 : (stat.isCurrency ? 800 : 400),
+                  color: stat.color,
+                  lineHeight: 1,
+                  letterSpacing: stat.isText ? '0.02em' : '0.01em',
+                }}
+                className="truncate"
+                title={String(stat.value)}
+              >
+                {stat.value}
+              </div>
+
+              {/* Sub-label */}
+              <div className="text-[10px] text-slate-400 font-medium truncate leading-none">
+                {stat.sub}
               </div>
             </div>
-            <div style={{
-              background: 'var(--spl-panel)', border: '1px solid var(--border-subtle)',
-              borderRadius: 10, padding: '22px 24px',
-            }}>
-              <div style={{ fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: '0.15em', marginBottom: 8, textTransform: 'uppercase' }}>
-                TOP SPENDING CLUB
+          );
+        })}
+      </div>
+
+      {/* ── 3. MAIN WORKSPACE SPLIT (100VH FIT) ── */}
+      <div className="flex-1 min-h-0 flex flex-col lg:flex-row gap-3.5">
+
+        {/* ── LEFT PANE: CLUB BUDGETS & RECENT TRANSFERS ── */}
+        <div className="flex-1 min-w-0 flex flex-col gap-3 min-h-0">
+
+          {/* Club Budgets & Squad Tracker */}
+          <div
+            className="flex-1 min-h-0 flex flex-col rounded-xl border border-white/10 overflow-hidden shadow-xl"
+            style={{
+              background: 'linear-gradient(180deg, rgba(15, 23, 42, 0.92) 0%, rgba(9, 13, 26, 0.96) 100%)',
+              backdropFilter: 'blur(20px)',
+            }}
+          >
+            {/* Table Header */}
+            <div className="px-4 py-2.5 border-b border-white/10 flex items-center justify-between shrink-0 bg-white/[0.02]">
+              <div className="flex items-center gap-2">
+                <Shield className="w-4 h-4 text-slate-400" />
+                <h2
+                  style={{ fontFamily: 'var(--font-display)' }}
+                  className="text-xs font-bold uppercase tracking-wider text-slate-200"
+                >
+                  Club Budgets & Squad Status
+                </h2>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-white/5">
+                  {teams.length} clubs
+                </span>
               </div>
-              {topTeam ? (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <div style={{ width: 4, height: 34, borderRadius: 2, background: topTeam.primaryColor }} />
-                  <div style={{ fontFamily: 'var(--font-broadcast)', fontSize: 26, color: topTeam.primaryColor, lineHeight: 1 }}>
-                    {topTeam.name}
-                  </div>
-                </div>
-              ) : (
-                <div style={{ fontFamily: 'var(--font-broadcast)', fontSize: 26, color: 'var(--text-muted)' }}>—</div>
-              )}
-            </div>
-          </div>
-
-          {/* Team budget table */}
-          <div style={{
-            background: 'var(--spl-panel)', border: '1px solid var(--border-subtle)',
-            borderRadius: 10, overflow: 'hidden',
-          }}>
-            <div style={{
-              padding: '18px 24px',
-              borderBottom: '1px solid var(--border-subtle)',
-              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-            }}>
-              <h2 style={{
-                fontFamily: 'var(--font-display)', fontSize: 15, fontWeight: 700,
-                color: 'var(--text-primary)', letterSpacing: '0.08em', textTransform: 'uppercase',
-              }}>
-                Club Budgets & Squad Status
-              </h2>
-              <span style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'var(--text-muted)' }}>
-                {teams.length} clubs registered
-              </span>
+              <button
+                onClick={() => navigate('/admin/teams')}
+                className="text-[11px] font-bold text-sky-400 hover:text-sky-300 transition-colors flex items-center gap-1 cursor-pointer"
+              >
+                <span>Manage Clubs</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
             </div>
 
-            <div>
-              {teams.map((team, i) => {
-                const pct = Math.max(0, Math.min(100, (team.currentBalance / team.startingBudget) * 100));
+            {/* Scrollable Club Rows */}
+            <div className="flex-1 overflow-y-auto divide-y divide-white/5 pr-1">
+              {teams.map((team) => {
+                const pct = Math.max(0, Math.min(100, (team.currentBalance / (team.startingBudget || 1)) * 100));
+                const spent = team.totalSpent || 0;
+                const teamColor = team.primaryColor || '#38bdf8';
+
                 return (
                   <div
                     key={team.id}
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: 18,
-                      padding: '16px 24px',
-                      borderBottom: i < teams.length - 1 ? '1px solid var(--border-subtle)' : 'none',
-                    }}
+                    className="flex items-center gap-3 px-4 py-2.5 hover:bg-white/[0.04] transition-all group"
                   >
-                    {/* Color strip */}
-                    <div style={{ width: 4, height: 42, borderRadius: 2, background: team.primaryColor, flexShrink: 0 }} />
+                    {/* Club Color Bar */}
+                    <div
+                      className="w-1.5 h-9 rounded-full shrink-0 shadow-sm transition-transform group-hover:scale-y-110"
+                      style={{ background: teamColor }}
+                    />
 
-                    {/* Name + manager */}
-                    <div style={{ minWidth: 160 }}>
-                      <div style={{
-                        fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 700,
-                        color: 'var(--text-primary)', letterSpacing: '0.04em', textTransform: 'uppercase',
-                        marginBottom: 3,
-                      }}>
+                    {/* Club Crest / Logo or Badge */}
+                    {team.logoUrl ? (
+                      <img
+                        src={team.logoUrl}
+                        alt={team.name}
+                        className="w-7 h-7 object-contain shrink-0 filter drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]"
+                      />
+                    ) : (
+                      <div
+                        className="w-7 h-7 rounded-lg flex items-center justify-center font-black text-[10px] text-white shrink-0 shadow-inner border border-white/10"
+                        style={{ background: `linear-gradient(135deg, ${teamColor}90, ${teamColor})` }}
+                      >
+                        {team.shortName || team.name?.slice(0, 3) || 'CLB'}
+                      </div>
+                    )}
+
+                    {/* Club Name & Manager */}
+                    <div className="w-[180px] xl:w-[210px] min-w-0 shrink-0">
+                      <div
+                        style={{ fontFamily: 'var(--font-display)' }}
+                        className="text-sm font-bold uppercase text-white truncate leading-tight tracking-wide group-hover:text-sky-300 transition-colors"
+                        title={team.name}
+                      >
                         {team.name}
                       </div>
-                      <div style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: 'var(--text-muted)' }}>
-                        Manager: {team.managerName || '—'}
+                      <div className="text-[11px] text-slate-400 truncate leading-tight mt-0.5">
+                        Mgr: <span className="text-slate-300">{team.managerName || '—'}</span>
                       </div>
                     </div>
 
-                    {/* Budget bar */}
-                    <div style={{ flex: 1 }}>
-                      <div style={{
-                        height: 6, borderRadius: 3,
-                        background: 'var(--spl-black)', overflow: 'hidden',
-                      }}>
-                        <div style={{
-                          height: '100%', borderRadius: 3,
-                          width: `${pct}%`, background: team.primaryColor,
-                          transition: 'width 0.5s ease',
-                        }} />
+                    {/* Squad Count Pill */}
+                    <div className="shrink-0 w-[70px] text-center">
+                      <span
+                        className={`inline-block px-2 py-0.5 rounded text-[11px] font-extrabold border transition-colors ${
+                          (team.playersBought || 0) > 0
+                            ? 'bg-emerald-500/15 text-emerald-300 border-emerald-400/30'
+                            : 'bg-black/40 text-slate-400 border-white/10'
+                        }`}
+                      >
+                        {team.playersBought || 0} <span className="text-[9px] font-medium opacity-80">SQUAD</span>
+                      </span>
+                    </div>
+
+                    {/* Budget Progress Bar */}
+                    <div className="flex-1 min-w-[120px] px-2">
+                      <div className="flex justify-between items-center text-[10px] text-slate-400 mb-1 leading-none font-medium">
+                        <span>Balance: {Math.round(pct)}%</span>
+                        <span>Used: {Math.round(100 - pct)}%</span>
+                      </div>
+                      <div className="h-1.5 bg-black/60 rounded-full overflow-hidden border border-white/5">
+                        <div
+                          className="h-full rounded-full transition-all duration-500"
+                          style={{
+                            width: `${pct}%`,
+                            background: `linear-gradient(90deg, ${teamColor}, #facc15)`,
+                            boxShadow: `0 0 10px ${teamColor}70`
+                          }}
+                        />
                       </div>
                     </div>
 
-                    {/* Budget numbers */}
-                    <div style={{ textAlign: 'right', minWidth: 130 }}>
-                      <div style={{
-                        fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 700,
-                        color: 'var(--spl-gold-light)',
-                      }}>
+                    {/* Budget Balance & Spent */}
+                    <div className="text-right shrink-0 w-[125px] xl:w-[135px]">
+                      <div
+                        style={{ fontFamily: 'var(--font-display)' }}
+                        className="text-sm font-extrabold text-amber-300 leading-tight"
+                      >
                         {formatCurrency(team.currentBalance, tournament?.currency)}
                       </div>
-                      <div style={{ fontFamily: 'var(--font-body)', fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>
-                        Spent: {formatCurrency(team.totalSpent || 0, tournament?.currency)}
-                      </div>
-                    </div>
-
-                    {/* Players count */}
-                    <div style={{ textAlign: 'center', minWidth: 60 }}>
-                      <div style={{
-                        fontFamily: 'var(--font-broadcast)', fontSize: 26,
-                        color: 'var(--text-secondary)', lineHeight: 1,
-                      }}>
-                        {team.playersBought || 0}
-                      </div>
-                      <div style={{ fontFamily: 'var(--font-body)', fontSize: 10, color: 'var(--text-muted)', letterSpacing: '0.1em' }}>
-                        PLAYERS
+                      <div className="text-[10px] text-slate-400 leading-tight mt-0.5">
+                        Spent: <span className="text-slate-300 font-semibold">{formatCurrency(spent, tournament?.currency)}</span>
                       </div>
                     </div>
                   </div>
@@ -259,15 +346,12 @@ export const Dashboard = () => {
               })}
 
               {teams.length === 0 && (
-                <div style={{ padding: '48px 24px', textAlign: 'center' }}>
-                  <Users className="w-10 h-10 mx-auto mb-3 text-slate-600" />
-                  <div style={{ fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.1em', marginBottom: 12 }}>
-                    NO CLUBS REGISTERED YET
-                  </div>
+                <div className="py-12 text-center flex flex-col items-center justify-center">
+                  <Users className="w-8 h-8 text-slate-600 mb-2" />
+                  <div className="text-xs font-bold uppercase text-slate-400">No Clubs Registered</div>
                   <button
                     onClick={() => navigate('/admin/teams')}
-                    className="btn-primary"
-                    style={{ padding: '9px 18px', fontSize: 13 }}
+                    className="mt-3 px-3 py-1 rounded bg-blue-600 text-xs font-bold text-white hover:bg-blue-500"
                   >
                     Register Clubs
                   </button>
@@ -276,93 +360,150 @@ export const Dashboard = () => {
             </div>
           </div>
 
-          {/* Recent transfers */}
-          {history.length > 0 && (
-            <div style={{ marginTop: 24 }}>
-              <div style={{
-                fontFamily: 'var(--font-display)', fontSize: 13, fontWeight: 700,
-                color: 'var(--text-secondary)', letterSpacing: '0.15em', marginBottom: 12, textTransform: 'uppercase',
-              }}>
-                Recent Transfers
+          {/* Recent Transfers Feed */}
+          <div
+            className="rounded-xl border border-white/10 px-4 py-2.5 shrink-0 shadow-lg"
+            style={{
+              background: 'linear-gradient(180deg, rgba(15, 23, 42, 0.94) 0%, rgba(8, 12, 24, 0.97) 100%)',
+              backdropFilter: 'blur(20px)',
+              height: '115px'
+            }}
+          >
+            <div className="flex items-center justify-between pb-1.5 mb-1.5 border-b border-white/10">
+              <div className="flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                <span className="text-[11px] font-bold text-slate-300 uppercase tracking-wider">
+                  Latest Transfers
+                </span>
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {history.slice(0, 5).map((record, i) => {
-                  const team = teams.find(t => t.id === record.teamId);
-                  const isSold = record.status === 'SOLD';
+              <button
+                onClick={() => navigate('/admin/history')}
+                className="text-[10.5px] font-bold text-slate-400 hover:text-white transition-colors flex items-center gap-1 cursor-pointer"
+              >
+                <span>Full History</span>
+                <ArrowUpRight className="w-3 h-3" />
+              </button>
+            </div>
+
+            {recentTransfers.length > 0 ? (
+              <div className="flex items-center gap-2 overflow-x-auto scrollbar-none py-0.5">
+                {recentTransfers.map((rec, i) => {
+                  const t = teams.find(team => team.id === rec.teamId);
+                  const teamColor = t?.primaryColor || '#38bdf8';
+
                   return (
-                    <div key={i} style={{
-                      display: 'flex', alignItems: 'center', gap: 16,
-                      background: 'var(--spl-panel)', border: '1px solid var(--border-subtle)',
-                      borderRadius: 8, padding: '14px 18px',
-                      borderLeft: `4px solid ${isSold ? '#22C55E' : '#EF4444'}`,
-                    }}>
-                      <div style={{ flex: 1 }}>
-                        <div style={{
-                          fontFamily: 'var(--font-display)', fontSize: 15, fontWeight: 700,
-                          color: 'var(--text-primary)', letterSpacing: '0.03em', textTransform: 'uppercase',
-                        }}>
-                          {record.playerName}
+                    <div
+                      key={i}
+                      className="flex items-center gap-2.5 px-3 py-1.5 rounded-lg bg-black/40 border border-white/10 shrink-0 hover:border-white/20 transition-all"
+                      style={{ borderLeft: `3px solid ${teamColor}` }}
+                    >
+                      <div className="min-w-0">
+                        <div className="text-xs font-bold text-white truncate max-w-[120px]">
+                          {rec.playerName}
                         </div>
-                        {isSold && team && (
-                          <div style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>
-                            → {record.teamName}
-                          </div>
-                        )}
+                        <div className="text-[10px] text-slate-400 truncate max-w-[120px]">
+                          → {rec.teamName}
+                        </div>
                       </div>
-                      <div style={{
-                        fontFamily: 'var(--font-broadcast)', fontSize: 22,
-                        color: isSold ? 'var(--spl-gold-light)' : '#EF4444',
-                      }}>
-                        {isSold ? formatCurrency(record.finalPrice, tournament?.currency) : 'UNSOLD'}
+                      <div
+                        style={{ fontFamily: 'var(--font-broadcast)' }}
+                        className="text-base text-amber-300 font-bold shrink-0 leading-none pl-1"
+                      >
+                        {formatCurrency(rec.finalPrice, tournament?.currency)}
                       </div>
                     </div>
                   );
                 })}
               </div>
-            </div>
-          )}
+            ) : (
+              <div className="text-xs text-slate-500 py-3 text-center">
+                No players sold yet. Enter the Live Auction to begin bidding!
+              </div>
+            )}
+          </div>
+
         </div>
 
-        {/* Right: Featured Player Card */}
-        <div>
-          <div style={{
-            fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: 700,
-            color: 'var(--text-secondary)', letterSpacing: '0.2em', textTransform: 'uppercase',
-            textAlign: 'center', marginBottom: 14,
-          }}>
-            NEXT IN AUCTION
+        {/* ── RIGHT PANE: NEXT IN AUCTION SPOTLIGHT ── */}
+        <div
+          className="w-full lg:w-[310px] xl:w-[325px] shrink-0 rounded-xl border border-white/10 p-3.5 flex flex-col justify-between items-center shadow-2xl relative overflow-hidden min-h-0"
+          style={{
+            background: 'linear-gradient(180deg, rgba(16, 23, 42, 0.95) 0%, rgba(7, 10, 20, 0.98) 100%)',
+            backdropFilter: 'blur(20px)',
+          }}
+        >
+          {/* Ambient Card Spotlight Glow */}
+          <div
+            className="absolute -top-12 -right-12 w-48 h-48 rounded-full pointer-events-none opacity-20 filter blur-3xl"
+            style={{ background: isAuctionLive ? '#ef4444' : '#f59e0b' }}
+          />
+
+          {/* Card Header & Status */}
+          <div className="w-full flex items-center justify-between pb-2 mb-1 border-b border-white/10 z-10 shrink-0">
+            <div className="flex items-center gap-1.5">
+              <span
+                className={`w-2 h-2 rounded-full ${isAuctionLive ? 'bg-red-500 animate-ping' : 'bg-amber-400 animate-pulse'}`}
+              />
+              <span className="text-[11px] font-extrabold uppercase tracking-widest text-slate-200">
+                {isAuctionLive ? 'LIVE ON AUCTION' : 'NEXT IN AUCTION'}
+              </span>
+            </div>
+            {featuredPlayer && (
+              <span className="text-[10.5px] font-black px-2 py-0.5 rounded bg-black/60 border border-white/15 text-amber-400">
+                OVR {featuredPlayer.overallRating || featuredPlayer.rating || 88}
+              </span>
+            )}
           </div>
-          {featuredPlayer ? (
-            <div style={{ display: 'flex', justifyContent: 'center' }}>
+
+          {/* EA FC Ultimate Team Card */}
+          <div className="my-auto py-1 flex items-center justify-center relative z-10 drop-shadow-[0_12px_24px_rgba(0,0,0,0.85)]">
+            {featuredPlayer ? (
               <EFootballCard
                 player={featuredPlayer}
-                size="lg"
+                size={0.70}
+                disableBackdrop={true}
                 onClick={() => navigate('/admin/auction')}
               />
-            </div>
-          ) : (
-            <div style={{
-              background: 'var(--spl-panel)', border: '1px solid var(--border-subtle)',
-              borderRadius: 10, height: 320,
-              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14,
-              padding: '24px', textAlign: 'center',
-            }}>
-              <Gavel className="w-10 h-10 text-slate-600" />
-              <div style={{ fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.1em' }}>
-                NO UPCOMING PLAYERS
+            ) : (
+              <div className="py-16 text-center text-slate-500">
+                <Gavel className="w-10 h-10 mx-auto mb-2 opacity-40" />
+                <div className="text-xs font-bold uppercase tracking-wider">Draft Pool Exhausted</div>
               </div>
-              <button
-                onClick={() => navigate('/admin/players')}
-                className="btn-ghost"
-                style={{ padding: '8px 16px', fontSize: 12 }}
-              >
-                Add / Import Players
-              </button>
-            </div>
-          )}
+            )}
+          </div>
+
+          {/* Bottom Action Chamber */}
+          <div className="w-full pt-2 border-t border-white/10 z-10 flex flex-col gap-2 shrink-0">
+            {featuredPlayer && (
+              <div className="flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-black/50 border border-white/10 text-xs">
+                <span className="text-slate-400 font-medium">Base Price</span>
+                <span className="font-extrabold text-amber-300 font-broadcast text-base">
+                  {formatCurrency(featuredPlayer.basePrice || 1000, tournament?.currency)}
+                </span>
+              </div>
+            )}
+
+            <button
+              onClick={() => navigate('/admin/auction')}
+              className="w-full py-2.5 px-3 rounded-lg flex items-center justify-center gap-2 font-bold text-xs uppercase tracking-wider text-white transition-all shadow-md hover:brightness-110 active:scale-95 cursor-pointer"
+              style={{
+                background: isAuctionLive
+                  ? 'linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)'
+                  : 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+                boxShadow: isAuctionLive
+                  ? '0 4px 14px rgba(239, 68, 68, 0.4)'
+                  : '0 4px 14px rgba(59, 130, 246, 0.35)',
+              }}
+            >
+              <Gavel className="w-3.5 h-3.5 shrink-0" />
+              <span>{isAuctionLive ? 'Join Live Bidding' : 'Auction This Player'}</span>
+              <ArrowRight className="w-3.5 h-3.5 shrink-0" />
+            </button>
+          </div>
         </div>
 
       </div>
+
     </div>
   );
 };

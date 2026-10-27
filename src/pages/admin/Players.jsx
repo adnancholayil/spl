@@ -533,7 +533,7 @@ export const Players = () => {
                   {/* Base Price */}
                   <div>
                     <label style={{ fontFamily: 'var(--font-display)', fontSize: 9, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.2em', display: 'block', marginBottom: 5 }}>
-                      BASE PRICE ({tournament?.currency || '₹'})
+                      BASE PRICE ({tournament?.currency || '$'})
                     </label>
                     <input 
                       type="number" 

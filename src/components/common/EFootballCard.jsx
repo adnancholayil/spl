@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { formatCurrency } from '../../utils/currency';
 import { storageService } from '../../services/storageService';
 import { CardStudioTransformOverlay } from './CardStudioTransformOverlay';
+import { createRealisticPlayerPortrait } from '../../utils/fifaPlayerGenerator';
 
 /**
  * Pro-Level EA FC 24 Ultimate Team Player Card Component
@@ -17,12 +18,14 @@ export const EFootballCard = ({
   showPrice = false,
   highlight = false,
   disableShadow = false,
+  disableBackdrop = false,
   customThemeOverride = null,
   isStudio = false,
   selectedElement = null,
   onSelectElement = null,
   onUpdateTheme = null,
   onCommitHistory = null,
+  centerVisual = false,
 }) => {
   if (!player) return null;
 
@@ -31,7 +34,7 @@ export const EFootballCard = ({
   const photoOffsetX = player.photoOffsetX !== undefined ? parseInt(player.photoOffsetX, 10) : 0;
   const photoOffsetY = player.photoOffsetY !== undefined ? parseInt(player.photoOffsetY, 10) : 0;
 
-  const heroImage = player.presentationPng || player.photoUrl || player.photo;
+  const heroImage = player.presentationPng || player.photoUrl || player.photo || (player.name ? createRealisticPlayerPortrait(player.name, player.position) : null);
   const ovr = player.overallRating || player.rating || player.ovr || (player.stats ? Math.round(Object.values(player.stats).reduce((a,b)=>a+b,0)/Object.values(player.stats).length) : 98);
   const position = (player.position || 'RW').toUpperCase();
   const name = player.name || 'PLAYER';
@@ -149,6 +152,24 @@ export const EFootballCard = ({
     photoClipPath = "M 160 415 L 15 340 L 15 60 L 60 15 L 60 -100 L 260 -100 L 260 15 L 305 60 L 305 340 Z";
   }
 
+  // Calculate vertical offset to ensure card is centered in 320x440 viewBox
+  const getCardShapeOffsetY = (shape) => {
+    switch (shape) {
+      case 'shield':
+        return -7.5;
+      case 'classic':
+      case 'notched':
+        return 10;
+      case 'hex':
+      case 'cyber':
+        return 5;
+      case 'eafc24':
+      default:
+        return 15;
+    }
+  };
+  const visualOffsetY = centerVisual ? getCardShapeOffsetY(cfg.cardShape) : 0;
+
   return (
     <div
       onClick={onClick}
@@ -160,7 +181,7 @@ export const EFootballCard = ({
       }}
     >
       {/* ── REAL CARD VISUAL EFFECTS (Backdrop rays, particles & pulse) ── */}
-      {effectsOn && (
+      {effectsOn && !disableBackdrop && (
         <>
           {cfg.fxBgRays !== false && (
             <div
@@ -210,7 +231,7 @@ export const EFootballCard = ({
         height={cardHeight}
         className="w-full h-full overflow-visible"
       >
-        <g transform="scale(4)">
+        <g transform={`scale(4)${visualOffsetY ? ` translate(0, ${visualOffsetY})` : ''}`}>
         <defs>
           <path id={`card-shape-${idSuffix}`} d={cardPath} />
 
@@ -519,13 +540,13 @@ export const EFootballCard = ({
           
           {/* Header Lines / Inner Accents (Removed per user request) */}
           {/* STATS BACKGROUND GRADIENT (Darkens bottom half for text legibility) */}
-          <rect x="0" y={(cfg.layoutShadowY ?? 220) + 20} width="320" height="200" fill="url(#photo-fade-darken)" opacity="0" />
-          <linearGradient id="photo-fade-darken" x1="0%" y1="0%" x2="0%" y2="100%">
+          <rect x="0" y={(cfg.layoutShadowY ?? 220) + 20} width="320" height="200" fill={`url(#photo-fade-darken-${idSuffix})`} opacity="0" />
+          <linearGradient id={`photo-fade-darken-${idSuffix}`} x1="0%" y1="0%" x2="0%" y2="100%">
             <stop offset="0%" stopColor="#000000" stopOpacity="0" />
             <stop offset="40%" stopColor="#000000" stopOpacity={(cfg.layoutShadowOpacity ?? 60) * 0.5 / 100} />
             <stop offset="100%" stopColor="#000000" stopOpacity={(cfg.layoutShadowOpacity ?? 60) / 100} />
           </linearGradient>
-          <rect x="0" y={cfg.layoutShadowY ?? 220} width="320" height={Math.max(10, 440 - (cfg.layoutShadowY ?? 220))} fill="url(#photo-fade-darken)" />
+          <rect x="0" y={cfg.layoutShadowY ?? 220} width="320" height={Math.max(10, 440 - (cfg.layoutShadowY ?? 220))} fill={`url(#photo-fade-darken-${idSuffix})`} />
 
           {/* RATING & POSITION */}
           {(cfg.showRating !== false || cfg.showLogos !== false) && (

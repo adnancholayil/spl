@@ -1,23 +1,62 @@
 import React, { useState } from 'react';
 import { useTournament } from '../../context/TournamentContext';
 import { storageService } from '../../services/storageService';
+import { soundEngine } from '../../services/soundService';
+import { formatCurrency } from '../../utils/currency';
 import { ConfirmModal } from '../../components/common/ConfirmModal';
-import { Download, Upload, RotateCcw, AlertTriangle, Zap, CheckCircle2, Trash2, Users, Palette, Tv } from 'lucide-react';
+import {
+  Download,
+  Upload,
+  RotateCcw,
+  AlertTriangle,
+  Zap,
+  CheckCircle2,
+  Trash2,
+  Users,
+  Palette,
+  Tv,
+  Coins,
+  Check,
+  Sparkles
+} from 'lucide-react';
 import { generateMockData } from '../../utils/mockDataGenerator';
 import { createRealisticPlayerPortrait } from '../../utils/fifaPlayerGenerator';
 import { useNavigate } from 'react-router-dom';
+
 export const Settings = () => {
-  const { refreshData } = useTournament();
+  const { tournament, updateTournament, setCurrency, refreshData } = useTournament();
   const navigate = useNavigate();
 
   const [squadFormat, setSquadFormat] = useState(() => storageService.getSquadFormat());
   const [formatSavedToast, setFormatSavedToast] = useState(false);
+
+  // Currency State — Dollar ($), Rupee (₹), and BRICS (India, Russia, China collab currency)
+  const activeCurrency = tournament?.currency || storageService.getCurrency() || '$';
+  const [currencySavedToast, setCurrencySavedToast] = useState(false);
+  const [customCurrencyInput, setCustomCurrencyInput] = useState('');
+  const [showCustomInput, setShowCustomInput] = useState(false);
 
   const handleFormatSelect = (fmt) => {
     setSquadFormat(fmt);
     storageService.saveSquadFormat(fmt);
     setFormatSavedToast(true);
     setTimeout(() => setFormatSavedToast(false), 2500);
+  };
+
+  const handleSelectCurrency = (symbol) => {
+    if (!symbol) return;
+    const clean = symbol.trim();
+    if (typeof setCurrency === 'function') {
+      setCurrency(clean);
+    } else {
+      updateTournament({ currency: clean });
+    }
+    storageService.saveCurrency(clean);
+    try {
+      soundEngine.playFeedbackTone();
+    } catch (_) {}
+    setCurrencySavedToast(true);
+    setTimeout(() => setCurrencySavedToast(false), 2500);
   };
 
   // Custom Modal State
@@ -58,7 +97,6 @@ export const Settings = () => {
       onConfirm
     });
   };
-
 
   const handleExportJSON = () => {
     const data = {
@@ -102,7 +140,6 @@ export const Settings = () => {
       reader.readAsText(file);
     }
   };
-
 
   const handleClearAll = () => {
     showConfirm({
@@ -155,7 +192,7 @@ export const Settings = () => {
       boxSizing: 'border-box',
       display: 'flex', 
       flexDirection: 'column', 
-      gap: 20 
+      gap: 18 
     }}>
 
       {/* Broadcast Confirm Modal */}
@@ -171,7 +208,7 @@ export const Settings = () => {
         isAlert={modalConfig.isAlert}
       />
 
-      {/* ── TOAST NOTIFICATION ── */}
+      {/* ── SQUAD FORMAT TOAST ── */}
       {formatSavedToast && (
         <div style={{
           position: 'fixed',
@@ -200,6 +237,36 @@ export const Settings = () => {
         </div>
       )}
 
+      {/* ── CURRENCY SYNCHRONIZED TOAST ── */}
+      {currencySavedToast && (
+        <div style={{
+          position: 'fixed',
+          bottom: 24,
+          right: 24,
+          zIndex: 9999,
+          background: 'rgba(15, 23, 42, 0.96)',
+          border: '1px solid #F59E0B',
+          borderRadius: 10,
+          padding: '14px 20px',
+          boxShadow: '0 10px 25px rgba(0,0,0,0.5), 0 0 20px rgba(245,158,11,0.35)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+          backdropFilter: 'blur(12px)',
+          animation: 'fadeIn 0.2s ease',
+        }}>
+          <CheckCircle2 style={{ width: 20, height: 20, color: '#F59E0B' }} />
+          <div>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: 13, fontWeight: 800, color: '#fff', textTransform: 'uppercase' }}>
+              Currency Synchronized
+            </div>
+            <div style={{ fontFamily: 'var(--font-body)', fontSize: 12.5, color: '#94a3b8' }}>
+              Tournament currency set to <strong style={{ color: '#F59E0B' }}>{activeCurrency}</strong>. All live bids, team budgets, and projector ticker updated in real-time.
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── BROADCAST HEADER ── */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 16, borderBottom: '1px solid var(--border-subtle)', flexWrap: 'wrap', gap: 14 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
@@ -213,26 +280,38 @@ export const Settings = () => {
             </h1>
           </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 16px', borderRadius: 20, background: 'rgba(56,189,248,0.08)', border: '1px solid rgba(56,189,248,0.25)' }}>
-          <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
-          <span style={{ fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: 800, color: '#38BDF8', letterSpacing: '0.12em' }}>
-            ACTIVE SQUAD STRENGTH: <strong style={{ color: '#fff' }}>{squadFormat.toUpperCase()}</strong>
-          </span>
+        
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+          {/* Active Currency Badge */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 15px', borderRadius: 20, background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)' }}>
+            <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse" />
+            <span style={{ fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: 800, color: '#F59E0B', letterSpacing: '0.12em' }}>
+              CURRENCY: <strong style={{ color: '#fff' }}>{activeCurrency}</strong> ({formatCurrency(5000, activeCurrency)})
+            </span>
+          </div>
+
+          {/* Active Squad Format Badge */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 15px', borderRadius: 20, background: 'rgba(56,189,248,0.08)', border: '1px solid rgba(56,189,248,0.25)' }}>
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+            <span style={{ fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: 800, color: '#38BDF8', letterSpacing: '0.12em' }}>
+              SQUAD: <strong style={{ color: '#fff' }}>{squadFormat.toUpperCase()}</strong>
+            </span>
+          </div>
         </div>
       </div>
 
-      {/* ── 1. MATCH FORMAT & TACTICAL PITCH FORMATION (100% Width Responsive Grid) ── */}
-      <div style={{ background: 'var(--spl-panel)', border: '1px solid var(--border-subtle)', borderRadius: 12, padding: '18px 22px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+      {/* ── 1. MATCH FORMAT & TACTICAL PITCH FORMATION ── */}
+      <div style={{ background: 'var(--spl-panel)', border: '1px solid var(--border-subtle)', borderRadius: 12, padding: '16px 20px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
             <span style={{ fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: 800, color: '#38BDF8', letterSpacing: '0.18em', textTransform: 'uppercase' }}>
               MATCH FORMAT & SQUAD STRENGTH
             </span>
-            <span style={{ fontSize: 12.5, color: 'var(--text-muted)' }}>• Controls field slot layout on both Projector Signing Reveal and Squad Showcase</span>
+            <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>• Controls field slot layout on both Projector Signing Reveal and Squad Showcase</span>
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14 }}>
           {[
             {
               id: '11s',
@@ -268,7 +347,7 @@ export const Settings = () => {
                   background: isSelected ? 'rgba(15, 23, 42, 0.95)' : 'rgba(255, 255, 255, 0.02)',
                   border: isSelected ? `2px solid ${opt.accent}` : '1px solid rgba(255,255,255,0.08)',
                   borderRadius: 10,
-                  padding: '16px 18px',
+                  padding: '14px 16px',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
@@ -277,18 +356,18 @@ export const Settings = () => {
                   transition: 'all 0.18s ease',
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                   <div style={{
-                    width: 48,
-                    height: 48,
-                    borderRadius: 10,
+                    width: 42,
+                    height: 42,
+                    borderRadius: 9,
                     background: isSelected ? `${opt.accent}25` : 'rgba(255,255,255,0.05)',
                     border: `1px solid ${isSelected ? opt.accent : 'rgba(255,255,255,0.1)'}`,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     fontFamily: 'var(--font-broadcast)',
-                    fontSize: 20,
+                    fontSize: 18,
                     fontWeight: 900,
                     color: isSelected ? opt.accent : '#94a3b8',
                     flexShrink: 0
@@ -296,30 +375,30 @@ export const Settings = () => {
                     {opt.id.toUpperCase()}
                   </div>
                   <div>
-                    <div style={{ fontFamily: 'var(--font-broadcast)', fontSize: 18, color: '#fff', lineHeight: 1.1, letterSpacing: '0.02em' }}>
+                    <div style={{ fontFamily: 'var(--font-broadcast)', fontSize: 17, color: '#fff', lineHeight: 1.1, letterSpacing: '0.02em' }}>
                       {opt.formation}
                     </div>
-                    <div style={{ fontFamily: 'var(--font-display)', fontSize: 11, fontWeight: 700, color: opt.accent, letterSpacing: '0.12em', textTransform: 'uppercase', marginTop: 3 }}>
+                    <div style={{ fontFamily: 'var(--font-display)', fontSize: 10.5, fontWeight: 700, color: opt.accent, letterSpacing: '0.12em', textTransform: 'uppercase', marginTop: 3 }}>
                       {opt.slots}
                     </div>
                   </div>
                 </div>
 
                 <div style={{
-                  padding: '6px 14px',
+                  padding: '5px 12px',
                   borderRadius: 6,
                   background: isSelected ? opt.accent : 'rgba(255,255,255,0.06)',
                   color: isSelected ? '#0f172a' : '#94a3b8',
-                  fontSize: 11,
+                  fontSize: 10.5,
                   fontWeight: 900,
                   fontFamily: 'var(--font-display)',
                   letterSpacing: '0.12em',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 5,
+                  gap: 4,
                   flexShrink: 0
                 }}>
-                  {isSelected && <CheckCircle2 size={13} />}
+                  {isSelected && <CheckCircle2 size={12} />}
                   {isSelected ? 'ACTIVE' : 'SELECT'}
                 </div>
               </div>
@@ -328,7 +407,210 @@ export const Settings = () => {
         </div>
       </div>
 
-      {/* ── 2. DUAL-COLUMN MANAGEMENT MATRIX (Width 100%, 50% / 50% Columns) ── */}
+      {/* ── 2. TOURNAMENT CURRENCY (Compact Small Single-Row Strip) ── */}
+      <div style={{
+        background: 'var(--spl-panel)',
+        border: '1px solid var(--border-subtle)',
+        borderRadius: 10,
+        padding: '10px 18px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        flexWrap: 'wrap',
+        gap: 12
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{
+            width: 30,
+            height: 30,
+            borderRadius: 7,
+            background: 'rgba(245, 158, 11, 0.15)',
+            border: '1px solid rgba(245, 158, 11, 0.3)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#F59E0B'
+          }}>
+            <Coins size={15} />
+          </div>
+          <div>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: 11.5, fontWeight: 800, color: '#fff', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+              CURRENCY TYPE
+            </div>
+            <div style={{ fontFamily: 'var(--font-body)', fontSize: 11, color: 'var(--text-muted)' }}>
+              Active currency across bids, team purses, and projector screens
+            </div>
+          </div>
+        </div>
+
+        {/* The 3 Currencies: Rupees (₹), Dollar ($), and BRICS (India/Russia/China) + Custom */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          {[
+            { id: 'INR', symbol: '₹', label: 'Rupees (₹)', sub: 'INR', color: '#22C55E' },
+            { id: 'USD', symbol: '$', label: 'Dollar ($)', sub: 'USD', color: '#38BDF8' },
+            { id: 'BRICS', symbol: 'BRICS', label: 'BRICS Unit', sub: 'IND • RUS • CHN', color: '#F59E0B' },
+          ].map(curr => {
+            const isSelected = activeCurrency === curr.symbol;
+            return (
+              <button
+                key={curr.id}
+                onClick={() => handleSelectCurrency(curr.symbol)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 7,
+                  padding: '6px 14px',
+                  borderRadius: 7,
+                  cursor: 'pointer',
+                  border: isSelected ? `1.5px solid ${curr.color}` : '1px solid rgba(255, 255, 255, 0.08)',
+                  background: isSelected ? `${curr.color}22` : 'rgba(255, 255, 255, 0.02)',
+                  color: isSelected ? '#fff' : 'var(--text-secondary)',
+                  boxShadow: isSelected ? `0 0 12px ${curr.color}35` : 'none',
+                  transition: 'all 0.15s ease'
+                }}
+                onMouseEnter={e => {
+                  if (!isSelected) {
+                    e.currentTarget.style.borderColor = `${curr.color}66`;
+                    e.currentTarget.style.background = 'var(--spl-elevated)';
+                    e.currentTarget.style.color = '#fff';
+                  }
+                }}
+                onMouseLeave={e => {
+                  if (!isSelected) {
+                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)';
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.02)';
+                    e.currentTarget.style.color = 'var(--text-secondary)';
+                  }
+                }}
+              >
+                <span style={{
+                  fontFamily: 'var(--font-broadcast)',
+                  fontSize: 16,
+                  fontWeight: 900,
+                  color: isSelected ? curr.color : '#fff',
+                  lineHeight: 1
+                }}>
+                  {curr.symbol}
+                </span>
+                <span style={{
+                  fontFamily: 'var(--font-display)',
+                  fontSize: 11.5,
+                  fontWeight: 700,
+                  letterSpacing: '0.04em'
+                }}>
+                  {curr.label}
+                </span>
+                {isSelected && (
+                  <span style={{
+                    padding: '2px 5px',
+                    borderRadius: 4,
+                    background: curr.color,
+                    color: '#0f172a',
+                    fontSize: 9,
+                    fontWeight: 900,
+                    fontFamily: 'var(--font-display)',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 2
+                  }}>
+                    <Check size={9} /> ACTIVE
+                  </span>
+                )}
+              </button>
+            );
+          })}
+
+          {/* Tiny Custom Currency Trigger */}
+          {showCustomInput ? (
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (customCurrencyInput.trim()) {
+                  handleSelectCurrency(customCurrencyInput.trim());
+                  setShowCustomInput(false);
+                  setCustomCurrencyInput('');
+                }
+              }}
+              style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+            >
+              <input
+                type="text"
+                placeholder="Custom..."
+                value={customCurrencyInput}
+                onChange={e => setCustomCurrencyInput(e.target.value)}
+                maxLength={8}
+                autoFocus
+                style={{
+                  width: 85,
+                  padding: '5px 8px',
+                  borderRadius: 6,
+                  background: 'var(--spl-elevated)',
+                  border: '1px solid #F59E0B',
+                  color: '#fff',
+                  fontFamily: 'var(--font-display)',
+                  fontSize: 11,
+                  fontWeight: 700,
+                  outline: 'none'
+                }}
+              />
+              <button
+                type="submit"
+                disabled={!customCurrencyInput.trim()}
+                style={{
+                  padding: '5px 10px',
+                  borderRadius: 6,
+                  background: '#F59E0B',
+                  color: '#0f172a',
+                  border: 'none',
+                  fontFamily: 'var(--font-display)',
+                  fontSize: 10.5,
+                  fontWeight: 800,
+                  cursor: customCurrencyInput.trim() ? 'pointer' : 'not-allowed'
+                }}
+              >
+                Set
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowCustomInput(false)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'var(--text-muted)',
+                  cursor: 'pointer',
+                  padding: '0 4px',
+                  fontSize: 13
+                }}
+              >
+                ✕
+              </button>
+            </form>
+          ) : (
+            <button
+              onClick={() => setShowCustomInput(true)}
+              style={{
+                padding: '6px 11px',
+                borderRadius: 7,
+                cursor: 'pointer',
+                border: (!['$', '₹', 'BRICS'].includes(activeCurrency)) ? '1.5px solid #F59E0B' : '1px dashed rgba(255, 255, 255, 0.15)',
+                background: (!['$', '₹', 'BRICS'].includes(activeCurrency)) ? 'rgba(245, 158, 11, 0.18)' : 'transparent',
+                color: (!['$', '₹', 'BRICS'].includes(activeCurrency)) ? '#F59E0B' : 'var(--text-muted)',
+                fontFamily: 'var(--font-display)',
+                fontSize: 11,
+                fontWeight: 700,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4
+              }}
+            >
+              <Sparkles size={11} />
+              <span>{!['$', '₹', 'BRICS'].includes(activeCurrency) ? `Custom: ${activeCurrency}` : '+ Custom'}</span>
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* ── 3. DUAL-COLUMN MANAGEMENT MATRIX (Width 100%, 50% / 50% Columns — Exact Old Layout) ── */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18 }}>
         
         {/* LEFT COLUMN: Studio & Display Customization + Demo Data */}
@@ -452,11 +734,11 @@ export const Settings = () => {
           flexDirection: 'column',
           gap: 14
         }}>
-          <div style={{ fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: 800, color: 'var(--spl-blue-light, #38BDF8)', letterSpacing: '0.18em', textTransform: 'uppercase', marginBottom: 2 }}>
-            BACKUPS & DATA INTEGRITY
+          <div style={{ fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: 800, color: '#38BDF8', letterSpacing: '0.18em', textTransform: 'uppercase', marginBottom: 2 }}>
+            SYSTEM BACKUP & DATABASE CONTROL
           </div>
 
-          {/* Export JSON */}
+          {/* Export Backup JSON */}
           <button
             onClick={handleExportJSON}
             style={{
@@ -465,30 +747,30 @@ export const Settings = () => {
               borderRadius: 10, padding: '14px 18px', cursor: 'pointer', textAlign: 'left',
               transition: 'all 0.15s ease',
             }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--spl-blue)'; e.currentTarget.style.background = 'var(--spl-elevated)'; }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--spl-blue-light)'; e.currentTarget.style.background = 'var(--spl-elevated)'; }}
             onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.07)'; e.currentTarget.style.background = 'rgba(255,255,255,0.02)'; }}
           >
             <div style={{
               width: 44, height: 44, borderRadius: 10, flexShrink: 0,
-              background: 'rgba(26,86,219,0.15)', border: '1px solid rgba(26,86,219,0.3)',
+              background: 'rgba(56,189,248,0.12)', border: '1px solid rgba(56,189,248,0.25)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
-              <Download className="w-5 h-5" style={{ color: 'var(--spl-blue-light)' }} />
+              <Download className="w-5 h-5" style={{ color: '#38BDF8' }} />
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 800, color: '#fff', letterSpacing: '0.04em', textTransform: 'uppercase', lineHeight: 1.2 }}>
-                Export Complete Backup (.JSON)
+                Export Database Backup (.JSON)
               </div>
               <div style={{ fontFamily: 'var(--font-body)', fontSize: 12.5, color: 'var(--text-secondary)', marginTop: 3 }}>
-                Download tournament configuration, clubs, player rosters, and auction history
+                Download offline JSON copy of all clubs, squads, players, and auction history
               </div>
             </div>
-            <span style={{ fontSize: 11, fontFamily: 'var(--font-display)', fontWeight: 800, color: 'var(--spl-blue-light)', background: 'rgba(56,189,248,0.12)', border: '1px solid rgba(56,189,248,0.25)', padding: '6px 12px', borderRadius: 6, flexShrink: 0 }}>
+            <span style={{ fontSize: 11, fontFamily: 'var(--font-display)', fontWeight: 800, color: '#38BDF8', background: 'rgba(56,189,248,0.1)', border: '1px solid rgba(56,189,248,0.25)', padding: '6px 12px', borderRadius: 6, flexShrink: 0 }}>
               EXPORT
             </span>
           </button>
 
-          {/* Import JSON */}
+          {/* Import Backup JSON */}
           <label
             style={{
               display: 'flex', alignItems: 'center', gap: 16,
@@ -496,25 +778,25 @@ export const Settings = () => {
               borderRadius: 10, padding: '14px 18px', cursor: 'pointer', textAlign: 'left',
               transition: 'all 0.15s ease',
             }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = '#22C55E'; e.currentTarget.style.background = 'var(--spl-elevated)'; }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--spl-green-light)'; e.currentTarget.style.background = 'var(--spl-elevated)'; }}
             onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.07)'; e.currentTarget.style.background = 'rgba(255,255,255,0.02)'; }}
           >
             <div style={{
               width: 44, height: 44, borderRadius: 10, flexShrink: 0,
-              background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.3)',
+              background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.25)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
               <Upload className="w-5 h-5" style={{ color: '#22C55E' }} />
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 800, color: '#fff', letterSpacing: '0.04em', textTransform: 'uppercase', lineHeight: 1.2 }}>
-                Import Tournament JSON Backup
+                Import Database Backup (.JSON)
               </div>
               <div style={{ fontFamily: 'var(--font-body)', fontSize: 12.5, color: 'var(--text-secondary)', marginTop: 3 }}>
-                Restore tournament settings, clubs, and squad rosters from a backup file
+                Restore clubs, players, and tournament data from a local JSON file
               </div>
             </div>
-            <span style={{ fontSize: 11, fontFamily: 'var(--font-display)', fontWeight: 800, color: '#22C55E', background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.25)', padding: '6px 12px', borderRadius: 6, flexShrink: 0 }}>
+            <span style={{ fontSize: 11, fontFamily: 'var(--font-display)', fontWeight: 800, color: '#22C55E', background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.25)', padding: '6px 12px', borderRadius: 6, flexShrink: 0 }}>
               IMPORT
             </span>
             <input type="file" accept=".json" onChange={handleImportJSON} style={{ display: 'none' }} />

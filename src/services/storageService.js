@@ -1,5 +1,6 @@
 // Offline Persistence Engine — SPL Auction Platform
 import { createRealisticPlayerPortrait, createTeamLogoSvg } from '../utils/fifaPlayerGenerator';
+import { broadcastBus } from '../utils/broadcastChannel';
 
 const KEYS = {
   TOURNAMENT:       'spl_active_tournament',
@@ -13,7 +14,8 @@ const KEYS = {
   CARD_THEME:       'spl_card_theme',
   GK_CARD_THEME:    'spl_gk_card_theme',
   DATA_CLEARED:     'spl_user_cleared_data',
-  DEMO_WIPED:       'spl_demo_cleared_wipe_v2'
+  DEMO_WIPED:       'spl_demo_cleared_wipe_v2',
+  AUDIO_MUTED:      'spl_audio_muted'
 };
 
 const DEFAULT_PROJECTOR_SETTINGS = {
@@ -39,6 +41,17 @@ const DEFAULT_PROJECTOR_SETTINGS = {
   panelBorderOpacity: 10,
   ambientShadowOpacity: 20,
   squadFormat: '11s', // '11s' | '7s' | '5s'
+  homeMediaUrl: '',
+  homeMediaName: '',
+  homeMediaType: 'none', // 'image' | 'video' | 'none'
+  homeMediaCustom: false,
+  homeMediaFullScreen: true,
+  homeMediaFit: 'cover', // 'cover' | 'contain'
+  showLogoOnHomeMedia: true,
+  logoBackgroundBadge: true,
+  showSponsors: false,
+  showSponsorsOnAllScreens: false,
+  sponsors: [],
 };
 
 const DEFAULT_TOURNAMENT = {
@@ -174,12 +187,21 @@ export const storageService = {
     }
 
     const existingTourn = JSON.parse(localStorage.getItem(KEYS.TOURNAMENT) || 'null');
-    if (!existingTourn || existingTourn.name !== 'SUPER PREMIER LEAGUE 2026' || existingTourn.currency !== '$') {
-      localStorage.setItem(KEYS.TOURNAMENT, JSON.stringify({
-        ...(existingTourn || DEFAULT_TOURNAMENT),
-        currency: '$',
-        minIncrement: 5
-      }));
+    if (!existingTourn) {
+      localStorage.setItem(KEYS.TOURNAMENT, JSON.stringify(DEFAULT_TOURNAMENT));
+    } else {
+      let shouldUpdate = false;
+      if (!existingTourn.currency) {
+        existingTourn.currency = '$';
+        shouldUpdate = true;
+      }
+      if (existingTourn.minIncrement === undefined) {
+        existingTourn.minIncrement = 5;
+        shouldUpdate = true;
+      }
+      if (shouldUpdate) {
+        localStorage.setItem(KEYS.TOURNAMENT, JSON.stringify(existingTourn));
+      }
     }
 
     if (!localStorage.getItem(KEYS.TEAMS)) localStorage.setItem(KEYS.TEAMS, JSON.stringify([]));
@@ -189,7 +211,28 @@ export const storageService = {
   },
 
   getTournament()        { this.init(); return JSON.parse(localStorage.getItem(KEYS.TOURNAMENT)); },
-  saveTournament(data)   { localStorage.setItem(KEYS.TOURNAMENT, JSON.stringify(data)); return data; },
+  saveTournament(data)   { 
+    localStorage.setItem(KEYS.TOURNAMENT, JSON.stringify(data)); 
+    try { window.dispatchEvent(new Event('tournament-updated')); } catch (e) {}
+    try { window.dispatchEvent(new Event('storage')); } catch (e) {}
+    try { broadcastBus.publish('TOURNAMENT_UPDATED', data); } catch (e) {}
+    return data; 
+  },
+
+  getCurrency() {
+    try {
+      const tourn = this.getTournament();
+      return tourn?.currency || '$';
+    } catch {
+      return '$';
+    }
+  },
+
+  saveCurrency(currency) {
+    const tourn = this.getTournament() || DEFAULT_TOURNAMENT;
+    tourn.currency = currency;
+    return this.saveTournament(tourn);
+  },
 
   getTeams()             { this.init(); return JSON.parse(localStorage.getItem(KEYS.TEAMS)) || []; },
   saveTeams(teams)       { 
@@ -259,10 +302,21 @@ export const storageService = {
   },
 
   getAuctionState()      { this.init(); return JSON.parse(localStorage.getItem(KEYS.AUCTION_STATE)); },
-  saveAuctionState(state){ localStorage.setItem(KEYS.AUCTION_STATE, JSON.stringify(state)); return state; },
+  saveAuctionState(state){ 
+    localStorage.setItem(KEYS.AUCTION_STATE, JSON.stringify(state)); 
+    try { window.dispatchEvent(new Event('auction-state-updated')); } catch (e) {}
+    try { window.dispatchEvent(new Event('storage')); } catch (e) {}
+    return state; 
+  },
 
   getAuctionHistory()    { this.init(); return JSON.parse(localStorage.getItem(KEYS.AUCTION_HISTORY)) || []; },
-  saveAuctionHistory(h)  { localStorage.setItem(KEYS.AUCTION_HISTORY, JSON.stringify(h)); return h; },
+  saveAuctionHistory(h)  { 
+    localStorage.setItem(KEYS.AUCTION_HISTORY, JSON.stringify(h)); 
+    try { window.dispatchEvent(new Event('history-updated')); } catch (e) {}
+    try { window.dispatchEvent(new Event('storage')); } catch (e) {}
+    try { broadcastBus.publish('AUCTION_HISTORY_UPDATED', h); } catch (e) {}
+    return h; 
+  },
 
   getProjectorSettings() {
     try {
@@ -276,10 +330,29 @@ export const storageService = {
   saveProjectorSettings(settings) {
     try {
       localStorage.setItem(KEYS.PROJECTOR_SETTINGS, JSON.stringify(settings));
-      window.dispatchEvent(new Event('storage'));
     } catch (e) {
-      console.error('Failed to save projector settings', e);
+      console.warn('Failed to save full projector settings to localStorage (quota exceeded):', e);
+      try {
+        // Fallback: strip oversized data strings to ensure critical toggles like showSponsors persist
+        const safeSettings = { ...settings };
+        if (Array.isArray(safeSettings.sponsors)) {
+          safeSettings.sponsors = safeSettings.sponsors.map(s => ({
+            id: s.id,
+            name: s.name,
+            imageUrl: typeof s.imageUrl === 'string' && s.imageUrl.length > 300000 ? '' : s.imageUrl
+          }));
+        }
+        localStorage.setItem(KEYS.PROJECTOR_SETTINGS, JSON.stringify(safeSettings));
+      } catch (err2) {
+        console.error('Projector settings fallback save also failed:', err2);
+      }
     }
+
+    // Always dispatch storage and BroadcastChannel events so other tabs update in real-time
+    try {
+      window.dispatchEvent(new Event('storage'));
+      broadcastBus.publish('PROJECTOR_SETTINGS_UPDATED', settings);
+    } catch (_) {}
   },
 
   getCardTheme() {
@@ -348,6 +421,27 @@ export const storageService = {
     } catch (e) {
       console.error('Failed to save squad format', e);
       return format;
+    }
+  },
+
+  getAudioMuted() {
+    try {
+      return localStorage.getItem(KEYS.AUDIO_MUTED) === 'true';
+    } catch {
+      return false;
+    }
+  },
+
+  saveAudioMuted(muted) {
+    try {
+      const isMuted = Boolean(muted);
+      localStorage.setItem(KEYS.AUDIO_MUTED, String(isMuted));
+      window.dispatchEvent(new CustomEvent('audio-settings-updated', { detail: { muted: isMuted } }));
+      window.dispatchEvent(new Event('storage'));
+      return isMuted;
+    } catch (e) {
+      console.error('Failed to save audio muted state', e);
+      return false;
     }
   },
 

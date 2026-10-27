@@ -3,6 +3,9 @@ import { tournamentService } from '../services/tournamentService';
 import { teamService } from '../services/teamService';
 import { playerService } from '../services/playerService';
 import { storageService } from '../services/storageService';
+import { auctionService } from '../services/auctionService';
+
+import { broadcastBus } from '../utils/broadcastChannel';
 
 const TournamentContext = createContext(null);
 
@@ -24,9 +27,23 @@ export const TournamentProvider = ({ children }) => {
     const handleUpdate = () => refreshData();
     window.addEventListener('storage', handleUpdate);
     window.addEventListener('teams-updated', handleUpdate);
+    window.addEventListener('players-updated', handleUpdate);
+    window.addEventListener('history-updated', handleUpdate);
+    window.addEventListener('tournament-updated', handleUpdate);
+
+    const unsub = broadcastBus.subscribe((msg) => {
+      if (msg?.type === 'TOURNAMENT_UPDATED') {
+        refreshData();
+      }
+    });
+
     return () => {
       window.removeEventListener('storage', handleUpdate);
       window.removeEventListener('teams-updated', handleUpdate);
+      window.removeEventListener('players-updated', handleUpdate);
+      window.removeEventListener('history-updated', handleUpdate);
+      window.removeEventListener('tournament-updated', handleUpdate);
+      if (unsub) unsub();
     };
   }, []);
 
@@ -34,6 +51,10 @@ export const TournamentProvider = ({ children }) => {
     const updated = tournamentService.updateTournament(updates);
     setTournament(updated);
     return updated;
+  };
+
+  const setCurrency = (currency) => {
+    return updateTournament({ currency });
   };
 
   const addTeam = (teamData) => {
@@ -81,6 +102,18 @@ export const TournamentProvider = ({ children }) => {
     refreshData();
   };
 
+  const resetAllTransfers = () => {
+    const result = auctionService.resetAllTransfers();
+    refreshData();
+    return result;
+  };
+
+  const revertTransfer = (id) => {
+    const result = auctionService.revertTransferById(id);
+    refreshData();
+    return result;
+  };
+
   return (
     <TournamentContext.Provider
       value={{
@@ -97,7 +130,10 @@ export const TournamentProvider = ({ children }) => {
         updatePlayer,
         deletePlayer,
         importBulkPlayers,
-        resetAllData
+        resetAllData,
+        resetAllTransfers,
+        revertTransfer,
+        setCurrency
       }}
     >
       {children}

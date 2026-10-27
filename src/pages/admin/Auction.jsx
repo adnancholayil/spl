@@ -8,6 +8,8 @@ import {
   DollarSign, X, Zap, Sliders, Shield, ArrowUpRight, Check
 } from 'lucide-react';
 import { soundEngine } from '../../services/soundService';
+import { storageService } from '../../services/storageService';
+import { broadcastBus } from '../../utils/broadcastChannel';
 import { createRealisticPlayerPortrait } from '../../utils/fifaPlayerGenerator';
 import { ConfirmModal } from '../../components/common/ConfirmModal';
 
@@ -38,7 +40,7 @@ export const Auction = () => {
 
   const [searchTerm, setSearchTerm] = useState('');
   const [showSoldModal, setShowSoldModal] = useState(false);
-  const [soundMuted, setSoundMuted] = useState(false);
+  const [soundMuted, setSoundMuted] = useState(() => storageService.getAudioMuted());
   const [bidFlash, setBidFlash] = useState(false);
   const [filter, setFilter] = useState('UPCOMING');
 
@@ -91,6 +93,41 @@ export const Auction = () => {
 
   const activePlayer = players.find(p => p.id === auctionState?.currentPlayerId);
   const leadingTeam  = teams.find(t => t.id === auctionState?.leadingTeamId);
+
+  // Sync audio mute state with storage and other windows/projector tabs
+  useEffect(() => {
+    const syncAudio = () => {
+      setSoundMuted(storageService.getAudioMuted());
+    };
+    window.addEventListener('storage', syncAudio);
+    window.addEventListener('audio-settings-updated', syncAudio);
+    const unsub = broadcastBus.subscribe((msg) => {
+      if (msg.type === 'AUDIO_SETTINGS_CHANGED') {
+        setSoundMuted(Boolean(msg.payload?.muted));
+      }
+    });
+    return () => {
+      window.removeEventListener('storage', syncAudio);
+      window.removeEventListener('audio-settings-updated', syncAudio);
+      if (unsub) unsub();
+    };
+  }, []);
+
+  const toggleAudio = async () => {
+    const nextMuted = !soundMuted;
+    setSoundMuted(nextMuted);
+    storageService.saveAudioMuted(nextMuted);
+    soundEngine.setEnabled(!nextMuted);
+
+    if (!nextMuted) {
+      try {
+        await soundEngine.resumeContext();
+        soundEngine.playFeedbackTone();
+      } catch (err) {
+        console.warn('Audio resume failed:', err);
+      }
+    }
+  };
 
   // Trigger flash animation on bid update
   useEffect(() => {
@@ -199,9 +236,9 @@ export const Auction = () => {
       return;
     }
 
-    const val = parseFloat(customBidInput.trim().replace('$', ''));
+    const val = parseFloat(customBidInput.trim().replace(/[^0-9.]/g, ''));
     if (isNaN(val) || val <= 0) {
-      showAlert('Invalid Amount', 'Please enter a valid numeric dollar amount.', 'warning');
+      showAlert('Invalid Amount', 'Please enter a valid numeric amount.', 'warning');
       return;
     }
 
@@ -303,19 +340,28 @@ export const Auction = () => {
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           {/* Sound Toggle */}
           <button
-            onClick={() => { setSoundMuted(!soundMuted); soundEngine.setEnabled(soundMuted); }}
-            title={soundMuted ? 'Unmute Audio' : 'Mute Audio'}
+            onClick={toggleAudio}
+            title={soundMuted ? 'Turn Audio On (Unmute)' : 'Turn Audio Off (Mute)'}
             style={{
               padding: '7px 14px', borderRadius: 6,
-              background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
+              background: soundMuted ? 'rgba(239, 68, 68, 0.08)' : 'rgba(16, 185, 129, 0.08)',
+              border: soundMuted ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid rgba(16, 185, 129, 0.3)',
               cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 7,
-              fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: 700, color: 'var(--text-primary)'
+              fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: 700,
+              color: 'var(--text-primary)',
+              transition: 'all 0.15s ease'
             }}
           >
             {soundMuted ? (
-              <><VolumeX className="w-4 h-4 text-red-400" /> <span style={{ color: '#F87171' }}>Muted</span></>
+              <>
+                <VolumeX className="w-4 h-4 text-red-400" />
+                <span style={{ color: '#F87171' }}>Audio Off</span>
+              </>
             ) : (
-              <><Volume2 className="w-4 h-4 text-emerald-400" /> <span style={{ color: '#E2E8F0' }}>Audio On</span></>
+              <>
+                <Volume2 className="w-4 h-4 text-emerald-400" />
+                <span style={{ color: '#E2E8F0' }}>Audio On</span>
+              </>
             )}
           </button>
 
@@ -937,7 +983,7 @@ export const Auction = () => {
                           }}
                         >
                           {activeIncrement === 5 && <Check className="w-3 h-3" />}
-                          +$5 Bid
+                          +{tournament?.currency || '$'}5 Bid
                         </button>
 
                         <button
@@ -953,7 +999,7 @@ export const Auction = () => {
                           }}
                         >
                           {activeIncrement === 10 && <Check className="w-3 h-3" />}
-                          +$10 Bid
+                          +{tournament?.currency || '$'}10 Bid
                         </button>
 
                         <button
@@ -1048,248 +1094,342 @@ export const Auction = () => {
         }}>
           {/* Header */}
           <div style={{
-            padding: '16px 18px 12px',
+            padding: '14px 18px 12px',
             borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+            background: 'linear-gradient(180deg, rgba(255,255,255,0.02) 0%, transparent 100%)',
             display: 'flex', alignItems: 'center', justifyContent: 'space-between'
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <span style={{
-                fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 800,
-                color: 'var(--text-secondary)', letterSpacing: '0.12em', textTransform: 'uppercase'
+                width: 7, height: 7, borderRadius: '50%',
+                background: stage === 'BIDDING' ? '#22C55E' : '#64748B',
+                boxShadow: stage === 'BIDDING' ? '0 0 8px #22C55E' : 'none'
+              }} />
+              <span style={{
+                fontFamily: 'var(--font-display)', fontSize: 13.5, fontWeight: 800,
+                color: '#fff', letterSpacing: '0.1em', textTransform: 'uppercase'
               }}>
                 Club Bids
               </span>
               <span style={{
-                fontSize: 11, background: 'rgba(255,255,255,0.06)', color: 'var(--text-muted)',
-                padding: '2px 7px', borderRadius: 999, fontWeight: 700
+                fontSize: 10.5, background: 'rgba(255,255,255,0.08)', color: 'var(--text-muted)',
+                padding: '1px 7px', borderRadius: 999, fontWeight: 700
               }}>
                 {teams.length}
               </span>
             </div>
-            <span style={{
-              fontFamily: 'var(--font-display)', fontSize: 11, fontWeight: 700,
-              color: 'var(--text-muted)', letterSpacing: '0.08em'
-            }}>
-              HOTKEYS 1–9
-            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{
+                fontFamily: 'var(--font-display)', fontSize: 10.5, fontWeight: 700,
+                color: 'var(--text-muted)', letterSpacing: '0.06em',
+                background: 'rgba(255,255,255,0.04)', padding: '2px 7px', borderRadius: 4,
+                border: '1px solid rgba(255,255,255,0.06)'
+              }}>
+                HOTKEYS 1–9
+              </span>
+            </div>
           </div>
 
           {/* Teams List */}
           <div style={{
             flex: 1, overflowY: 'auto',
-            padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 10
+            padding: '10px 12px 24px', display: 'flex', flexDirection: 'column', gap: 7,
+            scrollbarWidth: 'thin',
+            scrollbarColor: 'rgba(255, 255, 255, 0.15) transparent'
           }}>
             {teams.map((team, idx) => {
               const isLeading = team.id === auctionState?.leadingTeamId;
-              const hasBudgetFor5 = team.currentBalance >= (auctionState?.currentBid ? auctionState.currentBid + 5 : 0);
-              const hasBudgetFor10 = team.currentBalance >= (auctionState?.currentBid ? auctionState.currentBid + 10 : 0);
-              const pct = Math.max(0, Math.min(100, (team.currentBalance / team.startingBudget) * 100));
+              const safeStartingBudget = (typeof team.startingBudget === 'number' && team.startingBudget > 0)
+                ? team.startingBudget
+                : (tournament?.defaultBudget || 50000);
+              const pct = Math.max(0, Math.min(100, ((team.currentBalance || 0) / safeStartingBudget) * 100));
 
-              // Compute next amounts for display preview
-              const next5 = !auctionState?.leadingTeamId
-                ? auctionState?.currentBid
-                : auctionState?.currentBid + 5;
-              const next10 = !auctionState?.leadingTeamId
-                ? auctionState?.currentBid + 10
-                : auctionState?.currentBid + 10;
+              // Compute next amounts for 5, 10, and custom
+              let targetBid5;
+              let targetBid10;
+              if (!auctionState?.leadingTeamId) {
+                targetBid5 = auctionState?.currentBid || 0;
+                targetBid10 = (auctionState?.currentBid || 0) + 10;
+              } else {
+                targetBid5 = (auctionState?.currentBid || 0) + 5;
+                targetBid10 = (auctionState?.currentBid || 0) + 10;
+              }
+
+              const canBid5 = stage === 'BIDDING' && !isLeading && team.currentBalance >= targetBid5;
+              const canBid10 = stage === 'BIDDING' && !isLeading && team.currentBalance >= targetBid10;
+              const canCustomBid = stage === 'BIDDING' && !isLeading && team.currentBalance > (auctionState?.currentBid || 0);
+
+              const isWhiteOrLight = isLightColor(team.primaryColor) ||
+                !team.primaryColor ||
+                team.primaryColor.toLowerCase() === '#ffffff' ||
+                team.primaryColor.toLowerCase() === '#fff';
+
+              const budgetColor = pct > 45 ? '#10B981' : pct > 20 ? '#F59E0B' : '#EF4444';
+              const budgetGrad = pct > 45
+                ? 'linear-gradient(90deg, #059669 0%, #10B981 100%)'
+                : pct > 20
+                  ? 'linear-gradient(90deg, #D97706 0%, #F59E0B 100%)'
+                  : 'linear-gradient(90deg, #DC2626 0%, #EF4444 100%)';
+
+              const currSymbol = (tournament?.currency && tournament.currency.length <= 2) ? tournament.currency : '';
 
               return (
                 <div
                   key={team.id}
                   style={{
-                    borderRadius: 10,
+                    borderRadius: 7,
                     border: isLeading
-                      ? `1.5px solid ${team.primaryColor || '#F59E0B'}`
+                      ? '1px solid #F59E0B'
                       : '1px solid rgba(255, 255, 255, 0.08)',
+                    borderLeft: isLeading
+                      ? '3.5px solid #F59E0B'
+                      : `3.5px solid ${isWhiteOrLight ? '#D4AF37' : (team.primaryColor || '#3B82F6')}`,
                     background: isLeading
-                      ? `linear-gradient(135deg, ${team.primaryColor}15 0%, #111827 100%)`
-                      : '#101624',
-                    boxShadow: isLeading ? `0 0 16px ${team.primaryColor}20` : 'none',
-                    overflow: 'hidden',
+                      ? 'linear-gradient(180deg, rgba(245, 158, 11, 0.12) 0%, rgba(17, 24, 39, 0.98) 100%)'
+                      : 'linear-gradient(180deg, #131A29 0%, #0E1420 100%)',
+                    boxShadow: isLeading
+                      ? '0 0 16px rgba(245, 158, 11, 0.22), 0 2px 8px rgba(0, 0, 0, 0.35)'
+                      : '0 2px 6px rgba(0, 0, 0, 0.25)',
+                    padding: '8px 10px',
                     transition: 'all 0.15s ease'
                   }}
                 >
-                  {/* Team Top Color Stripe */}
-                  <div style={{ height: 4, background: team.primaryColor || 'var(--spl-blue)' }} />
+                  {/* Top Row: Key Badge + Crest + Team Names (Left) and Budget (Right) */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 5 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 7, minWidth: 0, flex: 1 }}>
+                      {/* Key Badge */}
+                      <span
+                        title={`Keyboard Hotkey: Press ${idx + 1}`}
+                        style={{
+                          fontFamily: 'var(--font-display)', fontSize: 10, fontWeight: 800,
+                          color: isLeading ? '#FDE047' : 'var(--text-muted)',
+                          background: isLeading ? 'rgba(245, 158, 11, 0.2)' : 'rgba(255, 255, 255, 0.06)',
+                          border: isLeading ? '1px solid rgba(245, 158, 11, 0.4)' : '1px solid rgba(255, 255, 255, 0.08)',
+                          borderRadius: 4, minWidth: 18, height: 18,
+                          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                          flexShrink: 0
+                        }}
+                      >
+                        {idx + 1}
+                      </span>
 
-                  <div style={{ padding: '12px 14px' }}>
-                    {/* Header: Crest + Name + Hotkey Pill / Leading Badge */}
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0, flex: 1 }}>
-                        {team.logoUrl ? (
+                      {/* Crest */}
+                      {team.logoUrl ? (
+                        <div style={{
+                          width: 24, height: 24, borderRadius: 4, overflow: 'hidden', flexShrink: 0,
+                          padding: 1, background: '#070A0F', border: '1px solid rgba(255, 255, 255, 0.1)'
+                        }}>
+                          <img src={team.logoUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                        </div>
+                      ) : (
+                        <div style={{
+                          width: 24, height: 24, borderRadius: 4,
+                          background: `${team.primaryColor || '#3B82F6'}25`,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontFamily: 'var(--font-broadcast)', fontSize: 11, fontWeight: 700,
+                          color: team.primaryColor || '#fff',
+                          border: `1px solid ${team.primaryColor || '#3B82F6'}40`,
+                          flexShrink: 0
+                        }}>
+                          {team.shortName || team.name.slice(0, 3)}
+                        </div>
+                      )}
+
+                      {/* Team & Manager Names */}
+                      <div style={{ minWidth: 0, flex: 1 }}>
+                        <div style={{
+                          fontFamily: 'var(--font-display)', fontSize: 12.5, fontWeight: 800,
+                          color: isLeading ? '#FFFFFF' : '#F1F5F9',
+                          letterSpacing: '0.02em', textTransform: 'uppercase',
+                          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
+                        }}>
+                          {team.name}
+                        </div>
+                        {team.managerName && (
                           <div style={{
-                            width: 30, height: 30, borderRadius: 6, overflow: 'hidden', flexShrink: 0,
-                            padding: 1, background: '#070A0F', border: '1px solid rgba(255,255,255,0.08)'
+                            fontFamily: 'var(--font-body)', fontSize: 10,
+                            color: isLeading ? 'rgba(254, 240, 138, 0.75)' : 'var(--text-muted)',
+                            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                            marginTop: -1
                           }}>
-                            <img src={team.logoUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-                          </div>
-                        ) : (
-                          <div style={{
-                            width: 30, height: 30, borderRadius: 6,
-                            background: `${team.primaryColor || '#3B82F6'}25`,
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            fontFamily: 'var(--font-broadcast)', fontSize: 12,
-                            color: isLightColor(team.primaryColor) ? '#fff' : (team.primaryColor || '#fff'),
-                            flexShrink: 0
-                          }}>
-                            {team.shortName || team.name.slice(0, 3)}
+                            {team.managerName}
                           </div>
                         )}
-
-                        <div style={{ minWidth: 0, flex: 1 }}>
-                          <div style={{
-                            fontFamily: 'var(--font-display)', fontSize: 14.5, fontWeight: 700,
-                            color: isLeading ? (isLightColor(team.primaryColor) ? '#fff' : team.primaryColor) : '#fff',
-                            letterSpacing: '0.03em', textTransform: 'uppercase',
-                            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
-                          }}>
-                            {team.name}
-                          </div>
-                          {team.managerName && (
-                            <div style={{
-                              fontFamily: 'var(--font-body)', fontSize: 11, color: 'var(--text-muted)',
-                              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
-                            }}>
-                              {team.managerName}
-                            </div>
-                          )}
-                        </div>
                       </div>
+                    </div>
 
-                      {/* Pill on Top Right */}
-                      {isLeading ? (
+                    {/* Right: Remaining Budget & Percentage */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0 }}>
+                      {team.currentBalance < targetBid5 && !isLeading && stage === 'BIDDING' && (
                         <span style={{
-                          display: 'flex', alignItems: 'center', gap: 4,
-                          fontFamily: 'var(--font-display)', fontSize: 10, fontWeight: 800,
-                          color: 'var(--spl-gold-light)', background: 'rgba(245,158,11,0.15)',
-                          border: '1px solid rgba(245,158,11,0.3)', padding: '2px 7px', borderRadius: 4,
-                          whiteSpace: 'nowrap'
+                          fontFamily: 'var(--font-display)', fontSize: 8.5, fontWeight: 800,
+                          color: '#EF4444', background: 'rgba(239, 68, 68, 0.12)',
+                          border: '1px solid rgba(239, 68, 68, 0.25)',
+                          padding: '1px 5px', borderRadius: 3, textTransform: 'uppercase'
                         }}>
-                          <Crown className="w-3 h-3" />
-                          LEADING
-                        </span>
-                      ) : (
-                        <span style={{
-                          fontFamily: 'var(--font-display)', fontSize: 10, fontWeight: 800,
-                          color: 'var(--text-muted)', background: 'rgba(255,255,255,0.06)',
-                          padding: '2px 6px', borderRadius: 4,
-                          whiteSpace: 'nowrap'
-                        }}>
-                          KEY {idx + 1}
+                          LOW
                         </span>
                       )}
+                      <span style={{
+                        fontFamily: 'var(--font-display)', fontSize: 9.5, fontWeight: 700,
+                        color: budgetColor, background: `${budgetColor}15`,
+                        padding: '1px 4px', borderRadius: 3
+                      }}>
+                        {Math.round(pct)}%
+                      </span>
+                      <span style={{
+                        fontFamily: 'var(--font-display)', fontSize: 13, fontWeight: 800,
+                        color: isLeading ? '#FEF08A' : 'var(--spl-gold-light)',
+                        letterSpacing: '0.01em'
+                      }}>
+                        {formatCurrency(team.currentBalance, tournament?.currency)}
+                      </span>
                     </div>
-
-                    {/* Remaining Budget Bar */}
-                    <div style={{ marginBottom: 10 }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                        <span style={{ fontFamily: 'var(--font-body)', fontSize: 11, color: 'var(--text-muted)' }}>
-                          Remaining Budget
-                        </span>
-                        <span style={{ fontFamily: 'var(--font-display)', fontSize: 13, fontWeight: 700, color: 'var(--spl-gold-light)' }}>
-                          {formatCurrency(team.currentBalance, tournament?.currency)}
-                        </span>
-                      </div>
-                      <div style={{ height: 4, borderRadius: 2, background: 'rgba(0,0,0,0.5)', overflow: 'hidden' }}>
-                        <div style={{
-                          height: '100%', width: `${pct}%`,
-                          background: team.primaryColor || 'var(--spl-blue)', transition: 'width 0.3s ease'
-                        }} />
-                      </div>
-                    </div>
-
-                    {/* ── BIDDING ACTIONS ROW ── */}
-                    {stage === 'BIDDING' && (
-                      <div>
-                        {/* CASE 1: ALREADY LEADING TEAM -> NO CALL/BID BUTTONS */}
-                        {isLeading ? (
-                          <div style={{
-                            height: 44, borderRadius: 7,
-                            background: 'linear-gradient(90deg, rgba(245,158,11,0.16) 0%, rgba(245,158,11,0.06) 100%)',
-                            border: '1px solid rgba(245,158,11,0.35)',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
-                            fontFamily: 'var(--font-display)', fontSize: 12.5, fontWeight: 800,
-                            color: 'var(--spl-gold-light)', letterSpacing: '0.04em', textTransform: 'uppercase',
-                            whiteSpace: 'nowrap'
-                          }}>
-                            <Crown className="w-4 h-4 text-amber-400" />
-                            <span>HOLDING HIGHEST BID · {formatCurrency(auctionState?.currentBid, tournament?.currency)}</span>
-                          </div>
-                        ) : (
-                          /* CASE 2: COMPETING CLUBS -> UNIFIED 3 BUTTONS ($5, $10, CUSTOM) */
-                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 7 }}>
-                            {/* +$5 Bid Button */}
-                            <button
-                              disabled={!hasBudgetFor5}
-                              onClick={() => handleTeamBid(team.id, 5)}
-                              style={{
-                                height: 44, borderRadius: 7,
-                                border: '1px solid rgba(255, 255, 255, 0.12)',
-                                background: hasBudgetFor5 ? 'rgba(255, 255, 255, 0.06)' : 'rgba(255, 255, 255, 0.02)',
-                                color: hasBudgetFor5 ? '#fff' : 'var(--text-muted)',
-                                fontFamily: 'var(--font-display)', cursor: hasBudgetFor5 ? 'pointer' : 'not-allowed',
-                                opacity: hasBudgetFor5 ? 1 : 0.4,
-                                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                                transition: 'all 0.12s ease'
-                              }}
-                              onMouseEnter={e => { if (hasBudgetFor5) e.currentTarget.style.background = 'rgba(255,255,255,0.14)'; }}
-                              onMouseLeave={e => { if (hasBudgetFor5) e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; }}
-                            >
-                              <span style={{ fontSize: 13, fontWeight: 800 }}>+$5</span>
-                              <span style={{ fontSize: 10.5, fontWeight: 700, color: 'var(--spl-gold-light)' }}>
-                                {formatCurrency(next5, tournament?.currency)}
-                              </span>
-                            </button>
-
-                            {/* +$10 Bid Button */}
-                            <button
-                              disabled={!hasBudgetFor10}
-                              onClick={() => handleTeamBid(team.id, 10)}
-                              style={{
-                                height: 44, borderRadius: 7,
-                                border: '1px solid rgba(255, 255, 255, 0.12)',
-                                background: hasBudgetFor10 ? 'rgba(255, 255, 255, 0.06)' : 'rgba(255, 255, 255, 0.02)',
-                                color: hasBudgetFor10 ? '#fff' : 'var(--text-muted)',
-                                fontFamily: 'var(--font-display)', cursor: hasBudgetFor10 ? 'pointer' : 'not-allowed',
-                                opacity: hasBudgetFor10 ? 1 : 0.4,
-                                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                                transition: 'all 0.12s ease'
-                              }}
-                              onMouseEnter={e => { if (hasBudgetFor10) e.currentTarget.style.background = 'rgba(234,88,12,0.2)'; }}
-                              onMouseLeave={e => { if (hasBudgetFor10) e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; }}
-                            >
-                              <span style={{ fontSize: 13, fontWeight: 800 }}>+$10</span>
-                              <span style={{ fontSize: 10.5, fontWeight: 700, color: '#FDBA74' }}>
-                                {formatCurrency(next10, tournament?.currency)}
-                              </span>
-                            </button>
-
-                            {/* Custom Bid Button */}
-                            <button
-                              disabled={team.currentBalance <= (auctionState?.currentBid || 0)}
-                              onClick={() => openCustomBid(team.id)}
-                              style={{
-                                height: 44, borderRadius: 7,
-                                border: '1px solid rgba(139, 92, 246, 0.35)',
-                                background: 'rgba(139, 92, 246, 0.12)',
-                                color: '#DDD6FE',
-                                fontFamily: 'var(--font-display)',
-                                cursor: team.currentBalance > (auctionState?.currentBid || 0) ? 'pointer' : 'not-allowed',
-                                opacity: team.currentBalance > (auctionState?.currentBid || 0) ? 1 : 0.4,
-                                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                                transition: 'all 0.12s ease'
-                              }}
-                              onMouseEnter={e => e.currentTarget.style.background = 'rgba(139, 92, 246, 0.25)'}
-                              onMouseLeave={e => e.currentTarget.style.background = 'rgba(139, 92, 246, 0.12)'}
-                            >
-                              <span style={{ fontSize: 12, fontWeight: 800, color: '#C084FC' }}>CUSTOM</span>
-                              <span style={{ fontSize: 10, color: '#A855F7' }}>Amount...</span>
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    )}
                   </div>
+
+                  {/* Budget Micro-bar */}
+                  <div style={{
+                    height: 2.5, borderRadius: 999,
+                    background: 'rgba(255, 255, 255, 0.06)',
+                    overflow: 'hidden', marginBottom: 6
+                  }}>
+                    <div style={{
+                      height: '100%', width: `${pct}%`,
+                      background: budgetGrad,
+                      borderRadius: 999,
+                      transition: 'width 0.3s ease'
+                    }} />
+                  </div>
+
+                  {/* Action Row: Leading Banner OR 3 Standard Buttons (+5, +10, Custom) */}
+                  {isLeading ? (
+                    <div style={{
+                      height: 26, borderRadius: 4,
+                      background: 'rgba(245, 158, 11, 0.14)',
+                      border: '1px solid rgba(245, 158, 11, 0.35)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                      fontFamily: 'var(--font-display)', fontSize: 11, fontWeight: 800,
+                      color: '#FEF08A', letterSpacing: '0.04em'
+                    }}>
+                      <Crown style={{ width: 12, height: 12, color: '#F59E0B' }} />
+                      <span>CURRENT LEADER</span>
+                      <span style={{ color: '#FFFFFF', opacity: 0.85 }}>({formatCurrency(auctionState?.currentBid, tournament?.currency)})</span>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      {/* Button 1: +5 */}
+                      <button
+                        type="button"
+                        disabled={!canBid5}
+                        title={!canBid5 ? `Insufficient budget (Need ${formatCurrency(targetBid5, tournament?.currency)})` : `Place bid of ${formatCurrency(targetBid5, tournament?.currency)}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleTeamBid(team.id, 5);
+                        }}
+                        style={{
+                          flex: 1, height: 26, borderRadius: 4,
+                          border: canBid5 ? '1px solid rgba(59, 130, 246, 0.4)' : '1px solid rgba(255, 255, 255, 0.05)',
+                          background: canBid5 ? '#1E293B' : 'rgba(255, 255, 255, 0.02)',
+                          color: canBid5 ? '#93C5FD' : '#475569',
+                          fontFamily: 'var(--font-display)', fontSize: 11, fontWeight: 800,
+                          cursor: canBid5 ? 'pointer' : 'not-allowed',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2,
+                          transition: 'all 0.12s ease'
+                        }}
+                        onMouseEnter={e => {
+                          if (canBid5) {
+                            e.currentTarget.style.background = '#2563EB';
+                            e.currentTarget.style.color = '#FFFFFF';
+                            e.currentTarget.style.borderColor = '#60A5FA';
+                          }
+                        }}
+                        onMouseLeave={e => {
+                          if (canBid5) {
+                            e.currentTarget.style.background = '#1E293B';
+                            e.currentTarget.style.color = '#93C5FD';
+                            e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.4)';
+                          }
+                        }}
+                      >
+                        +{currSymbol}5
+                      </button>
+
+                      {/* Button 2: +10 */}
+                      <button
+                        type="button"
+                        disabled={!canBid10}
+                        title={!canBid10 ? `Insufficient budget (Need ${formatCurrency(targetBid10, tournament?.currency)})` : `Place bid of ${formatCurrency(targetBid10, tournament?.currency)}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleTeamBid(team.id, 10);
+                        }}
+                        style={{
+                          flex: 1, height: 26, borderRadius: 4,
+                          border: canBid10 ? '1px solid rgba(245, 158, 11, 0.4)' : '1px solid rgba(255, 255, 255, 0.05)',
+                          background: canBid10 ? '#1E293B' : 'rgba(255, 255, 255, 0.02)',
+                          color: canBid10 ? '#FCD34D' : '#475569',
+                          fontFamily: 'var(--font-display)', fontSize: 11, fontWeight: 800,
+                          cursor: canBid10 ? 'pointer' : 'not-allowed',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2,
+                          transition: 'all 0.12s ease'
+                        }}
+                        onMouseEnter={e => {
+                          if (canBid10) {
+                            e.currentTarget.style.background = '#D97706';
+                            e.currentTarget.style.color = '#FFFFFF';
+                            e.currentTarget.style.borderColor = '#FBBF24';
+                          }
+                        }}
+                        onMouseLeave={e => {
+                          if (canBid10) {
+                            e.currentTarget.style.background = '#1E293B';
+                            e.currentTarget.style.color = '#FCD34D';
+                            e.currentTarget.style.borderColor = 'rgba(245, 158, 11, 0.4)';
+                          }
+                        }}
+                      >
+                        +{currSymbol}10
+                      </button>
+
+                      {/* Button 3: Custom */}
+                      <button
+                        type="button"
+                        disabled={!canCustomBid}
+                        title={!canCustomBid ? 'Insufficient budget for custom bid' : `Place custom bid for ${team.name}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openCustomBid(team.id);
+                        }}
+                        style={{
+                          flex: 1, height: 26, borderRadius: 4,
+                          border: canCustomBid ? '1px solid rgba(147, 51, 234, 0.4)' : '1px solid rgba(255, 255, 255, 0.05)',
+                          background: canCustomBid ? '#1E293B' : 'rgba(255, 255, 255, 0.02)',
+                          color: canCustomBid ? '#C084FC' : '#475569',
+                          fontFamily: 'var(--font-display)', fontSize: 11, fontWeight: 800,
+                          cursor: canCustomBid ? 'pointer' : 'not-allowed',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 3,
+                          transition: 'all 0.12s ease'
+                        }}
+                        onMouseEnter={e => {
+                          if (canCustomBid) {
+                            e.currentTarget.style.background = '#7E22CE';
+                            e.currentTarget.style.color = '#FFFFFF';
+                            e.currentTarget.style.borderColor = '#C084FC';
+                          }
+                        }}
+                        onMouseLeave={e => {
+                          if (canCustomBid) {
+                            e.currentTarget.style.background = '#1E293B';
+                            e.currentTarget.style.color = '#C084FC';
+                            e.currentTarget.style.borderColor = 'rgba(147, 51, 234, 0.4)';
+                          }
+                        }}
+                      >
+                        <Sliders style={{ width: 11, height: 11 }} />
+                        <span>Custom</span>
+                      </button>
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -1450,7 +1590,7 @@ export const Auction = () => {
                       fontFamily: 'var(--font-display)', fontSize: 11.5, fontWeight: 700, color: '#fff', cursor: 'pointer'
                     }}
                   >
-                    +${addVal}
+                    +{tournament?.currency || '$'}{addVal}
                   </button>
                 ))}
               </div>
@@ -1463,10 +1603,13 @@ export const Auction = () => {
                   Target Bid Amount (Total or Jump):
                 </label>
                 <div style={{ position: 'relative' }}>
-                  <DollarSign className="w-5 h-5" style={{
-                    position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)',
-                    color: 'var(--spl-gold-light)', pointerEvents: 'none'
-                  }} />
+                  <span style={{
+                    position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)',
+                    color: 'var(--spl-gold-light)', pointerEvents: 'none',
+                    fontFamily: 'var(--font-broadcast)', fontSize: 18, fontWeight: 700
+                  }}>
+                    {tournament?.currency || '$'}
+                  </span>
                   <input
                     type="number"
                     step="1"

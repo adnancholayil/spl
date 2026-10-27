@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Save, RotateCcw, Image as ImageIcon } from 'lucide-react';
+import { ArrowLeft, Save, RotateCcw, Image as ImageIcon, Video, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { storageService } from '../../services/storageService';
+import { mediaStorage } from '../../services/mediaStorage';
 
 export const ProjectorScreenCustomization = () => {
   const navigate = useNavigate();
@@ -54,9 +55,27 @@ export const ProjectorScreenCustomization = () => {
     }
   };
 
-  const handleImageUpload = (e) => {
+  const handleMediaUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
+
+    if (file.type.startsWith('video/') || /\.(mp4|webm|mov|ogg)$/i.test(file.name)) {
+      mediaStorage.saveMedia('home_main_media', file).then(() => {
+        handleChange('homeMediaCustom', true);
+        handleChange('homeMediaName', file.name);
+        handleChange('homeMediaType', 'video');
+        handleChange('homeMediaFullScreen', true);
+      });
+      return;
+    }
+
+    // If image, save to IndexedDB as well for large sizes
+    mediaStorage.saveMedia('home_main_media', file).then(() => {
+      handleChange('homeMediaCustom', true);
+      handleChange('homeMediaName', file.name);
+      handleChange('homeMediaType', 'image');
+      handleChange('homeMediaFullScreen', true);
+    });
 
     const reader = new FileReader();
     reader.onload = (event) => {
@@ -125,15 +144,33 @@ export const ProjectorScreenCustomization = () => {
         <div className="w-[450px] shrink-0 overflow-y-auto" style={{ borderRight: '1px solid var(--border-subtle)', background: 'var(--spl-navy)' }}>
           <div className="p-6 flex flex-col gap-8">
             
-            {/* Background Image */}
+            {/* Background Image & Video */}
             <div style={{ background: 'var(--spl-panel)', border: '1px solid var(--border-subtle)', borderRadius: 12, padding: 20 }}>
-              <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 11, fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '0.1em', marginBottom: 16, textTransform: 'uppercase' }}>Background Image</h3>
+              <div className="flex items-center justify-between mb-4">
+                <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 11, fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+                  Background Image / Video
+                </h3>
+                {settings.homeMediaCustom && (
+                  <button
+                    onClick={async () => {
+                      await mediaStorage.deleteMedia('home_main_media');
+                      handleChange('homeMediaCustom', false);
+                      handleChange('homeMediaName', '');
+                      handleChange('homeMediaType', 'none');
+                      handleChange('bgImage', '');
+                    }}
+                    style={{ fontSize: 11, color: '#F87171', background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
+                  >
+                    <Trash2 className="w-3.5 h-3.5" /> Remove Media
+                  </button>
+                )}
+              </div>
               <div className="flex gap-4">
                 <input 
                   type="text" 
                   value={settings.bgImage || ''} 
                   onChange={e => handleChange('bgImage', e.target.value)}
-                  placeholder="https://... (Leave blank for random stadium)"
+                  placeholder="https://... (Leave blank for default stadium)"
                   style={{ flex: 1, padding: '10px 14px', background: 'var(--spl-elevated)', border: '1px solid var(--border-subtle)', borderRadius: 8, color: '#fff', fontSize: 13, outline: 'none' }}
                 />
                 <label
@@ -146,10 +183,15 @@ export const ProjectorScreenCustomization = () => {
                   onMouseEnter={e => e.currentTarget.style.opacity = '0.9'}
                   onMouseLeave={e => e.currentTarget.style.opacity = '1'}
                 >
-                  <ImageIcon className="w-4 h-4 mr-2" /> Upload
-                  <input type="file" accept="image/*" onChange={handleImageUpload} style={{ display: 'none' }} />
+                  <Video className="w-4 h-4 mr-2" /> Upload
+                  <input type="file" accept="image/*,video/*" onChange={handleMediaUpload} style={{ display: 'none' }} />
                 </label>
               </div>
+              {settings.homeMediaCustom && (
+                <div className="mt-2 text-xs text-emerald-400 font-bold">
+                  ✓ Active Full Screen {settings.homeMediaType === 'video' ? 'Video' : 'Image'}: {settings.homeMediaName}
+                </div>
+              )}
             </div>
 
             {/* Gradient Overlay */}

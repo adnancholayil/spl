@@ -5,7 +5,8 @@ import { EFootballCard } from '../../components/common/EFootballCard';
 import { ConfirmModal } from '../../components/common/ConfirmModal';
 import { TeamLogoUploader } from '../../components/common/TeamLogoUploader';
 import { ManagerPhotoUploader } from '../../components/common/ManagerPhotoUploader';
-import { Plus, Edit2, Trash2, X, Users } from 'lucide-react';
+import { generateTeamCode } from '../../services/teamService';
+import { Plus, Edit2, Trash2, X, Users, Sparkles } from 'lucide-react';
 
 export const Teams = () => {
   const { teams, players, addTeam, updateTeam, deleteTeam, tournament } = useTournament();
@@ -13,6 +14,7 @@ export const Teams = () => {
   const [editingTeam, setEditingTeam] = useState(null);
   const [selectedSquad, setSelectedSquad] = useState(null);
   const [deleteConfirmTeam, setDeleteConfirmTeam] = useState(null);
+  const [isShortCodeCustom, setIsShortCodeCustom] = useState(false);
   const [formData, setFormData] = useState({
     name: '', shortName: '', managerName: '',
     primaryColor: '#1A56DB', secondaryColor: '#0C1220',
@@ -22,15 +24,52 @@ export const Teams = () => {
   });
 
   const handleOpenModal = (team = null) => {
-    if (team) { setEditingTeam(team); setFormData({ managerPhotoUrl: '', logoUrl: '', ...team }); }
-    else { setEditingTeam(null); setFormData({ name: '', shortName: '', managerName: '', primaryColor: '#1A56DB', secondaryColor: '#0C1220', startingBudget: tournament?.defaultBudget || 5000, logoUrl: '', managerPhotoUrl: '' }); }
+    if (team) {
+      setEditingTeam(team);
+      setFormData({ managerPhotoUrl: '', logoUrl: '', ...team });
+      setIsShortCodeCustom(true);
+    } else {
+      setEditingTeam(null);
+      setFormData({
+        name: '',
+        shortName: '',
+        managerName: '',
+        primaryColor: '#1A56DB',
+        secondaryColor: '#0C1220',
+        startingBudget: tournament?.defaultBudget || 5000,
+        logoUrl: '',
+        managerPhotoUrl: ''
+      });
+      setIsShortCodeCustom(false);
+    }
     setShowModal(true);
+  };
+
+  const handleNameChange = (e) => {
+    const newName = e.target.value;
+    setFormData(prev => ({
+      ...prev,
+      name: newName,
+      // Auto-create short code if user hasn't explicitly customized it
+      shortName: !isShortCodeCustom ? generateTeamCode(newName) : prev.shortName
+    }));
+  };
+
+  const handleShortCodeChange = (e) => {
+    const val = e.target.value.toUpperCase();
+    setIsShortCodeCustom(val.trim().length > 0);
+    setFormData(prev => ({ ...prev, shortName: val }));
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (editingTeam) updateTeam(editingTeam.id, formData);
-    else addTeam(formData);
+    const finalCode = (formData.shortName && formData.shortName.trim())
+      ? formData.shortName.trim().toUpperCase()
+      : (generateTeamCode(formData.name) || 'CLUB');
+
+    const finalData = { ...formData, shortName: finalCode };
+    if (editingTeam) updateTeam(editingTeam.id, finalData);
+    else addTeam(finalData);
     setShowModal(false);
   };
 
@@ -219,7 +258,15 @@ export const Teams = () => {
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div>
                 <label style={{ fontFamily: 'var(--font-display)', fontSize: 9, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.2em', display: 'block', marginBottom: 5 }}>Club Name</label>
-                <input type="text" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} required className="input-field" style={{ padding: '8px 12px' }} />
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={handleNameChange}
+                  required
+                  placeholder="e.g. Super Villa"
+                  className="input-field"
+                  style={{ padding: '8px 12px' }}
+                />
               </div>
               <div>
                 <label style={{ fontFamily: 'var(--font-display)', fontSize: 9, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.2em', display: 'block', marginBottom: 5 }}>Manager / Owner</label>
@@ -236,8 +283,21 @@ export const Teams = () => {
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                 <div>
-                  <label style={{ fontFamily: 'var(--font-display)', fontSize: 9, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.2em', display: 'block', marginBottom: 5 }}>Short Code</label>
-                  <input type="text" maxLength={4} value={formData.shortName} onChange={e => setFormData({ ...formData, shortName: e.target.value.toUpperCase() })} required className="input-field" style={{ padding: '8px 12px', textTransform: 'uppercase' }} />
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
+                    <label style={{ fontFamily: 'var(--font-display)', fontSize: 9, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.2em' }}>Short Code</label>
+                    <span style={{ fontSize: 9, color: 'var(--spl-blue-light)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 3 }}>
+                      <Sparkles size={10} /> Auto
+                    </span>
+                  </div>
+                  <input
+                    type="text"
+                    maxLength={4}
+                    value={formData.shortName}
+                    onChange={handleShortCodeChange}
+                    placeholder="Auto (e.g. SVI)"
+                    className="input-field"
+                    style={{ padding: '8px 12px', textTransform: 'uppercase' }}
+                  />
                 </div>
                 <div>
                   <label style={{ fontFamily: 'var(--font-display)', fontSize: 9, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.2em', display: 'block', marginBottom: 5 }}>Club Color</label>
@@ -246,7 +306,9 @@ export const Teams = () => {
               </div>
 
               <div>
-                <label style={{ fontFamily: 'var(--font-display)', fontSize: 9, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.2em', display: 'block', marginBottom: 5 }}>Starting Budget</label>
+                <label style={{ fontFamily: 'var(--font-display)', fontSize: 9, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.2em', display: 'block', marginBottom: 5 }}>
+                  Starting Budget ({tournament?.currency || '$'})
+                </label>
                 <input type="number" value={formData.startingBudget} onChange={e => setFormData({ ...formData, startingBudget: parseInt(e.target.value, 10) })} required className="input-field" style={{ padding: '8px 12px' }} />
               </div>
 
