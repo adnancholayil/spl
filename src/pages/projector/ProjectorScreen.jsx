@@ -180,6 +180,7 @@ export const ProjectorScreen = () => {
   const shadowOpacity = (projectorSettings?.ambientShadowOpacity ?? 20) / 100;
 
   const getAmbientColor = () => {
+    if (mode === 'HOME') return '#0ea5e9';
     if (stage === 'BIDDING') return leadingTeam?.primaryColor || '#ea580c';
     if (stage === 'SOLD' || stage === 'SIGNING') return winningTeam?.primaryColor || '#22c55e';
     if (stage === 'UNSOLD') return '#ef4444';
@@ -212,7 +213,7 @@ export const ProjectorScreen = () => {
       </button>
 
       {/* FULL SCREEN HOME MEDIA (IMAGE OR VIDEO) */}
-      {stage === 'IDLE' && mode === 'AUTO' && homeMediaBlobUrl && (
+      {(mode === 'HOME' || (mode === 'AUTO' && stage === 'IDLE')) && homeMediaBlobUrl && (
         <div className="absolute inset-0 w-full h-full overflow-hidden pointer-events-none z-0">
           {projectorSettings?.homeMediaType === 'video' ? (
             <video
@@ -241,47 +242,30 @@ export const ProjectorScreen = () => {
       <div className="flex-1 w-full h-full relative overflow-hidden z-10">
         {mode === 'AUTO' && (
           <div className="w-full h-full absolute inset-0">
-            <AnimatePresence mode="wait">
-              {stage === 'IDLE' && (
-                <motion.div key="idle" className="w-full h-full absolute inset-0" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                  <PlayerCardShowcase stage="IDLE" tournament={tournament} settings={projectorSettings} />
-                </motion.div>
-              )}
-              {stage === 'INTRO' && activePlayer && (
-                <motion.div key={`intro-${activePlayer.id}`} className="w-full h-full absolute inset-0" initial={{ x: -1000, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: 1000, opacity: 0 }} transition={{ type: 'spring', stiffness: 150, damping: 20 }}>
-                  <PlayerCardShowcase stage="INTRO" player={activePlayer} tournament={tournament} settings={projectorSettings} />
-                </motion.div>
-              )}
-              {stage === 'BIDDING' && activePlayer && (
-                <motion.div key={`bidding-${activePlayer.id}`} className="w-full h-full absolute inset-0" initial={{ x: -1000, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: 1000, opacity: 0 }} transition={{ type: 'spring', stiffness: 150, damping: 20 }}>
-                  <PlayerCardShowcase stage="BIDDING" player={activePlayer} tournament={tournament} teams={teams} currentBid={auctionState?.currentBid} leadingTeam={leadingTeam} bidHistory={auctionState?.bidHistory} settings={projectorSettings} />
-                </motion.div>
-              )}
-              {(stage === 'SOLD' || stage === 'SIGNING') && activePlayer && (
-                <motion.div
-                  key={`deal-${activePlayer.id}`}
-                  className="w-full h-full absolute inset-0"
-                  initial={{ opacity: 0, scale: 0.98 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ duration: 0.35, ease: 'easeOut' }}
-                >
-                  <PlayerCardShowcase
-                    stage={stage}
-                    player={activePlayer}
-                    tournament={tournament}
-                    winningTeam={winningTeam}
-                    finalPrice={finalPrice}
-                    settings={projectorSettings}
-                  />
-                </motion.div>
-              )}
-              {stage === 'UNSOLD' && activePlayer && (
-                <motion.div key={`unsold-${activePlayer.id}`} className="w-full h-full absolute inset-0" initial={{ x: -1000, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: 1000, opacity: 0 }} transition={{ type: 'spring', stiffness: 150, damping: 20 }}>
-                  <PlayerCardShowcase stage="UNSOLD" player={activePlayer} tournament={tournament} settings={projectorSettings} />
-                </motion.div>
-              )}
-            </AnimatePresence>
+            <PlayerCardShowcase
+              stage={stage}
+              player={activePlayer}
+              tournament={tournament}
+              teams={teams}
+              players={players}
+              currentBid={auctionState?.currentBid}
+              leadingTeam={leadingTeam}
+              bidHistory={auctionState?.bidHistory}
+              winningTeam={winningTeam}
+              finalPrice={finalPrice}
+              settings={projectorSettings}
+            />
+          </div>
+        )}
+
+        {/* CUSTOM MODE: HOME SCREEN / MAIN PAGE */}
+        {mode === 'HOME' && (
+          <div className="w-full h-full absolute inset-0">
+            <PlayerCardShowcase
+              stage="IDLE"
+              tournament={tournament}
+              settings={projectorSettings}
+            />
           </div>
         )}
 
@@ -762,8 +746,8 @@ export const ProjectorScreen = () => {
         )}
       </div>
 
-      {/* BOTTOM TICKER BANNER (HIDE IN IDLE & INTRO STAGE FOR PURE CLEAN MINIMAL LOOK, POSITIONED ABSOLUTE TO PREVENT DISPLACING VERTICAL CENTER) */}
-      {projectorSettings.showLiveTicker && stage !== 'IDLE' && stage !== 'INTRO' && (
+      {/* BOTTOM TICKER BANNER (HIDE IN IDLE, INTRO STAGE & HOME MODE FOR PURE CLEAN MINIMAL LOOK, POSITIONED ABSOLUTE TO PREVENT DISPLACING VERTICAL CENTER) */}
+      {projectorSettings.showLiveTicker && stage !== 'IDLE' && stage !== 'INTRO' && mode !== 'HOME' && (
         <div style={{
           position: 'absolute',
           bottom: 0,

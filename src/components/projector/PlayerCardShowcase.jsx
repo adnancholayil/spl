@@ -773,6 +773,7 @@ const IntroStage = ({ player, tournament, settings }) => {
 
 // ── 3. BIDDING STAGE (PRECISION BROADCAST LAYOUT) ─────────
 const BiddingStage = ({
+  stage = 'BIDDING',
   player,
   currentBid,
   leadingTeam,
@@ -781,14 +782,28 @@ const BiddingStage = ({
   tournament,
   settings,
 }) => {
+  const isIntro = stage === 'INTRO';
   const cardTheme = settings?.cardTheme || 'GOLD';
   const [flash, setFlash] = useState(false);
 
   useEffect(() => {
-    setFlash(true);
-    const t = setTimeout(() => setFlash(false), 400);
-    return () => clearTimeout(t);
-  }, [currentBid]);
+    if (stage === 'BIDDING') {
+      setFlash(true);
+      const t = setTimeout(() => setFlash(false), 400);
+      return () => clearTimeout(t);
+    }
+  }, [currentBid, stage]);
+
+  // Play reveal fanfare when player enters INTRO stage
+  useEffect(() => {
+    if (isIntro) {
+      try {
+        soundEngine.playRevealSound();
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  }, [player?.id, isIntro]);
 
   // bidHistory has newest bids at index 0 (stored via unshift / [newBid, ...rest])
   const recentBids = (bidHistory || []).slice(0, 3);
@@ -800,7 +815,12 @@ const BiddingStage = ({
       <div className="relative z-10 w-full h-full flex flex-col p-8 md:p-12 select-none overflow-hidden justify-center items-center">
 
         {/* Top-Right Broadcast Badge */}
-        <div className="absolute top-8 right-8 z-30 flex items-center gap-3 bg-black/60 border border-white/10 backdrop-blur-md px-4 py-2 rounded-full shadow-2xl">
+        <motion.div
+          animate={{ opacity: isIntro ? 0 : 1, y: isIntro ? -20 : 0 }}
+          transition={{ duration: 0.35 }}
+          className="absolute top-8 right-8 z-30 flex items-center gap-3 bg-black/60 border border-white/10 backdrop-blur-md px-4 py-2 rounded-full shadow-2xl"
+          style={{ pointerEvents: isIntro ? 'none' : 'auto' }}
+        >
           <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse shadow-[0_0_12px_rgba(239,68,68,0.9)]" />
           <span className="text-[11px] font-black text-white uppercase tracking-[0.25em]" style={{ fontFamily: 'var(--font-display)' }}>
             Live Auction
@@ -813,16 +833,19 @@ const BiddingStage = ({
               </span>
             </>
           )}
-        </div>
+        </motion.div>
 
         {/* MAIN STAGE: DUAL-COLUMN BROADCAST GRID */}
         <div className="flex items-center justify-center gap-16 lg:gap-24 w-full max-w-[1300px] my-auto">
           
-          {/* LEFT COLUMN: HERO EA FC PLAYER CARD */}
+          {/* LEFT COLUMN: HERO EA FC PLAYER CARD (Centered during INTRO, slides left for BIDDING) */}
           <motion.div
-            initial={{ x: -80, opacity: 0, scale: 0.94 }}
-            animate={{ x: 0, opacity: 1, scale: 1 }}
-            transition={{ type: 'spring', stiffness: 90, damping: 20 }}
+            animate={{
+              x: isIntro ? 260 : 0,
+              scale: 1,
+              opacity: 1,
+            }}
+            transition={{ type: 'spring', stiffness: 95, damping: 20 }}
             className="flex-shrink-0 relative z-20 flex items-center justify-center"
           >
             {/* Dynamic team aura behind card */}
@@ -839,11 +862,15 @@ const BiddingStage = ({
             />
           </motion.div>
 
-          {/* RIGHT COLUMN: PRECISION ALIGNED BROADCAST DATA STACK */}
+          {/* RIGHT COLUMN: PRECISION ALIGNED BROADCAST DATA STACK (Fades in on BIDDING) */}
           <motion.div
-            initial={{ opacity: 0, x: 60 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.7, ease: "easeOut" }}
+            animate={{
+              opacity: isIntro ? 0 : 1,
+              x: isIntro ? 80 : 0,
+              scale: isIntro ? 0.95 : 1,
+            }}
+            transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+            style={{ pointerEvents: isIntro ? 'none' : 'auto' }}
             className="flex flex-col items-center justify-center w-full max-w-[460px] relative z-10"
           >
             {/* 1. CURRENT BID SECTION */}
@@ -991,80 +1018,99 @@ const BiddingStage = ({
 };
 
 // ── 4. SOLD STAGE ───────────────────────────────────────────────────────
-const SoldStage = ({ player, winningTeam, finalPrice, tournament, settings }) => {
+const SoldStage = ({ player, winningTeam, finalPrice, tournament, settings, teams = [] }) => {
   const cardTheme = settings?.cardTheme || 'GOLD';
   
+  // Robust winning team resolution (supporting object or ID fallback to allTeams / storage)
+  const resolvedTeam = useMemo(() => {
+    if (winningTeam?.name && winningTeam?.logoUrl) return winningTeam;
+    const allTeams = (teams && teams.length > 0) ? teams : storageService.getTeams();
+    const found = allTeams.find(t => t.id === winningTeam?.id || t.name?.toLowerCase() === winningTeam?.name?.toLowerCase());
+    return found || winningTeam;
+  }, [winningTeam, teams]);
+
   // Use team color or default green for glow
-  const teamColor = winningTeam?.primaryColor || '#22c55e';
+  const teamColor = resolvedTeam?.primaryColor || '#22c55e';
+
+  // Play sold fanfare on mounting sold animation
+  useEffect(() => {
+    try {
+      soundEngine.playSoldFanfare();
+    } catch (e) {
+      console.error('Audio play error:', e);
+    }
+  }, []);
 
   return (
     <div className="w-full h-full relative overflow-hidden">
       {/* MASSIVE TEAM LOGO AURA BACKGROUND */}
-      {winningTeam?.logoUrl && (
-        <div className="absolute inset-0 flex items-center justify-center opacity-[0.07] mix-blend-screen pointer-events-none z-0">
+      {resolvedTeam?.logoUrl && (
+        <div className="absolute inset-0 flex items-center justify-center opacity-[0.08] mix-blend-screen pointer-events-none z-0">
           <motion.img 
             initial={{ scale: 0.5, rotate: -20, opacity: 0 }}
             animate={{ scale: 1.8, rotate: 0, opacity: 1 }}
-            transition={{ duration: 2, ease: "easeOut" }}
-            src={winningTeam.logoUrl} 
-            className="w-[800px] h-[800px] object-contain blur-[2px]"
+            transition={{ duration: 1.8, ease: "easeOut" }}
+            src={resolvedTeam.logoUrl} 
+            className="w-[850px] h-[850px] object-contain blur-[2px]"
           />
         </div>
       )}
       
-      {/* Ambient Color Glow */}
+      {/* Ambient Color Glow (Vibrant Celebratory Aura) */}
       <div 
-        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] blur-[150px] -z-10 rounded-full opacity-20 pointer-events-none"
-        style={{ backgroundColor: teamColor }}
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[850px] h-[850px] blur-[150px] -z-10 rounded-full opacity-40 pointer-events-none"
+        style={{ 
+          background: `radial-gradient(circle, ${teamColor} 0%, rgba(251,191,36,0.3) 40%, transparent 70%)`
+        }}
       />
 
-      <div className="relative z-10 w-full h-full flex flex-col items-center justify-center p-10 select-none">
+      <div className="relative z-10 w-full h-full flex items-center justify-center p-6 md:p-8 select-none">
         
-        {/* COLLAB GRAPHIC CONTAINER */}
-        <div className="flex flex-col items-center justify-center relative w-full h-full">
-          
-        {/* HEADER: TEAM NAME */}
+        {/* TOP HEADER: OFFICIAL TRANSFER TO [TEAM] (Pinned to top so card centers on Y) */}
         <motion.div
           initial={{ y: -50, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.3, duration: 0.8 }}
-          className="mb-8 flex flex-col items-center"
+          transition={{ delay: 0.15, duration: 0.6 }}
+          className="absolute top-6 md:top-8 inset-x-0 flex flex-col items-center text-center pointer-events-none z-20 px-4"
         >
-          <div className="text-sm tracking-[0.5em] text-white/70 uppercase mb-4 font-bold" style={{ fontFamily: 'var(--font-display)' }}>
+          <div className="text-xs md:text-sm tracking-[0.5em] text-white/70 uppercase mb-2 font-bold drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]" style={{ fontFamily: 'var(--font-display)' }}>
             Official Transfer To
           </div>
           <div 
-            className="text-6xl md:text-8xl font-black uppercase tracking-wide drop-shadow-2xl text-center leading-tight" 
+            className="text-5xl md:text-7xl lg:text-8xl font-black uppercase tracking-wide drop-shadow-[0_4px_24px_rgba(0,0,0,0.95)] text-center leading-tight" 
             style={{ fontFamily: 'var(--font-broadcast)', color: teamColor }}
           >
-            {winningTeam?.name || 'NEW CLUB'}
+            {resolvedTeam?.name || 'NEW CLUB'}
           </div>
         </motion.div>
 
-        {/* HORIZONTAL COLLAB LAYOUT */}
-        <div className="flex items-center justify-center gap-8 md:gap-16 w-full max-w-[1400px]">
+        {/* HORIZONTAL COLLAB LAYOUT (Positioned just slightly bottom to sit naturally in pitch view) */}
+        <div className="flex items-center justify-center gap-8 md:gap-14 lg:gap-16 w-full max-w-[1440px] translate-y-2 md:translate-y-3">
           
           {/* LEFT: FINAL TRANSFER FEE */}
           <motion.div
-            initial={{ x: -100, opacity: 0 }}
+            initial={{ x: -60, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
-            transition={{ type: 'spring', stiffness: 100, damping: 20, delay: 1.6 }}
+            transition={{ type: 'spring', stiffness: 120, damping: 18, delay: 0.3 }}
             className="flex flex-col items-end text-right flex-1"
           >
-            <div className="text-sm font-bold text-white/50 uppercase tracking-[0.4em] mb-4" style={{ fontFamily: 'var(--font-display)' }}>
+            <div className="text-sm font-bold text-white/60 uppercase tracking-[0.4em] mb-3 drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]" style={{ fontFamily: 'var(--font-display)' }}>
               Final Transfer Fee
             </div>
-            <div className="text-[80px] md:text-[110px] font-black text-white tracking-normal drop-shadow-[0_20px_50px_rgba(0,0,0,0.9)] leading-none" style={{ fontFamily: 'var(--font-broadcast)' }}>
+            <div className="text-[72px] md:text-[96px] lg:text-[110px] font-black text-white tracking-normal drop-shadow-[0_20px_50px_rgba(0,0,0,0.95)] leading-none whitespace-nowrap" style={{ fontFamily: 'var(--font-broadcast)' }}>
               {formatCurrency(finalPrice, tournament?.currency)}
             </div>
           </motion.div>
 
           {/* CENTER: THE CARD + SOLD STAMP */}
           <motion.div
-            initial={{ scale: 0.8, y: 50, opacity: 0 }}
+            initial={{ scale: 0.85, y: 30, opacity: 0 }}
             animate={{ scale: 1, y: 0, opacity: 1 }}
-            transition={{ type: 'spring', stiffness: 100, damping: 15, delay: 0.1 }}
+            transition={{ type: 'spring', stiffness: 120, damping: 16, delay: 0.1 }}
             className="relative z-20 shrink-0"
+            style={{
+              filter: `drop-shadow(0 25px 50px rgba(0,0,0,0.95)) drop-shadow(0 0 35px ${teamColor}35)`
+            }}
           >
             <EFootballCard
               player={player}
@@ -1074,28 +1120,36 @@ const SoldStage = ({ player, winningTeam, finalPrice, tournament, settings }) =>
               centerVisual={true}
             />
             
-            {/* EPIC SOLD STAMP */}
+            {/* CLEAN & SIMPLE BROADCAST SOLD BANNER (Edge-to-Edge Card Fit) */}
             <motion.div
-               initial={{ scale: 4, opacity: 0, rotate: -6, x: '-50%', y: '-50%' }}
-               animate={{ scale: 1, opacity: 1, rotate: -6, x: '-50%', y: '-50%' }}
-               transition={{ type: 'spring', stiffness: 150, damping: 10, delay: 0.8 }}
+               initial={{ scale: 2.2, opacity: 0, y: '-50%' }}
+               animate={{ scale: 1, opacity: 1, y: '-50%' }}
+               transition={{ type: 'spring', stiffness: 220, damping: 15, delay: 0.5 }}
                style={{
                  position: 'absolute',
-                 top: '50%',
-                 left: '50%',
+                 top: '55%',
+                 left: 0,
+                 right: 0,
+                 width: '100%',
                  transformOrigin: 'center center',
                }}
-               className="pointer-events-none z-50 flex items-center justify-center"
+               className="pointer-events-none z-50 flex items-center justify-center select-none"
             >
                <div 
-                 className="w-[344px] h-[74px] bg-black/80 backdrop-blur-md border-y-[3.5px] border-red-600 flex items-center justify-center shadow-[0_0_20px_rgba(220,38,38,0.5),0_15px_35px_rgba(0,0,0,0.9)]"
+                 style={{ 
+                   width: '100%',
+                   background: 'linear-gradient(180deg, #ef4444 0%, #dc2626 50%, #b91c1c 100%)',
+                   boxShadow: '0 14px 35px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.3), inset 0 -1px 0 rgba(0, 0, 0, 0.35)'
+                 }}
+                 className="h-[70px] border-y-2 border-white/25 flex items-center justify-center select-none"
                >
                  <span 
-                   className="text-white font-black text-[66px] uppercase drop-shadow-[0_0_15px_rgba(220,38,38,0.9)] leading-none select-none text-center" 
+                   className="text-white font-black text-[52px] md:text-[56px] uppercase leading-none select-none text-center" 
                    style={{ 
                      fontFamily: 'var(--font-broadcast)',
-                     letterSpacing: '0.2em',
-                     marginRight: '-0.2em',
+                     letterSpacing: '0.24em',
+                     marginRight: '-0.24em',
+                     textShadow: '0 2px 8px rgba(0, 0, 0, 0.6)'
                    }}
                  >
                    SOLD
@@ -1106,19 +1160,18 @@ const SoldStage = ({ player, winningTeam, finalPrice, tournament, settings }) =>
 
           {/* RIGHT: THE TEAM LOGO */}
           <motion.div
-             initial={{ x: 100, opacity: 0 }}
+             initial={{ x: 60, opacity: 0 }}
              animate={{ x: 0, opacity: 1 }}
-             transition={{ type: 'spring', stiffness: 100, damping: 20, delay: 1.8 }}
+             transition={{ type: 'spring', stiffness: 120, damping: 18, delay: 0.4 }}
              className="flex-1 flex justify-start items-center"
           >
-             {winningTeam?.logoUrl ? (
-                <img src={winningTeam.logoUrl} alt="Team" className="w-32 h-32 md:w-48 md:h-48 object-contain drop-shadow-[0_15px_30px_rgba(0,0,0,0.6)]" />
+             {resolvedTeam?.logoUrl ? (
+                <img src={resolvedTeam.logoUrl} alt={resolvedTeam.name || "Team"} className="w-32 h-32 md:w-48 md:h-48 object-contain drop-shadow-[0_20px_45px_rgba(0,0,0,0.95)]" />
              ) : (
-                <Shield className="w-32 h-32 md:w-48 md:h-48 drop-shadow-[0_15px_30px_rgba(0,0,0,0.6)]" style={{ color: teamColor }} />
+                <Shield className="w-32 h-32 md:w-48 md:h-48 drop-shadow-[0_20px_45px_rgba(0,0,0,0.95)]" style={{ color: teamColor }} />
              )}
           </motion.div>
 
-        </div>
         </div>
       </div>
     </div>
@@ -1195,9 +1248,15 @@ const SigningStage = ({ stage = 'SIGNING', player, winningTeam, finalPrice, tour
   const cardTheme = settings?.cardTheme || 'GOLD';
   const teamColor = winningTeam?.primaryColor || '#22c55e';
 
-  // Sound fanfare on signing unveiling
+  // Sound fanfare on sold celebration and signing unveiling
   useEffect(() => {
-    if (stage === 'SIGNING') {
+    if (stage === 'SOLD') {
+      try {
+        soundEngine.playSoldFanfare();
+      } catch (e) {
+        console.error('Audio play error:', e);
+      }
+    } else if (stage === 'SIGNING') {
       try {
         soundEngine.playRevealSound();
       } catch (e) {
@@ -1662,15 +1721,16 @@ export const PlayerCardShowcase = ({
         </motion.div>
       )}
 
-      {stage === 'INTRO' && player && (
-        <motion.div key={`intro-${player.id}`} className="w-full h-full" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-          <IntroStage player={player} tournament={tournament} settings={settings} />
-        </motion.div>
-      )}
-
-      {stage === 'BIDDING' && player && (
-        <motion.div key={`bidding-${player.id}`} className="w-full h-full" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+      {(stage === 'INTRO' || stage === 'BIDDING') && player && (
+        <motion.div
+          key={`auction-${player.id}`}
+          className="w-full h-full"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0, transition: { duration: 0.25 } }}
+        >
           <BiddingStage
+            stage={stage}
             player={player}
             currentBid={currentBid}
             leadingTeam={leadingTeam}
@@ -1684,12 +1744,11 @@ export const PlayerCardShowcase = ({
 
       {(stage === 'SOLD' || stage === 'SIGNING') && player && (
         <motion.div
-          key={`deal-showcase-${player.id}`}
+          key={`transfer-${player.id}`}
           className="w-full h-full"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.3 }}
+          exit={{ opacity: 0, transition: { duration: 0.25 } }}
         >
           <SigningStage
             stage={stage}
@@ -1697,10 +1756,12 @@ export const PlayerCardShowcase = ({
             winningTeam={winningTeam || leadingTeam}
             finalPrice={finalPrice || currentBid}
             tournament={tournament}
+            teams={teams}
             settings={settings}
           />
         </motion.div>
       )}
+
 
       {stage === 'UNSOLD' && player && (
         <motion.div key={`unsold-${player.id}`} className="w-full h-full" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>

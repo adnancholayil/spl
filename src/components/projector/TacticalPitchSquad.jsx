@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { EFootballCard } from '../common/EFootballCard';
 import { Shield, Users } from 'lucide-react';
@@ -226,6 +226,7 @@ export const TacticalPitchSquad = ({
   // Starts at center in normal size, pauses briefly, then smoothly glides directly to target slot!
   const [isMoving, setIsMoving] = useState(false);
   const [isSlotted, setIsSlotted] = useState(!isSigningAnimation);
+  const hasAnimatedRef = useRef(false);
 
   // Manager Card Display: Strictly show ONLY when manager photo is available and valid
   const [managerImgFailed, setManagerImgFailed] = useState(false);
@@ -357,6 +358,12 @@ export const TacticalPitchSquad = ({
   // In SOLD view: card remains stationary at center with the SOLD celebration overlay and stamp.
   // In SIGNING view: SOLD elements dissolve (700ms), then card smoothly glides & scales into formation slot (1.35s).
   useEffect(() => {
+    if (isSoldView) {
+      hasAnimatedRef.current = false;
+    }
+  }, [isSoldView, signingPlayer?.id]);
+
+  useEffect(() => {
     if (!isSigningAnimation || !signingPlayer) {
       setIsMoving(false);
       setIsSlotted(true);
@@ -365,6 +372,14 @@ export const TacticalPitchSquad = ({
 
     if (isSoldView) {
       setIsSlotted(false);
+      setIsMoving(false);
+      hasAnimatedRef.current = false;
+      return;
+    }
+
+    // If already animated for this signing player, keep them slotted
+    if (hasAnimatedRef.current) {
+      setIsSlotted(true);
       setIsMoving(false);
       return;
     }
@@ -381,6 +396,7 @@ export const TacticalPitchSquad = ({
     // After flight arrives (700ms + 1350ms = 2050ms), lock card cleanly into slot
     const tLock = setTimeout(() => {
       setIsSlotted(true);
+      hasAnimatedRef.current = true;
       try {
         soundEngine.playSoldFanfare();
       } catch (e) {
@@ -419,7 +435,6 @@ export const TacticalPitchSquad = ({
 
   return (
     <div
-      onClick={replayAnimation}
       className="w-full h-full relative overflow-hidden bg-slate-950 text-white select-none cursor-default"
     >
 
@@ -439,19 +454,11 @@ export const TacticalPitchSquad = ({
       >
         {/* Left: Club Crest + Team Name + Formation (Balanced broadcast size) */}
         <div className="flex items-center gap-3.5 md:gap-4">
-          <div 
-            className="w-[72px] h-[72px] md:w-[76px] md:h-[76px] rounded-2xl flex items-center justify-center shrink-0 p-2 shadow-xl"
-            style={{
-              background: 'rgba(11, 15, 25, 0.75)',
-              backdropFilter: 'blur(12px)',
-              border: '1.5px solid rgba(255, 255, 255, 0.15)',
-              boxShadow: '0 8px 24px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.12)'
-            }}
-          >
+          <div className="w-[64px] h-[64px] md:w-[72px] md:h-[72px] flex items-center justify-center shrink-0">
             {team?.logoUrl ? (
-              <img src={team.logoUrl} alt={team.name} className="w-full h-full object-contain drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)]" />
+              <img src={team.logoUrl} alt={team.name} className="w-full h-full object-contain drop-shadow-[0_4px_12px_rgba(0,0,0,0.9)]" />
             ) : (
-              <Shield className="w-12 h-12 md:w-14 md:h-14 drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)]" style={{ color: teamColor }} />
+              <Shield className="w-12 h-12 md:w-14 md:h-14 drop-shadow-[0_4px_12px_rgba(0,0,0,0.9)]" style={{ color: teamColor }} />
             )}
           </div>
           <div className="flex flex-col justify-center">
@@ -701,28 +708,36 @@ export const TacticalPitchSquad = ({
                 {isSoldView && (
                   <motion.div
                     key="sold-stamp-banner"
-                    initial={{ scale: 1.8, opacity: 0, x: '-50%', y: '-50%' }}
-                    animate={{ scale: 1, opacity: 1, x: '-50%', y: '-50%' }}
-                    exit={{ scale: 0.6, opacity: 0, x: '-50%', y: '-50%', transition: { duration: 0.3, ease: 'easeIn' } }}
-                    transition={{ type: 'spring', stiffness: 180, damping: 15 }}
+                    initial={{ scale: 2.2, opacity: 0, y: '-50%' }}
+                    animate={{ scale: 1, opacity: 1, y: '-50%' }}
+                    exit={{ scale: 0.6, opacity: 0, y: '-50%', transition: { duration: 0.3, ease: 'easeIn' } }}
+                    transition={{ type: 'spring', stiffness: 220, damping: 14 }}
                     style={{
                       position: 'absolute',
                       top: '55%',
-                      left: '50%',
+                      left: 0,
+                      right: 0,
+                      width: '100%',
                       transformOrigin: 'center center',
                     }}
-                    className="pointer-events-none z-50 flex items-center justify-center w-full"
+                    className="pointer-events-none z-50 flex items-center justify-center select-none"
                   >
                     <div
-                      style={{ width: '391.5px' }}
-                      className="h-[74px] bg-black/80 backdrop-blur-md border-y-[3.5px] border-red-600 flex items-center justify-center shadow-[0_0_25px_rgba(220,38,38,0.7),0_15px_35px_rgba(0,0,0,0.95)]"
+                      style={{
+                        width: '100%',
+                        background: 'linear-gradient(180deg, #ef4444 0%, #dc2626 50%, #b91c1c 100%)',
+                        boxShadow: '0 14px 35px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.3), inset 0 -1px 0 rgba(0, 0, 0, 0.35)'
+                      }}
+                      className="h-[70px] border-y-2 border-white/25 flex items-center justify-center select-none"
                     >
+                      {/* Clean & Simple Stamped Text: SOLD */}
                       <span
-                        className="text-white font-black text-[64px] uppercase drop-shadow-[0_0_15px_rgba(220,38,38,0.95)] leading-none select-none text-center"
+                        className="text-white font-black text-[52px] md:text-[56px] uppercase leading-none select-none text-center"
                         style={{
                           fontFamily: 'var(--font-broadcast)',
-                          letterSpacing: '0.22em',
-                          marginRight: '-0.22em',
+                          letterSpacing: '0.24em',
+                          marginRight: '-0.24em',
+                          textShadow: '0 2px 8px rgba(0, 0, 0, 0.6)'
                         }}
                       >
                         SOLD

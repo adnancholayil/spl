@@ -344,6 +344,7 @@ export const ProjectorControl = () => {
                 { id: 'SQUAD_SHOWCASE', label: '🛡️ Team Squad' },
                 { id: 'SOLD_SHOWCASE', label: '🌟 Sold Gallery' },
                 { id: 'UNSOLD_SHOWCASE', label: '📋 Unsold Pool' },
+                { id: 'HOME', label: '🏠 Home Screen' },
               ].map(m => {
                 const isActive = settings.mode === m.id;
                 return (
