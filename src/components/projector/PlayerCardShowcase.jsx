@@ -792,6 +792,7 @@ const BiddingStage = ({
 
   // bidHistory has newest bids at index 0 (stored via unshift / [newBid, ...rest])
   const recentBids = (bidHistory || []).slice(0, 3);
+  const allTeams = teams && teams.length > 0 ? teams : storageService.getTeams();
   const teamColor = leadingTeam?.primaryColor || '#3b82f6';
 
   return (
@@ -848,13 +849,13 @@ const BiddingStage = ({
             {/* 1. CURRENT BID SECTION */}
             <div className="flex flex-col items-center w-full text-center">
               <span 
-                className="text-xs tracking-[0.45em] text-white/50 uppercase mb-3 font-bold" 
+                className="text-xs tracking-[0.45em] text-white/60 uppercase mb-3 font-bold drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]" 
                 style={{ fontFamily: 'var(--font-display)' }}
               >
                 Current Bid
               </span>
               <span 
-                className={`text-[115px] lg:text-[130px] leading-none text-white font-black drop-shadow-2xl transition-all duration-300 ${
+                className={`text-[115px] lg:text-[130px] leading-none text-white font-black drop-shadow-[0_8px_32px_rgba(0,0,0,0.95)] transition-all duration-300 ${
                   flash ? 'scale-105 text-amber-400' : ''
                 }`} 
                 style={{ 
@@ -869,44 +870,36 @@ const BiddingStage = ({
             {/* SEPARATOR 1 */}
             <div className="w-full max-w-[440px] h-[1px] bg-gradient-to-r from-transparent via-white/15 to-transparent my-8" />
 
-            {/* 2. LEADING CLUB SECTION (CLEAN & UNBOXED) */}
+            {/* 2. LEADING CLUB SECTION (CLEAN & UNBOXED — LOGO BG REMOVED) */}
             <div className="flex flex-col items-center w-full">
               <span 
-                className="text-[11px] tracking-[0.4em] text-white/40 uppercase mb-3 font-bold" 
+                className="text-[11px] tracking-[0.4em] text-white/50 uppercase mb-3 font-bold drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]" 
                 style={{ fontFamily: 'var(--font-display)' }}
               >
                 {leadingTeam ? 'Leading Club' : 'Awaiting Bids'}
               </span>
               {leadingTeam ? (
                 <div className="flex items-center justify-center gap-5">
-                  <div 
-                    className="w-16 h-16 rounded-2xl flex items-center justify-center p-2 flex-shrink-0 shadow-xl"
-                    style={{
-                      background: 'rgba(11, 15, 25, 0.75)',
-                      backdropFilter: 'blur(12px)',
-                      border: '1.5px solid rgba(255, 255, 255, 0.15)',
-                      boxShadow: '0 8px 24px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.12)'
-                    }}
-                  >
+                  <div className="flex items-center justify-center shrink-0">
                     {leadingTeam.logoUrl ? (
                       <img 
                         src={leadingTeam.logoUrl} 
                         alt={leadingTeam.name} 
-                        className="w-full h-full object-contain" 
+                        className="w-16 h-16 lg:w-20 lg:h-20 object-contain drop-shadow-[0_8px_24px_rgba(0,0,0,0.95)] transition-transform duration-300" 
                       />
                     ) : (
-                      <Shield className="w-10 h-10" style={{ color: leadingTeam.primaryColor || '#38bdf8' }} />
+                      <Shield className="w-14 h-14 lg:w-16 lg:h-16 drop-shadow-[0_8px_24px_rgba(0,0,0,0.95)]" style={{ color: leadingTeam.primaryColor || '#38bdf8' }} />
                     )}
                   </div>
                   <span 
-                    className="text-4xl lg:text-5xl text-white font-black tracking-widest uppercase drop-shadow-xl" 
+                    className="text-4xl lg:text-5xl text-white font-black tracking-widest uppercase drop-shadow-[0_4px_20px_rgba(0,0,0,0.95)]" 
                     style={{ fontFamily: 'var(--font-display)' }}
                   >
                     {leadingTeam.name}
                   </span>
                 </div>
               ) : (
-                <span className="text-2xl text-white/20 font-bold tracking-widest uppercase" style={{ fontFamily: 'var(--font-display)' }}>
+                <span className="text-2xl text-white/20 font-bold tracking-widest uppercase drop-shadow" style={{ fontFamily: 'var(--font-display)' }}>
                   ...
                 </span>
               )}
@@ -917,37 +910,47 @@ const BiddingStage = ({
               <div className="w-full max-w-[440px] h-[1px] bg-gradient-to-r from-transparent via-white/15 to-transparent my-8" />
             )}
 
-            {/* 3. RECENT ACTIVITY (STANDARD & MODERN UNBOXED BROADCAST TABLE) */}
+            {/* 3. RECENT ACTIVITY (SHOWS REAL CLUB LOGO CRESTS) */}
             {recentBids.length > 0 && (
-              <div className="flex flex-col items-center w-full max-w-[440px]">
+              <div className="flex flex-col items-center w-full max-w-[460px]">
                 <span 
-                  className="text-[11px] tracking-[0.4em] text-white/40 uppercase mb-5 font-bold" 
+                  className="text-[11px] tracking-[0.4em] text-white/50 uppercase mb-4 font-bold drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]" 
                   style={{ fontFamily: 'var(--font-display)' }}
                 >
                   Recent Activity
                 </span>
-                <div className="flex flex-col gap-4 w-full">
+                <div className="flex flex-col gap-3.5 w-full">
                   {recentBids.map((bid, idx) => {
-                    const team = teams.find(t => t.id === bid.teamId) || { name: bid.teamName || 'Club', primaryColor: '#3b82f6' };
+                    const team = allTeams.find(t => t.id === bid.teamId) ||
+                                 allTeams.find(t => t.name?.toLowerCase() === bid.teamName?.toLowerCase()) ||
+                                 { name: bid.teamName || 'Club', primaryColor: '#3b82f6', logoUrl: null };
                     const isLatest = idx === 0;
                     return (
                       <div 
                         key={bid.id || idx} 
                         className="flex items-center justify-between w-full"
                       >
-                        {/* Team Name with indicator */}
-                        <div className="flex items-center gap-3 flex-shrink-0">
+                        {/* Club Logo Crest + Team Name */}
+                        <div className="flex items-center gap-2.5 flex-shrink-0 min-w-0">
+                          {/* Club Logo */}
+                          <div className="w-6 h-6 flex items-center justify-center shrink-0">
+                            {team.logoUrl ? (
+                              <img 
+                                src={team.logoUrl} 
+                                alt={team.name} 
+                                className="max-w-[24px] max-h-[24px] object-contain drop-shadow-[0_2px_8px_rgba(0,0,0,0.95)]" 
+                              />
+                            ) : (
+                              <Shield size={16} style={{ color: team.primaryColor || '#38bdf8' }} className="drop-shadow-[0_2px_8px_rgba(0,0,0,0.95)]" />
+                            )}
+                          </div>
+
                           <span 
-                            className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${
-                              isLatest ? 'bg-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.9)] animate-pulse' : 'bg-white/30'
-                            }`} 
-                            style={team.primaryColor ? { backgroundColor: team.primaryColor } : {}}
-                          />
-                          <span 
-                            className={`text-sm uppercase tracking-widest font-bold ${
-                              isLatest ? 'text-amber-400 font-extrabold' : 'text-white/60'
+                            className={`text-sm uppercase tracking-widest font-bold truncate drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)] ${
+                              isLatest ? 'text-amber-400 font-extrabold' : 'text-white/80'
                             }`} 
                             style={{ fontFamily: 'var(--font-display)' }}
+                            title={team.name}
                           >
                             {team.name}
                           </span>
@@ -955,16 +958,16 @@ const BiddingStage = ({
 
                         {/* Connecting Dotted Line */}
                         <div 
-                          className={`flex-1 border-b border-dashed mx-4 ${
-                            isLatest ? 'border-amber-400/30' : 'border-white/15'
+                          className={`flex-1 border-b border-dashed mx-3 ${
+                            isLatest ? 'border-amber-400/40' : 'border-white/20'
                           }`} 
                         />
 
                         {/* Bid Amount with gap on numbers */}
                         <div className="flex items-center flex-shrink-0">
                           <span 
-                            className={`text-2xl font-black ${
-                              isLatest ? 'text-amber-400 drop-shadow-[0_0_12px_rgba(251,191,36,0.5)]' : 'text-white/60'
+                            className={`text-2xl font-black drop-shadow-[0_2px_8px_rgba(0,0,0,0.95)] ${
+                              isLatest ? 'text-amber-400 drop-shadow-[0_0_12px_rgba(251,191,36,0.6)]' : 'text-white/80'
                             }`} 
                             style={{ 
                               fontFamily: 'var(--font-broadcast)',
