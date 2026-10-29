@@ -81,12 +81,14 @@ const IdleStage = ({ tournament, settings = {} }) => {
                 WebkitBackdropFilter: 'blur(20px)',
                 border: '2px solid rgba(255, 255, 255, 0.22)',
                 boxShadow: '0 24px 60px rgba(0, 0, 0, 0.85), inset 0 1px 1px rgba(255, 255, 255, 0.3), 0 0 40px rgba(0, 0, 0, 0.5)',
+                width: 'clamp(180px, 16vw, 220px)',
+                height: 'clamp(180px, 16vw, 220px)',
               }}
             >
-              <SPLLogo size={160} showGlow={false} />
+              <SPLLogo size={160} showGlow={false} customLogo={tournament?.logoUrl} />
             </div>
           ) : (
-            <SPLLogo size={170} showGlow={false} />
+            <SPLLogo size={170} showGlow={false} customLogo={tournament?.logoUrl} />
           )}
         </div>
 
@@ -545,20 +547,22 @@ export const MysteryCardBack = ({ size = 'xl', customTheme = null, isStudio = fa
               <circle cx="160" cy="200" r="58" fill="url(#mys-emblem-bg)" />
               <circle cx="160" cy="200" r="58" fill="none" stroke="url(#mys-gold)" strokeWidth="2.5" />
 
-              {/* SPL Logo */}
+              {/* SPL / Tournament Logo */}
               <image
-                href="/assets/logo.png"
+                href={tournament?.logoUrl || "/assets/logo.png"}
                 x="122" y="162" width="76" height="76"
                 preserveAspectRatio="xMidYMid meet"
                 style={{ filter: 'drop-shadow(0px 3px 8px rgba(0,0,0,0.9))' }}
               />
-              <foreignObject x="124" y="162" width="76" height="76">
-                <div xmlns="http://www.w3.org/1999/xhtml" style={{
-                  width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontFamily: "'Bebas Neue', Impact, 'Arial Black', sans-serif", fontSize: '16px', fontWeight: 'bold',
-                  color: '#FFFFFF', letterSpacing: '2px', textShadow: '0px 1px 5px rgba(0,0,0,0.95)', pointerEvents: 'none'
-                }}>SPL</div>
-              </foreignObject>
+              {!tournament?.logoUrl && (
+                <foreignObject x="124" y="162" width="76" height="76">
+                  <div xmlns="http://www.w3.org/1999/xhtml" style={{
+                    width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontFamily: "'Bebas Neue', Impact, 'Arial Black', sans-serif", fontSize: '16px', fontWeight: 'bold',
+                    color: '#FFFFFF', letterSpacing: '2px', textShadow: '0px 1px 5px rgba(0,0,0,0.95)', pointerEvents: 'none'
+                  }}>SPL</div>
+                </foreignObject>
+              )}
             </g>
           )}
 
@@ -579,7 +583,7 @@ export const MysteryCardBack = ({ size = 'xl', customTheme = null, isStudio = fa
               <circle cx="160" cy="290" r="1.5" fill="rgba(255,255,255,0.9)" />
               <circle cx="180" cy="290" r="1.5" fill="rgba(255,255,255,0.6)" />
 
-              {/* SUPER PREMIER LEAGUE text */}
+              {/* SUPER PREMIER LEAGUE / Custom tournament text */}
               <text
                 x="160" y="315"
                 fontFamily="'Bebas Neue', Impact, sans-serif"
@@ -588,7 +592,7 @@ export const MysteryCardBack = ({ size = 'xl', customTheme = null, isStudio = fa
                 fill="url(#mys-gold)"
                 textAnchor="middle"
                 style={{ letterSpacing: '4px' }}
-              >SUPER PREMIER LEAGUE</text>
+              >{tournament?.name || 'SUPER PREMIER LEAGUE'}</text>
 
               {/* Season text */}
               <text

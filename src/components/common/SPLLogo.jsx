@@ -1,10 +1,53 @@
 import React from 'react';
+import { useTournament } from '../../context/TournamentContext';
+import { storageService } from '../../services/storageService';
 
 /**
- * SPLLogo — Official Super Premier League Logo
- * Renders the colorful geometric starburst ring with transparent center & crisp white "SPL" text.
+ * SPLLogo — Official Super Premier League / Custom Event Logo
+ * Renders custom tournament logo if set, or official colorful geometric starburst ring with transparent center & crisp white "SPL" text.
  */
-export const SPLLogo = ({ size = 40, className = '', style = {}, showGlow = false }) => {
+export const SPLLogo = ({ size = 40, className = '', style = {}, showGlow = false, customLogo }) => {
+  let contextTourn = null;
+  try {
+    const ctx = useTournament();
+    contextTourn = ctx?.tournament;
+  } catch (_) {}
+
+  // Resolve logo: explicit customLogo prop -> tournament from context -> tournament from storage
+  const effectiveLogo = customLogo !== undefined 
+    ? customLogo 
+    : (contextTourn?.logoUrl || (typeof window !== 'undefined' ? storageService.getTournament()?.logoUrl : ''));
+
+  if (effectiveLogo) {
+    return (
+      <div
+        className={className}
+        style={{
+          position: 'relative',
+          width: size,
+          height: size,
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexShrink: 0,
+          filter: showGlow ? 'drop-shadow(0 0 16px rgba(255, 255, 255, 0.45))' : 'none',
+          ...style
+        }}
+      >
+        <img
+          src={effectiveLogo}
+          alt="Tournament Event Logo"
+          style={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'contain',
+            borderRadius: style?.borderRadius || '4px'
+          }}
+        />
+      </div>
+    );
+  }
+
   return (
     <div
       className={className}
@@ -54,3 +97,4 @@ export const SPLLogo = ({ size = 40, className = '', style = {}, showGlow = fals
     </div>
   );
 };
+

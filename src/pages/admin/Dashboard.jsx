@@ -50,8 +50,12 @@ export const Dashboard = () => {
 
         {/* Left: Tournament Details */}
         <div className="relative z-10 flex items-center gap-3.5 min-w-0">
-          <div className="w-10 h-10 rounded-lg bg-blue-500/10 border border-blue-400/30 flex items-center justify-center shrink-0 shadow-inner">
-            <Trophy className="w-5 h-5 text-blue-400" />
+          <div className="w-10 h-10 rounded-lg bg-blue-500/10 border border-blue-400/30 flex items-center justify-center shrink-0 shadow-inner overflow-hidden">
+            {tournament?.logoUrl ? (
+              <img src={tournament.logoUrl} alt="Event Logo" className="w-full h-full object-contain p-1" />
+            ) : (
+              <Trophy className="w-5 h-5 text-blue-400" />
+            )}
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-2">

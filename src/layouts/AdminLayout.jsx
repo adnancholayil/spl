@@ -47,12 +47,13 @@ export const AdminLayout = () => {
             className="flex items-center gap-3.5 px-5 py-5"
             style={{ borderBottom: '1px solid var(--border-subtle)' }}
           >
-            <SPLLogo size={40} />
+            <SPLLogo size={40} customLogo={tournament?.logoUrl} />
             {!collapsed && (
               <div className="min-w-0 flex-1">
                 <div
                   className="text-base font-bold truncate text-white"
                   style={{ fontFamily: 'var(--font-display)', letterSpacing: '0.04em' }}
+                  title={tournament?.name || 'SUPER PREMIER LEAGUE'}
                 >
                   {tournament?.name || 'SUPER PREMIER LEAGUE'}
                 </div>

@@ -311,7 +311,7 @@ export const ProjectorScreen = () => {
                   }}
                   className="uppercase mb-1"
                 >
-                  SUPER PREMIER LEAGUE 2026
+                  {tournament?.name || 'SUPER PREMIER LEAGUE 2026'}
                 </div>
                 <h1
                   style={{
@@ -776,7 +776,7 @@ export const ProjectorScreen = () => {
             color: '#fff', letterSpacing: '0.05em'
           }}>
             <marquee scrollamount="6">
-              {projectorSettings.customTickerText || 'SUPER PREMIER LEAGUE 2026 • OFFICIAL PLAYER AUCTION'}
+              {projectorSettings.customTickerText || `${tournament?.name || 'SUPER PREMIER LEAGUE 2026'} • OFFICIAL PLAYER AUCTION`}
             </marquee>
           </div>
 

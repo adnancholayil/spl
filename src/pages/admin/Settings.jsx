@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useTournament } from '../../context/TournamentContext';
 import { storageService } from '../../services/storageService';
 import { soundEngine } from '../../services/soundService';
 import { formatCurrency } from '../../utils/currency';
 import { ConfirmModal } from '../../components/common/ConfirmModal';
+import { SPLLogo } from '../../components/common/SPLLogo';
 import {
   Download,
   Upload,
@@ -17,7 +18,9 @@ import {
   Tv,
   Coins,
   Check,
-  Sparkles
+  Sparkles,
+  RefreshCw,
+  Image as ImageIcon
 } from 'lucide-react';
 import { generateMockData } from '../../utils/mockDataGenerator';
 import { createRealisticPlayerPortrait } from '../../utils/fifaPlayerGenerator';
@@ -26,6 +29,19 @@ import { useNavigate } from 'react-router-dom';
 export const Settings = () => {
   const { tournament, updateTournament, setCurrency, refreshData } = useTournament();
   const navigate = useNavigate();
+
+  // Event Identity & Global Branding State (Logo & Tournament Name)
+  const [eventNameInput, setEventNameInput] = useState(() => tournament?.name || 'SUPER PREMIER LEAGUE 2026');
+  const [logoUrlInput, setLogoUrlInput] = useState('');
+  const [eventBrandingSavedToast, setEventBrandingSavedToast] = useState(false);
+  const [isLogoUploading, setIsLogoUploading] = useState(false);
+  const logoFileInputRef = useRef(null);
+
+  useEffect(() => {
+    if (tournament?.name) {
+      setEventNameInput(tournament.name);
+    }
+  }, [tournament?.name]);
 
   const [squadFormat, setSquadFormat] = useState(() => storageService.getSquadFormat());
   const [formatSavedToast, setFormatSavedToast] = useState(false);
@@ -57,6 +73,123 @@ export const Settings = () => {
     } catch (_) {}
     setCurrencySavedToast(true);
     setTimeout(() => setCurrencySavedToast(false), 2500);
+  };
+
+  // ── EVENT BRANDING & LOGO HANDLERS ──
+  const handleSaveEventName = (e) => {
+    if (e) e.preventDefault();
+    const cleanName = eventNameInput.trim() || 'SUPER PREMIER LEAGUE 2026';
+    updateTournament({ name: cleanName });
+    try { soundEngine.playFeedbackTone(); } catch (_) {}
+    setEventBrandingSavedToast(true);
+    setTimeout(() => setEventBrandingSavedToast(false), 2500);
+  };
+
+  const handleResetEventName = () => {
+    const defaultName = 'SUPER PREMIER LEAGUE 2026';
+    setEventNameInput(defaultName);
+    updateTournament({ name: defaultName });
+    try { soundEngine.playFeedbackTone(); } catch (_) {}
+    setEventBrandingSavedToast(true);
+    setTimeout(() => setEventBrandingSavedToast(false), 2500);
+  };
+
+  const handleLogoFileUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      showAlert('Invalid File Format', 'Please upload a valid image file (PNG, JPG, SVG, WEBP).', 'danger');
+      return;
+    }
+
+    setIsLogoUploading(true);
+
+    // If SVG, preserve vector sharpness via raw dataURL
+    if (file.type === 'image/svg+xml') {
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        const dataUrl = evt.target.result;
+        updateTournament({ logoUrl: dataUrl });
+        setIsLogoUploading(false);
+        try { soundEngine.playFeedbackTone(); } catch (_) {}
+        setEventBrandingSavedToast(true);
+        setTimeout(() => setEventBrandingSavedToast(false), 2500);
+      };
+      reader.onerror = () => {
+        setIsLogoUploading(false);
+        showAlert('Upload Failed', 'Could not read image file.', 'danger');
+      };
+      reader.readAsDataURL(file);
+      e.target.value = '';
+      return;
+    }
+
+    // For raster images, resize with Canvas to sharp crisp dimension (max 400px)
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      const img = new Image();
+      img.onload = () => {
+        const MAX_DIM = 400;
+        let w = img.width;
+        let h = img.height;
+        if (w > h) {
+          if (w > MAX_DIM) {
+            h = Math.round((h * MAX_DIM) / w);
+            w = MAX_DIM;
+          }
+        } else {
+          if (h > MAX_DIM) {
+            w = Math.round((w * MAX_DIM) / h);
+            h = MAX_DIM;
+          }
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+
+        const compressedDataUrl = canvas.toDataURL('image/webp', 0.9);
+        updateTournament({ logoUrl: compressedDataUrl });
+        setIsLogoUploading(false);
+        try { soundEngine.playFeedbackTone(); } catch (_) {}
+        setEventBrandingSavedToast(true);
+        setTimeout(() => setEventBrandingSavedToast(false), 2500);
+      };
+      img.onerror = () => {
+        updateTournament({ logoUrl: evt.target.result });
+        setIsLogoUploading(false);
+        try { soundEngine.playFeedbackTone(); } catch (_) {}
+        setEventBrandingSavedToast(true);
+        setTimeout(() => setEventBrandingSavedToast(false), 2500);
+      };
+      img.src = evt.target.result;
+    };
+    reader.onerror = () => {
+      setIsLogoUploading(false);
+      showAlert('Upload Failed', 'Could not read image file.', 'danger');
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
+
+  const handleApplyLogoUrl = () => {
+    const url = logoUrlInput.trim();
+    if (!url) return;
+    updateTournament({ logoUrl: url });
+    setLogoUrlInput('');
+    try { soundEngine.playFeedbackTone(); } catch (_) {}
+    setEventBrandingSavedToast(true);
+    setTimeout(() => setEventBrandingSavedToast(false), 2500);
+  };
+
+  const handleResetLogo = () => {
+    updateTournament({ logoUrl: '' });
+    try { soundEngine.playFeedbackTone(); } catch (_) {}
+    setEventBrandingSavedToast(true);
+    setTimeout(() => setEventBrandingSavedToast(false), 2500);
   };
 
   // Custom Modal State
@@ -267,6 +400,36 @@ export const Settings = () => {
         </div>
       )}
 
+      {/* ── EVENT BRANDING SYNCHRONIZED TOAST ── */}
+      {eventBrandingSavedToast && (
+        <div style={{
+          position: 'fixed',
+          bottom: 24,
+          right: 24,
+          zIndex: 9999,
+          background: 'rgba(15, 23, 42, 0.96)',
+          border: '1px solid #38BDF8',
+          borderRadius: 10,
+          padding: '14px 20px',
+          boxShadow: '0 10px 25px rgba(0,0,0,0.5), 0 0 20px rgba(56,189,248,0.35)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+          backdropFilter: 'blur(12px)',
+          animation: 'fadeIn 0.2s ease',
+        }}>
+          <CheckCircle2 style={{ width: 20, height: 20, color: '#38BDF8' }} />
+          <div>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: 13, fontWeight: 800, color: '#fff', textTransform: 'uppercase' }}>
+              Event Branding Synchronized
+            </div>
+            <div style={{ fontFamily: 'var(--font-body)', fontSize: 12.5, color: '#94a3b8' }}>
+              Event Name & Official Logo updated live across top navigation, projector screen, and player cards!
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── BROADCAST HEADER ── */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 16, borderBottom: '1px solid var(--border-subtle)', flexWrap: 'wrap', gap: 14 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
@@ -282,6 +445,14 @@ export const Settings = () => {
         </div>
         
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+          {/* Active Tournament Brand Badge */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 15px', borderRadius: 20, background: 'rgba(56,189,248,0.08)', border: '1px solid rgba(56,189,248,0.25)' }}>
+            <SPLLogo size={18} customLogo={tournament?.logoUrl} />
+            <span style={{ fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: 800, color: '#fff', letterSpacing: '0.08em', textTransform: 'uppercase', maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {tournament?.name || 'SUPER PREMIER LEAGUE 2026'}
+            </span>
+          </div>
+
           {/* Active Currency Badge */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 15px', borderRadius: 20, background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)' }}>
             <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse" />
@@ -297,6 +468,312 @@ export const Settings = () => {
               SQUAD: <strong style={{ color: '#fff' }}>{squadFormat.toUpperCase()}</strong>
             </span>
           </div>
+        </div>
+      </div>
+
+      {/* ── 0. EVENT IDENTITY & OFFICIAL BRANDING (NAME & LOGO) ── */}
+      <div style={{
+        background: 'var(--spl-panel)',
+        border: '1px solid var(--border-subtle)',
+        borderRadius: 12,
+        padding: '20px 24px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 18,
+        boxShadow: '0 4px 20px rgba(0,0,0,0.25)'
+      }}>
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{
+              width: 32, height: 32, borderRadius: 8,
+              background: 'rgba(56, 189, 248, 0.15)', border: '1px solid rgba(56, 189, 248, 0.3)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#38BDF8'
+            }}>
+              <Sparkles size={16} />
+            </div>
+            <div>
+              <div style={{ fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: 800, color: '#38BDF8', letterSpacing: '0.18em', textTransform: 'uppercase' }}>
+                EVENT IDENTITY & GLOBAL BRANDING
+              </div>
+              <div style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: 'var(--text-muted)' }}>
+                Configure tournament name and official logo — live synchronized across top-left navigation, projector screen home page, and player cards
+              </div>
+            </div>
+          </div>
+
+          {/* Status Pill */}
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 8, padding: '5px 12px', borderRadius: 20,
+            background: tournament?.logoUrl ? 'rgba(34, 197, 94, 0.1)' : 'rgba(56, 189, 248, 0.1)',
+            border: `1px solid ${tournament?.logoUrl ? 'rgba(34, 197, 94, 0.25)' : 'rgba(56, 189, 248, 0.25)'}`
+          }}>
+            <span style={{ width: 8, height: 8, borderRadius: '50%', background: tournament?.logoUrl ? '#22C55E' : '#38BDF8' }} />
+            <span style={{ fontFamily: 'var(--font-display)', fontSize: 11, fontWeight: 800, color: tournament?.logoUrl ? '#22C55E' : '#38BDF8', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+              {tournament?.logoUrl ? 'CUSTOM EVENT LOGO ACTIVE' : 'DEFAULT SPL LOGO ACTIVE'}
+            </span>
+          </div>
+        </div>
+
+        {/* Two Columns Grid: Event Name (Left) & Event Logo with Live Previews (Right) */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(320px, 1fr) minmax(400px, 1.25fr)', gap: 20, alignItems: 'stretch' }}>
+          
+          {/* Left Column: Event / Tournament Name */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14, background: 'rgba(255,255,255,0.02)', padding: '18px 20px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.06)' }}>
+            <div>
+              <label style={{ fontFamily: 'var(--font-display)', fontSize: 11.5, fontWeight: 800, color: '#fff', letterSpacing: '0.1em', textTransform: 'uppercase', display: 'block', marginBottom: 6 }}>
+                Event / Tournament Name
+              </label>
+              <p style={{ fontSize: 11.5, color: 'var(--text-secondary)', margin: '0 0 12px 0', lineHeight: 1.45 }}>
+                Shown on top-left sidebar header, projector screen home page title, player signing cards, and live broadcast ticker.
+              </p>
+
+              <form onSubmit={handleSaveEventName} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <input
+                  type="text"
+                  value={eventNameInput}
+                  onChange={e => setEventNameInput(e.target.value)}
+                  placeholder="e.g. SUPER PREMIER LEAGUE 2026"
+                  style={{
+                    width: '100%',
+                    padding: '10px 14px',
+                    borderRadius: 8,
+                    background: 'var(--spl-elevated)',
+                    border: '1px solid rgba(56, 189, 248, 0.4)',
+                    color: '#ffffff',
+                    fontSize: 14,
+                    fontWeight: 700,
+                    fontFamily: 'var(--font-display)',
+                    letterSpacing: '0.04em',
+                    outline: 'none',
+                    boxSizing: 'border-box'
+                  }}
+                />
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                  <button
+                    type="submit"
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 6,
+                      padding: '8px 16px', borderRadius: 6,
+                      background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
+                      color: '#fff', fontSize: 11.5, fontWeight: 800,
+                      fontFamily: 'var(--font-display)', letterSpacing: '0.08em',
+                      textTransform: 'uppercase', border: 'none', cursor: 'pointer',
+                      boxShadow: '0 2px 10px rgba(2,132,199,0.3)',
+                      transition: 'all 0.15s ease'
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.filter = 'brightness(1.15)'}
+                    onMouseLeave={e => e.currentTarget.style.filter = 'none'}
+                  >
+                    <Check size={14} />
+                    Save Name
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleResetEventName}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 6,
+                      padding: '8px 14px', borderRadius: 6,
+                      background: 'rgba(255,255,255,0.05)',
+                      color: '#94a3b8', fontSize: 11.5, fontWeight: 700,
+                      fontFamily: 'var(--font-display)', letterSpacing: '0.06em',
+                      border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer',
+                      transition: 'all 0.15s ease'
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; e.currentTarget.style.color = '#fff'; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = '#94a3b8'; }}
+                  >
+                    <RotateCcw size={12} />
+                    Reset Default
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            {/* Live Broadcast Text Preview */}
+            <div style={{ marginTop: 'auto', paddingTop: 12, borderTop: '1px dashed rgba(255,255,255,0.08)' }}>
+              <div style={{ fontSize: 10, fontWeight: 800, color: '#64748b', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 4 }}>
+                LIVE BROADCAST DISPLAY PREVIEW:
+              </div>
+              <div style={{
+                fontFamily: 'var(--font-broadcast)',
+                fontSize: 22,
+                color: '#38BDF8',
+                letterSpacing: '0.04em',
+                textTransform: 'uppercase',
+                lineHeight: 1.15,
+                wordBreak: 'break-word',
+                textShadow: '0 2px 8px rgba(0,0,0,0.6)'
+              }}>
+                {eventNameInput || 'SUPER PREMIER LEAGUE 2026'}
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column: Event Logo & Dual Live Previews */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14, background: 'rgba(255,255,255,0.02)', padding: '18px 20px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.06)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+              <div>
+                <label style={{ fontFamily: 'var(--font-display)', fontSize: 11.5, fontWeight: 800, color: '#fff', letterSpacing: '0.1em', textTransform: 'uppercase', display: 'block' }}>
+                  Official Event Logo
+                </label>
+                <span style={{ fontSize: 11.5, color: 'var(--text-secondary)' }}>
+                  Upload high-res PNG, JPG, SVG, or WEBP (or paste image URL).
+                </span>
+              </div>
+
+              {tournament?.logoUrl && (
+                <button
+                  type="button"
+                  onClick={handleResetLogo}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 5,
+                    padding: '5px 10px', borderRadius: 6,
+                    background: 'rgba(239, 68, 68, 0.12)', border: '1px solid rgba(239, 68, 68, 0.3)',
+                    color: '#EF4444', fontSize: 10.5, fontWeight: 800,
+                    fontFamily: 'var(--font-display)', letterSpacing: '0.06em',
+                    cursor: 'pointer'
+                  }}
+                  title="Remove custom logo and restore official SPL logo"
+                >
+                  <RotateCcw size={12} />
+                  Restore SPL Logo
+                </button>
+              )}
+            </div>
+
+            {/* Dual Mockup Preview: Projector Badge + Sidebar Header */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              
+              {/* Preview 1: Projector Screen Home Badge Preview */}
+              <div style={{
+                background: 'radial-gradient(circle at 50% 30%, #0f172a 0%, #050811 100%)',
+                border: '1px solid rgba(255,255,255,0.12)',
+                borderRadius: 8,
+                padding: '12px 10px',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                textAlign: 'center',
+                position: 'relative',
+                overflow: 'hidden'
+              }}>
+                <div style={{ fontSize: 9.5, fontWeight: 800, color: '#94a3b8', letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 8 }}>
+                  Projector Screen Preview
+                </div>
+                <div style={{
+                  width: 82, height: 82, borderRadius: '50%',
+                  background: 'radial-gradient(circle at 50% 35%, rgba(15, 23, 42, 0.95) 0%, rgba(8, 12, 22, 0.98) 100%)',
+                  border: '2px solid rgba(255, 255, 255, 0.22)',
+                  boxShadow: '0 8px 24px rgba(0, 0, 0, 0.8), inset 0 1px 1px rgba(255, 255, 255, 0.3)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  padding: 8
+                }}>
+                  <SPLLogo size={64} showGlow={false} customLogo={tournament?.logoUrl} />
+                </div>
+                <div style={{ fontFamily: 'var(--font-broadcast)', fontSize: 12, color: '#fff', marginTop: 8, letterSpacing: '0.04em', textTransform: 'uppercase', maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {eventNameInput || 'SUPER PREMIER LEAGUE 2026'}
+                </div>
+              </div>
+
+              {/* Preview 2: Leftside Top Sidebar Preview */}
+              <div style={{
+                background: 'var(--spl-navy)',
+                border: '1px solid var(--border-subtle)',
+                borderRadius: 8,
+                padding: 12,
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+                position: 'relative'
+              }}>
+                <div style={{ fontSize: 9.5, fontWeight: 800, color: '#94a3b8', letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: 10 }}>
+                  Leftside Top Sidebar Preview
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <SPLLogo size={38} customLogo={tournament?.logoUrl} />
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ fontFamily: 'var(--font-display)', fontSize: 13, fontWeight: 800, color: '#fff', letterSpacing: '0.04em', textTransform: 'uppercase', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {eventNameInput || 'SUPER PREMIER LEAGUE'}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 3 }}>
+                      <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#4ade80' }} />
+                      <span style={{ fontSize: 9.5, fontWeight: 700, color: '#94a3b8', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                        CONTROL CENTER
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            {/* Logo Upload & URL Controls */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 'auto' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr auto', gap: 8, alignItems: 'center' }}>
+                
+                {/* File Upload Button */}
+                <label style={{
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  padding: '8px 14px', borderRadius: 6,
+                  background: isLogoUploading ? 'rgba(59,130,246,0.2)' : 'var(--spl-elevated)',
+                  border: '1px solid rgba(255,255,255,0.2)',
+                  color: '#fff', fontSize: 11, fontWeight: 700,
+                  cursor: isLogoUploading ? 'wait' : 'pointer',
+                  whiteSpace: 'nowrap',
+                  transition: 'all 0.15s ease'
+                }}>
+                  <input
+                    ref={logoFileInputRef}
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                    onChange={handleLogoFileUpload}
+                    disabled={isLogoUploading}
+                    style={{ display: 'none' }}
+                  />
+                  {isLogoUploading ? <RefreshCw size={13} className="animate-spin" /> : <Upload size={13} color="#F59E0B" />}
+                  {isLogoUploading ? 'Optimizing...' : 'Upload Logo File'}
+                </label>
+
+                {/* Paste URL Input */}
+                <input
+                  type="text"
+                  placeholder="Or paste logo URL (https://...)"
+                  value={logoUrlInput}
+                  onChange={e => setLogoUrlInput(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleApplyLogoUrl(); } }}
+                  style={{
+                    width: '100%', padding: '8px 12px', borderRadius: 6,
+                    background: 'var(--spl-elevated)', border: '1px solid var(--border-subtle)',
+                    color: '#fff', fontSize: 11.5, outline: 'none', boxSizing: 'border-box'
+                  }}
+                />
+
+                {/* Apply URL Button */}
+                <button
+                  type="button"
+                  onClick={handleApplyLogoUrl}
+                  disabled={!logoUrlInput.trim()}
+                  style={{
+                    padding: '8px 14px', borderRadius: 6,
+                    background: logoUrlInput.trim() ? 'var(--spl-blue)' : 'rgba(255,255,255,0.1)',
+                    color: '#fff', fontSize: 11, fontWeight: 800,
+                    fontFamily: 'var(--font-display)', letterSpacing: '0.06em',
+                    textTransform: 'uppercase', border: 'none',
+                    cursor: logoUrlInput.trim() ? 'pointer' : 'not-allowed',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  Apply
+                </button>
+              </div>
+            </div>
+
+          </div>
+
         </div>
       </div>
 
