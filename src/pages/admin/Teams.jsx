@@ -6,14 +6,15 @@ import { ConfirmModal } from '../../components/common/ConfirmModal';
 import { TeamLogoUploader } from '../../components/common/TeamLogoUploader';
 import { ManagerPhotoUploader } from '../../components/common/ManagerPhotoUploader';
 import { generateTeamCode } from '../../services/teamService';
-import { Plus, Edit2, Trash2, X, Users, Sparkles } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Users, Sparkles, RotateCcw } from 'lucide-react';
 
 export const Teams = () => {
-  const { teams, players, addTeam, updateTeam, deleteTeam, tournament } = useTournament();
+  const { teams, players, addTeam, updateTeam, deleteTeam, setAllTeamsStartingBudget, tournament } = useTournament();
   const [showModal, setShowModal] = useState(false);
   const [editingTeam, setEditingTeam] = useState(null);
   const [selectedSquad, setSelectedSquad] = useState(null);
   const [deleteConfirmTeam, setDeleteConfirmTeam] = useState(null);
+  const [showSyncModal, setShowSyncModal] = useState(false);
   const [isShortCodeCustom, setIsShortCodeCustom] = useState(false);
   const [formData, setFormData] = useState({
     name: '', shortName: '', managerName: '',
@@ -67,32 +68,61 @@ export const Teams = () => {
       ? formData.shortName.trim().toUpperCase()
       : (generateTeamCode(formData.name) || 'CLUB');
 
-    const finalData = { ...formData, shortName: finalCode };
+    const startingBudget = (typeof formData.startingBudget === 'number' && !isNaN(formData.startingBudget))
+      ? formData.startingBudget
+      : (parseInt(formData.startingBudget, 10) || (tournament?.defaultBudget || 5000));
+
+    const totalSpent = editingTeam ? (Number(editingTeam.totalSpent) || 0) : 0;
+    const currentBalance = startingBudget - totalSpent;
+
+    const finalData = { 
+      ...formData, 
+      shortName: finalCode,
+      startingBudget,
+      totalSpent,
+      currentBalance
+    };
     if (editingTeam) updateTeam(editingTeam.id, finalData);
     else addTeam(finalData);
     setShowModal(false);
   };
 
+  const defaultTournBudget = tournament?.defaultBudget || 5000;
+  const hasUnsyncedBudgets = teams.some(t => t.startingBudget !== defaultTournBudget);
+
   return (
-    <div style={{ padding: '32px 40px', maxWidth: 1600, margin: '0 auto' }}>
+    <div className="p-3 sm:p-6 md:p-8 max-w-[1600px] mx-auto min-h-full overflow-y-auto pb-28 sm:pb-12">
 
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 20, marginBottom: 28, paddingBottom: 20, borderBottom: '1px solid var(--border-subtle)' }}>
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-7 pb-5 border-b border-[var(--border-subtle)]">
         <div>
           <div style={{ fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: 700, color: 'var(--spl-blue-light)', letterSpacing: '0.25em', marginBottom: 8, textTransform: 'uppercase' }}>
             CLUBS & FRANCHISE MANAGEMENT
           </div>
-          <h1 style={{ fontFamily: 'var(--font-broadcast)', fontSize: 'clamp(32px, 4vw, 48px)', color: '#fff', lineHeight: 0.95, textTransform: 'uppercase' }}>
+          <h1 style={{ fontFamily: 'var(--font-broadcast)', fontSize: 'clamp(28px, 4vw, 48px)', color: '#fff', lineHeight: 0.95, textTransform: 'uppercase' }}>
             Registered Clubs
           </h1>
         </div>
-        <button onClick={() => handleOpenModal()} className="btn-primary" style={{ padding: '10px 22px', fontSize: 14, gap: 8 }}>
-          <Plus className="w-5 h-5" /> Register Club
-        </button>
+        <div className="flex items-center gap-2.5 flex-wrap">
+          {hasUnsyncedBudgets && (
+            <button
+              onClick={() => setShowSyncModal(true)}
+              className="btn-ghost flex items-center gap-1.5"
+              style={{ padding: '9px 15px', fontSize: 12.5 }}
+              title={`Normalize all clubs' budget to ${formatCurrency(defaultTournBudget, tournament?.currency)}`}
+            >
+              <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
+              <span>Set All to {formatCurrency(defaultTournBudget, tournament?.currency)}</span>
+            </button>
+          )}
+          <button onClick={() => handleOpenModal()} className="btn-primary w-full sm:w-auto" style={{ padding: '10px 22px', fontSize: 14, gap: 8 }}>
+            <Plus className="w-5 h-5" /> Register Club
+          </button>
+        </div>
       </div>
 
       {/* Teams Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: 24 }}>
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 sm:gap-6">
         {teams.map(team => {
           const squad = players.filter(p => p.teamId === team.id);
           const pct = Math.max(0, Math.min(100, (team.currentBalance / team.startingBudget) * 100));
@@ -210,14 +240,14 @@ export const Teams = () => {
 
       {/* ── SQUAD MODAL ── */}
       {selectedSquad && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 50, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-          <div style={{ background: 'var(--spl-panel)', border: `1px solid ${selectedSquad.primaryColor}30`, borderRadius: 10, padding: '24px 28px', maxWidth: 840, width: '100%', maxHeight: '85vh', display: 'flex', flexDirection: 'column', boxShadow: `0 0 60px ${selectedSquad.primaryColor}10` }}>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 50, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 12 }}>
+          <div style={{ background: 'var(--spl-panel)', border: `1px solid ${selectedSquad.primaryColor}30`, borderRadius: 10, padding: '20px 24px', maxWidth: 840, width: '100%', maxHeight: '90vh', display: 'flex', flexDirection: 'column', boxShadow: `0 0 60px ${selectedSquad.primaryColor}10` }}>
             {/* Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, paddingBottom: 16, borderBottom: `1px solid ${selectedSquad.primaryColor}20` }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, paddingBottom: 12, borderBottom: `1px solid ${selectedSquad.primaryColor}20` }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <div style={{ width: 4, height: 36, borderRadius: 2, background: selectedSquad.primaryColor }} />
                 <div>
-                  <h3 style={{ fontFamily: 'var(--font-broadcast)', fontSize: 26, color: '#fff', textTransform: 'uppercase', letterSpacing: '0.02em' }}>{selectedSquad.name}</h3>
+                  <h3 style={{ fontFamily: 'var(--font-broadcast)', fontSize: 24, color: '#fff', textTransform: 'uppercase', letterSpacing: '0.02em' }}>{selectedSquad.name}</h3>
                   <div style={{ fontFamily: 'var(--font-body)', fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>Manager: {selectedSquad.managerName}</div>
                 </div>
               </div>
@@ -228,7 +258,7 @@ export const Teams = () => {
 
             <div style={{ flex: 1, overflowY: 'auto' }}>
               {players.filter(p => p.teamId === selectedSquad.id).length > 0 ? (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 16, justifyItems: 'center' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 180px), 1fr))', gap: 14, justifyItems: 'center' }}>
                   {players.filter(p => p.teamId === selectedSquad.id).map(p => (
                     <EFootballCard key={p.id} player={p} size="md" />
                   ))}
@@ -245,8 +275,8 @@ export const Teams = () => {
 
       {/* ── ADD / EDIT MODAL ── */}
       {showModal && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 50, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-          <div style={{ background: 'var(--spl-panel)', border: '1px solid var(--border-default)', borderRadius: 10, padding: '28px 30px', maxWidth: 460, width: '100%' }}>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 50, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 12 }}>
+          <div style={{ background: 'var(--spl-panel)', border: '1px solid var(--border-default)', borderRadius: 10, padding: '20px 24px', maxWidth: 480, width: '100%', maxHeight: '92vh', overflowY: 'auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
               <h3 style={{ fontFamily: 'var(--font-broadcast)', fontSize: 22, color: '#fff' }}>
                 {editingTeam ? 'EDIT CLUB' : 'REGISTER CLUB'}
@@ -339,6 +369,20 @@ export const Teams = () => {
         message={`Are you sure you want to delete ${deleteConfirmTeam?.name || 'this club'}? Any assigned players will become free agents.`}
         confirmText="Delete Club"
         type="danger"
+      />
+
+      {/* Confirm Sync All Budgets Modal */}
+      <ConfirmModal
+        isOpen={showSyncModal}
+        onClose={() => setShowSyncModal(false)}
+        onConfirm={() => {
+          setAllTeamsStartingBudget(defaultTournBudget);
+          setShowSyncModal(false);
+        }}
+        title="Normalize All Club Budgets"
+        message={`Set starting budget to ${formatCurrency(defaultTournBudget, tournament?.currency)} for all clubs? Each club's remaining balance will be automatically recalculated based on their player spend.`}
+        confirmText="Confirm Sync"
+        type="warning"
       />
     </div>
   );

@@ -286,11 +286,11 @@ export const ProjectorControl = () => {
   const sponsorsList = Array.isArray(settings.sponsors) ? settings.sponsors : [];
 
   return (
-    <div style={{ padding: '14px 20px', maxWidth: 1600, margin: '0 auto', color: '#fff', fontSize: 13 }}>
+    <div className="p-3 sm:p-5 max-w-[1600px] mx-auto text-white text-[13px] min-h-full overflow-y-auto pb-28 sm:pb-12">
 
       {/* ── COMPACT HEADER ── */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14, marginBottom: 12, paddingBottom: 10, borderBottom: '1px solid var(--border-subtle)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-3 pb-2.5 border-b border-[var(--border-subtle)]">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
           <h1 style={{ fontFamily: 'var(--font-broadcast)', fontSize: 24, color: '#fff', lineHeight: 1, textTransform: 'uppercase', margin: 0 }}>
             Projector Screen Manager
           </h1>
@@ -304,7 +304,7 @@ export const ProjectorControl = () => {
           )}
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div className="flex items-center gap-2 flex-wrap">
           <button
             onClick={handleResetDefaults}
             className="btn-ghost"
@@ -326,7 +326,7 @@ export const ProjectorControl = () => {
       </div>
 
       {/* ── 2-COLUMN BALANCED COMPACT GRID ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(400px, 1.15fr) minmax(380px, 1fr)', gap: 14, alignItems: 'start' }}>
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] gap-3.5 items-start">
 
         {/* ════════ LEFT COLUMN: BROADCAST MODE, HOME MEDIA, SPONSORS ════════ */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -337,7 +337,7 @@ export const ProjectorControl = () => {
               <LayoutGrid size={13} /> 1. Projector Display Mode
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
               {[
                 { id: 'AUTO', label: '🔴 Live Auction' },
                 { id: 'CLUBS_OVERVIEW', label: '📊 Club Standings' },
@@ -685,7 +685,7 @@ export const ProjectorControl = () => {
               <Sliders size={13} /> 4. Display Toggles (Show / Hide)
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
               {[
                 { key: 'showManagerBalance', label: 'Budgets', icon: DollarSign },
                 { key: 'showLiveTicker', label: 'Live Ticker', icon: Radio },
@@ -723,7 +723,7 @@ export const ProjectorControl = () => {
           </div>
 
           {/* 5. BROADCAST TICKER & STADIUM THEME (COMBINED COMPACT ROW) */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 10 }}>
+          <div className="grid grid-cols-1 sm:grid-cols-[1.2fr_1fr] gap-2.5">
 
             {/* LIVE BROADCAST TICKER */}
             <div style={{ background: 'var(--spl-panel)', border: '1px solid var(--border-subtle)', borderRadius: 8, padding: 10 }}>

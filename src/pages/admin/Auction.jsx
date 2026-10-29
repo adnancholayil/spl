@@ -5,7 +5,7 @@ import { formatCurrency } from '../../utils/currency';
 import {
   Gavel, CheckCircle2, AlertCircle, Play, RotateCcw, Tv, Search,
   Volume2, VolumeX, ChevronRight, Radio, Crown,
-  DollarSign, X, Zap, Sliders, Shield, ArrowUpRight, Check
+  DollarSign, X, Zap, Sliders, Shield, ArrowUpRight, Check, Users
 } from 'lucide-react';
 import { soundEngine } from '../../services/soundService';
 import { storageService } from '../../services/storageService';
@@ -43,6 +43,8 @@ export const Auction = () => {
   const [soundMuted, setSoundMuted] = useState(() => storageService.getAudioMuted());
   const [bidFlash, setBidFlash] = useState(false);
   const [filter, setFilter] = useState('UPCOMING');
+  // Responsive workspace tab on mobile/tablet: 'ARENA' | 'QUEUE' | 'CLUBS'
+  const [mobileTab, setMobileTab] = useState('ARENA');
 
   // Active increment mode: 5 ($5) or 10 ($10) for keyboard hotkeys 1-9
   const [activeIncrement, setActiveIncrement] = useState(5);
@@ -273,43 +275,34 @@ export const Auction = () => {
   const stage = auctionState?.stage || 'IDLE';
 
   return (
-    <div style={{
-      height: '100vh',
-      display: 'flex',
-      flexDirection: 'column',
-      background: '#070A0F',
-      color: 'var(--text-primary)',
-      overflow: 'hidden',
-      userSelect: 'none'
-    }}>
+    <div
+      className="h-full w-full flex flex-col overflow-hidden select-none"
+      style={{
+        background: '#070A0F',
+        color: 'var(--text-primary)',
+      }}
+    >
 
       {/* ── TOP HEADER TOOLBAR ── */}
-      <header style={{
-        height: 62,
-        flexShrink: 0,
-        padding: '0 24px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        background: '#0B101B',
-        borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-        zIndex: 20
-      }}>
+      <header
+        className="min-h-[58px] py-2 px-3 sm:px-6 flex items-center justify-between border-b border-white/10 shrink-0 z-20 flex-wrap gap-2.5"
+        style={{ background: '#0B101B' }}
+      >
         {/* Left: Brand & Stage Info */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div style={{
-            width: 38, height: 38, borderRadius: 8,
+            width: 34, height: 34, borderRadius: 8,
             background: 'rgba(234,88,12,0.15)',
             border: '1px solid rgba(234,88,12,0.3)',
             display: 'flex', alignItems: 'center', justifyContent: 'center'
           }}>
-            <Radio className="w-5 h-5 text-orange-500" />
+            <Radio className="w-4 h-4 text-orange-500" />
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <span style={{
               fontFamily: 'var(--font-display)',
-              fontSize: 16, fontWeight: 800,
+              fontSize: 15, fontWeight: 800,
               color: '#fff', letterSpacing: '0.04em', textTransform: 'uppercase'
             }}>
               Live Auction Control
@@ -337,29 +330,29 @@ export const Auction = () => {
         </div>
 
         {/* Right: Quick Actions */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
           {/* Sound Toggle */}
           <button
             onClick={toggleAudio}
             title={soundMuted ? 'Turn Audio On (Unmute)' : 'Turn Audio Off (Mute)'}
             style={{
-              padding: '7px 14px', borderRadius: 6,
+              padding: '6px 12px', borderRadius: 6,
               background: soundMuted ? 'rgba(239, 68, 68, 0.08)' : 'rgba(16, 185, 129, 0.08)',
               border: soundMuted ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid rgba(16, 185, 129, 0.3)',
-              cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 7,
-              fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: 700,
+              cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6,
+              fontFamily: 'var(--font-display)', fontSize: 11.5, fontWeight: 700,
               color: 'var(--text-primary)',
               transition: 'all 0.15s ease'
             }}
           >
             {soundMuted ? (
               <>
-                <VolumeX className="w-4 h-4 text-red-400" />
+                <VolumeX className="w-3.5 h-3.5 text-red-400" />
                 <span style={{ color: '#F87171' }}>Audio Off</span>
               </>
             ) : (
               <>
-                <Volume2 className="w-4 h-4 text-emerald-400" />
+                <Volume2 className="w-3.5 h-3.5 text-emerald-400" />
                 <span style={{ color: '#E2E8F0' }}>Audio On</span>
               </>
             )}
@@ -370,14 +363,14 @@ export const Auction = () => {
             <button
               onClick={() => undoLastBid()}
               style={{
-                padding: '7px 14px', borderRadius: 6,
+                padding: '6px 12px', borderRadius: 6,
                 background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.35)',
-                color: '#F59E0B', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 7,
-                fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: 700
+                color: '#F59E0B', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6,
+                fontFamily: 'var(--font-display)', fontSize: 11.5, fontWeight: 700
               }}
               title="Undo last bid step (Z)"
             >
-              <RotateCcw className="w-4 h-4" />
+              <RotateCcw className="w-3.5 h-3.5" />
               Undo Bid ({auctionState.bidHistory.length})
             </button>
           )}
@@ -395,13 +388,13 @@ export const Auction = () => {
                 });
               }}
               style={{
-                padding: '7px 14px', borderRadius: 6,
+                padding: '6px 12px', borderRadius: 6,
                 background: 'rgba(239, 68, 68, 0.12)', border: '1px solid rgba(239, 68, 68, 0.3)',
-                color: '#F87171', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 7,
-                fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: 700
+                color: '#F87171', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6,
+                fontFamily: 'var(--font-display)', fontSize: 11.5, fontWeight: 700
               }}
             >
-              <RotateCcw className="w-4 h-4" />
+              <RotateCcw className="w-3.5 h-3.5" />
               Undo Deal
             </button>
           )}
@@ -409,32 +402,72 @@ export const Auction = () => {
           {/* Projector Window */}
           <button
             onClick={() => window.open('/projector', '_blank', 'width=1280,height=720,toolbar=no')}
+            className="hidden sm:inline-flex items-center gap-1.5"
             style={{
-              padding: '8px 18px', borderRadius: 6,
+              padding: '7px 15px', borderRadius: 6,
               background: 'var(--spl-orange)', border: 'none',
-              color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 7,
-              fontFamily: 'var(--font-display)', fontSize: 13, fontWeight: 800,
+              color: '#fff', cursor: 'pointer',
+              fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: 800,
               letterSpacing: '0.04em', textTransform: 'uppercase'
             }}
           >
-            <Tv className="w-4 h-4" />
+            <Tv className="w-3.5 h-3.5" />
             Projector View
           </button>
         </div>
       </header>
 
+      {/* ── MOBILE / TABLET TAB SELECTOR (< 1280px) ── */}
+      <div
+        className="xl:hidden flex items-center justify-around border-b border-white/10 px-2 py-1.5 shrink-0 z-20"
+        style={{ background: '#090D17' }}
+      >
+        <button
+          onClick={() => setMobileTab('QUEUE')}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${
+            mobileTab === 'QUEUE'
+              ? 'bg-sky-500/20 text-sky-400 border border-sky-400/40 shadow-sm'
+              : 'text-slate-400 hover:text-white'
+          }`}
+        >
+          <Users className="w-3.5 h-3.5" />
+          <span>Queue ({players.filter(p => filter === 'ALL' || p.status === filter).length})</span>
+        </button>
+
+        <button
+          onClick={() => setMobileTab('ARENA')}
+          className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${
+            mobileTab === 'ARENA'
+              ? 'bg-orange-500/20 text-orange-400 border border-orange-400/40 shadow-sm'
+              : 'text-slate-400 hover:text-white'
+          }`}
+        >
+          <Radio className="w-3.5 h-3.5 text-orange-400 animate-pulse" />
+          <span>Live Arena</span>
+        </button>
+
+        <button
+          onClick={() => setMobileTab('CLUBS')}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${
+            mobileTab === 'CLUBS'
+              ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-400/40 shadow-sm'
+              : 'text-slate-400 hover:text-white'
+          }`}
+        >
+          <Shield className="w-3.5 h-3.5" />
+          <span>Club Bids ({teams.length})</span>
+        </button>
+      </div>
+
       {/* ── THREE COLUMN BALANCED WORKSPACE ── */}
       <div style={{ flex: 1, display: 'flex', overflow: 'hidden', minHeight: 0 }}>
 
-        {/* ─── LEFT: PLAYER QUEUE DRAWER (310px) ─── */}
-        <aside style={{
-          width: 310,
-          flexShrink: 0,
-          display: 'flex',
-          flexDirection: 'column',
-          background: '#0B101B',
-          borderRight: '1px solid rgba(255, 255, 255, 0.08)',
-        }}>
+        {/* ─── LEFT: PLAYER QUEUE DRAWER (Responsive) ─── */}
+        <aside
+          className={`${
+            mobileTab === 'QUEUE' ? 'flex w-full flex-1' : 'hidden'
+          } xl:flex xl:w-[310px] xl:shrink-0 flex-col bg-[#0B101B] border-r border-white/10 h-full overflow-hidden`}
+        >
           {/* Search & Tabs */}
           <div style={{ padding: '14px 16px', borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}>
             <div style={{ position: 'relative', marginBottom: 10 }}>
@@ -500,7 +533,7 @@ export const Auction = () => {
           </div>
 
           {/* List */}
-          <div style={{ flex: 1, overflowY: 'auto', padding: '10px 12px' }}>
+          <div className="flex-1 overflow-y-auto p-2.5 pb-28 xl:pb-4">
             {allFiltered.map((player) => {
               const isActive = player.id === auctionState?.currentPlayerId;
               const isSold = player.status === 'SOLD';
@@ -510,7 +543,10 @@ export const Auction = () => {
               return (
                 <button
                   key={player.id}
-                  onClick={() => selectPlayer(player.id)}
+                  onClick={() => {
+                    selectPlayer(player.id);
+                    setMobileTab('ARENA');
+                  }}
                   style={{
                     width: '100%', textAlign: 'left',
                     display: 'flex', alignItems: 'center', gap: 12,
@@ -577,26 +613,17 @@ export const Auction = () => {
           </div>
         </aside>
 
-        {/* ─── CENTER: PERFECTLY ALIGNED HERO BROADCAST ARENA (FLEX 1) ─── */}
-        <main style={{
-          flex: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '24px 32px',
-          overflowY: 'auto',
-          background: 'radial-gradient(ellipse at 50% 30%, #0F172A 0%, #070A0F 85%)'
-        }}>
+        {/* ─── CENTER: PERFECTLY ALIGNED HERO BROADCAST ARENA (Responsive) ─── */}
+        <main
+          className={`${
+            mobileTab === 'ARENA' ? 'flex w-full flex-1' : 'hidden'
+          } xl:flex xl:flex-1 flex-col items-center justify-start p-2.5 sm:p-5 md:p-8 overflow-y-auto w-full pb-28 sm:pb-16`}
+          style={{
+            background: 'radial-gradient(ellipse at 50% 30%, #0F172A 0%, #070A0F 85%)'
+          }}
+        >
           {activePlayer ? (
-            <div style={{
-              width: '100%',
-              maxWidth: 840,
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 16,
-              margin: 'auto 0'
-            }}>
+            <div className="w-full max-w-[840px] flex flex-col gap-3 sm:gap-4 my-0 xl:my-auto">
 
               {/* ── UNIFIED HERO BROADCAST COMMAND CARD ── */}
               <div style={{
@@ -609,13 +636,12 @@ export const Auction = () => {
                 {/* Top Accent Strip with Player Position Color */}
                 <div style={{ height: 4, background: getPosColor(activePlayer.position) }} />
 
-                <div style={{ padding: '24px 28px' }}>
+                <div className="p-3.5 sm:p-6 md:p-7">
 
-                  {/* ── ROW 1: HERO PLAYER DETAILS (FULL WIDTH, NEVER WRAPS!) ── */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 24, marginBottom: 20 }}>
+                  {/* ── ROW 1: HERO PLAYER DETAILS ── */}
+                  <div className="flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-3 sm:gap-6 mb-3 sm:mb-5">
                     {/* Photo Frame */}
-                    <div style={{
-                      width: 115, height: 145, borderRadius: 10, overflow: 'hidden', flexShrink: 0,
+                    <div className="w-20 h-24 sm:w-28 sm:h-36 rounded-lg sm:rounded-xl overflow-hidden shrink-0" style={{
                       background: '#070A0F',
                       border: `2px solid ${getPosColor(activePlayer.position)}60`,
                       boxShadow: `0 8px 24px ${getPosColor(activePlayer.position)}25`
@@ -636,14 +662,14 @@ export const Auction = () => {
 
                     {/* Middle: Player Name, Position, Base Price with FULL WIDTH */}
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      {/* Meta Pill Row - NEVER WRAPS */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, flexWrap: 'nowrap' }}>
+                      {/* Meta Pill Row */}
+                      <div className="flex items-center justify-center sm:justify-start gap-2 mb-1.5 flex-wrap">
                         {/* Position */}
                         <span style={{
                           padding: '3px 9px', borderRadius: 5,
                           background: `${getPosColor(activePlayer.position)}20`,
                           border: `1px solid ${getPosColor(activePlayer.position)}50`,
-                          fontFamily: 'var(--font-display)', fontSize: 11.5, fontWeight: 800,
+                          fontFamily: 'var(--font-display)', fontSize: 11, fontWeight: 800,
                           color: getPosColor(activePlayer.position), letterSpacing: '0.08em',
                           whiteSpace: 'nowrap'
                         }}>
@@ -652,7 +678,7 @@ export const Auction = () => {
 
                         {/* Jersey Number */}
                         <span style={{
-                          fontFamily: 'var(--font-broadcast)', fontSize: 22,
+                          fontFamily: 'var(--font-broadcast)', fontSize: 20,
                           color: 'rgba(255,255,255,0.4)',
                           letterSpacing: '0.05em',
                           whiteSpace: 'nowrap'
@@ -660,7 +686,7 @@ export const Auction = () => {
                           #{String(activePlayer.number || '10').padStart(2, '0')}
                         </span>
 
-                        {/* Stage Badge - NEVER WRAPS */}
+                        {/* Stage Badge */}
                         <span style={{
                           display: 'inline-flex',
                           alignItems: 'center',
@@ -671,7 +697,7 @@ export const Auction = () => {
                           background: stage === 'BIDDING' ? 'rgba(234,88,12,0.18)' : stage === 'SOLD' ? 'rgba(34,197,94,0.18)' : 'rgba(59,130,246,0.18)',
                           border: stage === 'BIDDING' ? '1px solid rgba(234,88,12,0.45)' : stage === 'SOLD' ? '1px solid rgba(34,197,94,0.45)' : '1px solid rgba(59,130,246,0.4)',
                           fontFamily: 'var(--font-display)',
-                          fontSize: 11,
+                          fontSize: 10.5,
                           fontWeight: 800,
                           letterSpacing: '0.08em',
                           color: stage === 'BIDDING' ? '#F97316' : stage === 'SOLD' ? '#22C55E' : '#60A5FA'
@@ -685,15 +711,15 @@ export const Auction = () => {
                         </span>
                       </div>
 
-                      {/* Player Full Name - Single Bold Line */}
+                      {/* Player Full Name */}
                       <h1 style={{
                         fontFamily: 'var(--font-broadcast)',
-                        fontSize: 'clamp(32px, 3.8vw, 46px)',
+                        fontSize: 'clamp(24px, 4.5vw, 44px)',
                         color: '#fff',
                         lineHeight: 1.1,
                         letterSpacing: '0.02em',
                         textTransform: 'uppercase',
-                        marginBottom: 8,
+                        marginBottom: 6,
                         whiteSpace: 'normal',
                         wordBreak: 'keep-all'
                       }}>
@@ -701,44 +727,42 @@ export const Auction = () => {
                       </h1>
 
                       {/* Base Price */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <span style={{ fontFamily: 'var(--font-display)', fontSize: 12, color: 'var(--text-secondary)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                      <div className="flex items-center justify-center sm:justify-start gap-2">
+                        <span style={{ fontFamily: 'var(--font-display)', fontSize: 11, color: 'var(--text-secondary)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
                           BASE PRICE:
                         </span>
-                        <span style={{ color: 'var(--spl-gold-light)', fontWeight: 800, fontSize: 19, fontFamily: 'var(--font-display)', letterSpacing: '0.04em' }}>
+                        <span style={{ color: 'var(--spl-gold-light)', fontWeight: 800, fontSize: 17, fontFamily: 'var(--font-display)', letterSpacing: '0.04em' }}>
                           {formatCurrency(activePlayer.basePrice, tournament?.currency)}
                         </span>
                       </div>
                     </div>
                   </div>
 
-                  {/* ── ROW 2: LIVE BIDDING & DECISION CONSOLE (PERFECTLY GROUPED) ── */}
-                  <div style={{
-                    background: '#070A0F',
-                    border: '1px solid rgba(255, 255, 255, 0.08)',
-                    borderRadius: 12,
-                    padding: '18px 22px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    gap: 20
-                  }}>
+                  {/* ── ROW 2: LIVE BIDDING & DECISION CONSOLE ── */}
+                  <div
+                    className="p-3 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4"
+                    style={{
+                      background: '#070A0F',
+                      border: '1px solid rgba(255, 255, 255, 0.08)',
+                      borderRadius: 12,
+                    }}
+                  >
                     {/* Left: Current Bid & Leading Team Status */}
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{
-                        fontFamily: 'var(--font-display)', fontSize: 11, fontWeight: 800,
+                        fontFamily: 'var(--font-display)', fontSize: 10.5, fontWeight: 800,
                         color: 'var(--text-secondary)', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 2
                       }}>
                         Current Highest Bid
                       </div>
                       <div style={{
                         fontFamily: 'var(--font-broadcast)',
-                        fontSize: 'clamp(44px, 4.8vw, 64px)',
+                        fontSize: 'clamp(32px, 6.5vw, 64px)',
                         color: bidFlash && stage === 'BIDDING' ? 'var(--spl-orange)' : 'var(--spl-gold-light)',
                         lineHeight: 1,
                         textShadow: '0 0 24px rgba(245,158,11,0.25)',
                         transition: 'all 0.3s ease',
-                        marginBottom: 8
+                        marginBottom: 6
                       }}>
                         {formatCurrency(auctionState?.currentBid || activePlayer.basePrice, tournament?.currency)}
                       </div>
@@ -751,16 +775,16 @@ export const Auction = () => {
                           gap: 10,
                           background: 'rgba(255, 255, 255, 0.04)',
                           border: `1.5px solid ${leadingTeam.primaryColor || '#F59E0B'}60`,
-                          padding: '6px 14px',
+                          padding: '5px 12px',
                           borderRadius: 8
                         }}>
                           {leadingTeam.logoUrl ? (
-                            <div style={{ width: 24, height: 24, borderRadius: 5, overflow: 'hidden', flexShrink: 0 }}>
+                            <div style={{ width: 22, height: 22, borderRadius: 5, overflow: 'hidden', flexShrink: 0 }}>
                               <img src={leadingTeam.logoUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                             </div>
                           ) : (
                             <div style={{
-                              width: 24, height: 24, borderRadius: 5,
+                              width: 22, height: 22, borderRadius: 5,
                               background: `${leadingTeam.primaryColor || '#3B82F6'}30`,
                               display: 'flex', alignItems: 'center', justifyContent: 'center',
                               fontFamily: 'var(--font-broadcast)', fontSize: 11,
@@ -773,13 +797,13 @@ export const Auction = () => {
                           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                             <Crown className="w-3.5 h-3.5 text-amber-400" />
                             <span style={{
-                              fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 800,
+                              fontFamily: 'var(--font-display)', fontSize: 13, fontWeight: 800,
                               color: '#fff', textTransform: 'uppercase', letterSpacing: '0.04em'
                             }}>
                               {leadingTeam.name}
                             </span>
                             <span style={{
-                              fontFamily: 'var(--font-display)', fontSize: 10, fontWeight: 800,
+                              fontFamily: 'var(--font-display)', fontSize: 9.5, fontWeight: 800,
                               color: 'var(--spl-gold-light)', letterSpacing: '0.08em',
                               background: 'rgba(245,158,11,0.15)', padding: '1px 6px', borderRadius: 4
                             }}>
@@ -789,7 +813,7 @@ export const Auction = () => {
                         </div>
                       ) : (
                         <div style={{
-                          fontFamily: 'var(--font-body)', fontSize: 12,
+                          fontFamily: 'var(--font-body)', fontSize: 11.5,
                           color: 'var(--text-muted)', fontStyle: 'italic',
                           display: 'flex', alignItems: 'center', gap: 6
                         }}>
@@ -799,16 +823,17 @@ export const Auction = () => {
                       )}
                     </div>
 
-                    {/* Right: Stage Decision Action Buttons (Clean & Solid!) */}
-                    <div style={{ minWidth: 200, display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'stretch' }}>
+                    {/* Right: Stage Decision Action Buttons (side-by-side on mobile) */}
+                    <div className="w-full md:w-auto min-w-0 md:min-w-[200px] flex flex-row md:flex-col gap-2 shrink-0">
                       {stage === 'INTRO' && (
                         <button
                           onClick={startBidding}
+                          className="w-full"
                           style={{
-                            padding: '16px 26px', borderRadius: 8,
+                            padding: '14px 22px', borderRadius: 8,
                             background: 'linear-gradient(135deg, #1A56DB 0%, #1E40AF 100%)',
                             border: 'none', color: '#fff', cursor: 'pointer',
-                            fontFamily: 'var(--font-display)', fontSize: 15, fontWeight: 800, letterSpacing: '0.06em',
+                            fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 800, letterSpacing: '0.06em',
                             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
                             boxShadow: '0 4px 18px rgba(26,86,219,0.4)',
                             whiteSpace: 'nowrap'
@@ -829,12 +854,13 @@ export const Auction = () => {
                               }
                               setShowSoldModal(true);
                             }}
+                            className="flex-1 md:flex-none"
                             style={{
-                              padding: '13px 22px', borderRadius: 8,
+                              padding: '11px 18px', borderRadius: 8,
                               background: 'linear-gradient(135deg, #16A34A 0%, #15803D 100%)',
                               border: 'none', color: '#fff', cursor: 'pointer',
-                              fontFamily: 'var(--font-display)', fontSize: 15, fontWeight: 800, letterSpacing: '0.06em',
-                              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                              fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 800, letterSpacing: '0.06em',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
                               boxShadow: '0 4px 16px rgba(22,163,74,0.35)',
                               whiteSpace: 'nowrap'
                             }}
@@ -845,8 +871,9 @@ export const Auction = () => {
 
                           <button
                             onClick={() => markUnsold()}
+                            className="flex-1 md:flex-none"
                             style={{
-                              padding: '9px 18px', borderRadius: 8,
+                              padding: '11px 16px', borderRadius: 8,
                               background: 'rgba(239, 68, 68, 0.12)', border: '1px solid rgba(239, 68, 68, 0.35)',
                               color: '#F87171', cursor: 'pointer',
                               fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: 700, letterSpacing: '0.04em',
@@ -863,11 +890,12 @@ export const Auction = () => {
                       {stage === 'SOLD' && (
                         <button
                           onClick={triggerSigning}
+                          className="w-full"
                           style={{
-                            padding: '16px 26px', borderRadius: 8,
+                            padding: '14px 22px', borderRadius: 8,
                             background: 'linear-gradient(135deg, #22C55E 0%, #16A34A 100%)',
                             border: 'none', color: '#fff', cursor: 'pointer',
-                            fontFamily: 'var(--font-display)', fontSize: 15, fontWeight: 800, letterSpacing: '0.06em',
+                            fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 800, letterSpacing: '0.06em',
                             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
                             boxShadow: '0 4px 18px rgba(34,197,94,0.4)',
                             whiteSpace: 'nowrap'
@@ -879,7 +907,7 @@ export const Auction = () => {
                       )}
 
                       {stage === 'SIGNING' && (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'stretch' }}>
+                        <div className="w-full flex flex-col gap-2 items-stretch">
                           <div style={{
                             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                             padding: '7px 12px', borderRadius: 6,
@@ -890,7 +918,7 @@ export const Auction = () => {
                             whiteSpace: 'nowrap'
                           }}>
                             <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#4ADE80', display: 'inline-block', boxShadow: '0 0 8px #4ADE80' }} />
-                            PROJECTOR: REVEAL ACTIVE
+                            <span>PROJECTOR SHOWCASE ACTIVE</span>
                           </div>
 
                           <button
@@ -902,6 +930,7 @@ export const Auction = () => {
                                 showAlert('Draft Complete', 'All players in the draft pool have been auctioned!', 'success');
                               }
                             }}
+                            className="w-full"
                             style={{
                               padding: '12px 18px', borderRadius: 8,
                               background: 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)',
@@ -928,11 +957,12 @@ export const Auction = () => {
                               showAlert('Draft Complete', 'All players in the draft pool have been auctioned!', 'success');
                             }
                           }}
+                          className="w-full"
                           style={{
-                            padding: '14px 22px', borderRadius: 8,
+                            padding: '12px 18px', borderRadius: 8,
                             background: 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)',
                             border: 'none', color: '#fff', cursor: 'pointer',
-                            fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 800, letterSpacing: '0.05em',
+                            fontFamily: 'var(--font-display)', fontSize: 13, fontWeight: 800, letterSpacing: '0.05em',
                             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                             boxShadow: '0 4px 18px rgba(59,130,246,0.35)',
                             whiteSpace: 'nowrap'
@@ -945,18 +975,111 @@ export const Auction = () => {
                     </div>
                   </div>
 
-                  {/* ── ROW 3: HOTKEY BID MODE (KEYS 1-9) - NEVER WRAPS! ── */}
+                  {/* ── MOBILE TOUCH BIDDING GRID (Active when Bidding) ── */}
                   {stage === 'BIDDING' && (
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      background: 'rgba(255, 255, 255, 0.03)',
-                      border: '1px solid rgba(255, 255, 255, 0.06)',
-                      borderRadius: 8,
-                      padding: '8px 16px',
-                      marginTop: 12
-                    }}>
+                    <div className="xl:hidden mt-3 pt-3 border-t border-white/10 flex flex-col gap-2">
+                      <div className="flex items-center justify-between px-0.5">
+                        <span className="text-[11px] font-extrabold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+                          <Zap className="w-3.5 h-3.5" /> Tap Club To Place Bid:
+                        </span>
+                        <div className="flex items-center gap-1 text-[10px] text-slate-400 font-bold">
+                          <span>Increment:</span>
+                          <button
+                            type="button"
+                            onClick={() => setActiveIncrement(5)}
+                            className={`px-1.5 py-0.5 rounded ${activeIncrement === 5 ? 'bg-sky-500 text-white font-extrabold' : 'bg-white/5 text-slate-400'}`}
+                          >
+                            +{tournament?.currency || '$'}5
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setActiveIncrement(10)}
+                            className={`px-1.5 py-0.5 rounded ${activeIncrement === 10 ? 'bg-orange-500 text-white font-extrabold' : 'bg-white/5 text-slate-400'}`}
+                          >
+                            +{tournament?.currency || '$'}10
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[320px] overflow-y-auto pr-1">
+                        {teams.map((team) => {
+                          const isLeading = team.id === auctionState?.leadingTeamId;
+                          let targetBid5 = !auctionState?.leadingTeamId ? (auctionState?.currentBid || 0) : (auctionState?.currentBid || 0) + 5;
+                          let targetBid10 = !auctionState?.leadingTeamId ? (auctionState?.currentBid || 0) + 10 : (auctionState?.currentBid || 0) + 10;
+                          const canBid5 = stage === 'BIDDING' && !isLeading && team.currentBalance >= targetBid5;
+                          const canBid10 = stage === 'BIDDING' && !isLeading && team.currentBalance >= targetBid10;
+
+                          return (
+                            <div
+                              key={team.id}
+                              className={`flex items-center justify-between p-2 rounded-lg border transition-all ${
+                                isLeading
+                                  ? 'bg-amber-500/15 border-amber-500/60 shadow-md'
+                                  : 'bg-[#111827]/90 border-white/10 hover:border-white/20'
+                              }`}
+                              style={{ borderLeft: `4px solid ${isLeading ? '#F59E0B' : (team.primaryColor || '#3B82F6')}` }}
+                            >
+                              <div className="flex items-center gap-2 min-w-0 flex-1 mr-2">
+                                {team.logoUrl ? (
+                                  <img src={team.logoUrl} alt="" className="w-6 h-6 object-contain rounded shrink-0 bg-black/40 p-0.5" />
+                                ) : (
+                                  <span className="w-6 h-6 rounded bg-slate-800 flex items-center justify-center text-[10px] font-bold text-slate-200 shrink-0">
+                                    {team.shortName || team.name.slice(0, 3)}
+                                  </span>
+                                )}
+                                <div className="min-w-0">
+                                  <div className="text-xs font-bold text-white truncate uppercase tracking-tight">
+                                    {team.name}
+                                  </div>
+                                  <div className="text-[10px] text-amber-400 font-semibold">
+                                    {formatCurrency(team.currentBalance, tournament?.currency)}
+                                  </div>
+                                </div>
+                              </div>
+
+                              {isLeading ? (
+                                <span className="text-[10px] font-black text-amber-300 bg-amber-400/20 px-2 py-1 rounded border border-amber-400/40 uppercase tracking-wider shrink-0 flex items-center gap-1">
+                                  <Crown className="w-3 h-3 text-amber-400" /> Leading
+                                </span>
+                              ) : (
+                                <div className="flex items-center gap-1.5 shrink-0">
+                                  <button
+                                    type="button"
+                                    disabled={!canBid5}
+                                    onClick={() => handleTeamBid(team.id, 5)}
+                                    className="px-2.5 py-1.5 rounded bg-blue-600 hover:bg-blue-500 disabled:opacity-30 disabled:cursor-not-allowed text-white text-[11px] font-extrabold shadow-sm active:scale-95 transition-all"
+                                  >
+                                    +{tournament?.currency || '$'}5
+                                  </button>
+                                  <button
+                                    type="button"
+                                    disabled={!canBid10}
+                                    onClick={() => handleTeamBid(team.id, 10)}
+                                    className="px-2.5 py-1.5 rounded bg-orange-600 hover:bg-orange-500 disabled:opacity-30 disabled:cursor-not-allowed text-white text-[11px] font-extrabold shadow-sm active:scale-95 transition-all"
+                                  >
+                                    +{tournament?.currency || '$'}10
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ── ROW 3: HOTKEY BID MODE (KEYS 1-9) - DESKTOP ONLY ── */}
+                  {stage === 'BIDDING' && (
+                    <div
+                      className="hidden xl:flex items-center justify-between"
+                      style={{
+                        background: 'rgba(255, 255, 255, 0.03)',
+                        border: '1px solid rgba(255, 255, 255, 0.06)',
+                        borderRadius: 8,
+                        padding: '8px 16px',
+                        marginTop: 12
+                      }}
+                    >
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                         <Zap className="w-3.5 h-3.5 text-amber-400" />
                         <span style={{
@@ -968,7 +1091,7 @@ export const Auction = () => {
                         </span>
                       </div>
 
-                      {/* Segmented Increment Mode Pills - NEVER WRAPS */}
+                      {/* Segmented Increment Mode Pills */}
                       <div style={{ display: 'flex', gap: 8 }}>
                         <button
                           onClick={() => setActiveIncrement(5)}
@@ -1024,14 +1147,8 @@ export const Auction = () => {
                 </div>
               </div>
 
-              {/* ── KEYBOARD SHORTCUTS BAR ── */}
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 16,
-                padding: '4px 0'
-              }}>
+              {/* ── KEYBOARD SHORTCUTS BAR (Desktop only) ── */}
+              <div className="hidden md:flex items-center justify-center gap-4 py-1">
                 {[
                   { key: '1–9', desc: 'Club Bid' },
                   { key: 'SPACE', desc: 'Next Stage' },
@@ -1083,15 +1200,12 @@ export const Auction = () => {
           )}
         </main>
 
-        {/* ─── RIGHT: CLUB BIDS CONSOLE (370px) ─── */}
-        <aside style={{
-          width: 370,
-          flexShrink: 0,
-          display: 'flex',
-          flexDirection: 'column',
-          background: '#0B101B',
-          borderLeft: '1px solid rgba(255, 255, 255, 0.08)',
-        }}>
+        {/* ─── RIGHT: CLUB BIDS CONSOLE (Responsive) ─── */}
+        <aside
+          className={`${
+            mobileTab === 'CLUBS' ? 'flex w-full flex-1' : 'hidden'
+          } xl:flex xl:w-[370px] xl:shrink-0 flex-col bg-[#0B101B] border-l border-white/10 h-full overflow-hidden`}
+        >
           {/* Header */}
           <div style={{
             padding: '14px 18px 12px',
@@ -1131,12 +1245,13 @@ export const Auction = () => {
           </div>
 
           {/* Teams List */}
-          <div style={{
-            flex: 1, overflowY: 'auto',
-            padding: '10px 12px 24px', display: 'flex', flexDirection: 'column', gap: 7,
-            scrollbarWidth: 'thin',
-            scrollbarColor: 'rgba(255, 255, 255, 0.15) transparent'
-          }}>
+          <div
+            className="flex-1 overflow-y-auto p-2.5 pb-28 xl:pb-6 flex flex-col gap-2"
+            style={{
+              scrollbarWidth: 'thin',
+              scrollbarColor: 'rgba(255, 255, 255, 0.15) transparent'
+            }}
+          >
             {teams.map((team, idx) => {
               const isLeading = team.id === auctionState?.leadingTeamId;
               const safeStartingBudget = (typeof team.startingBudget === 'number' && team.startingBudget > 0)

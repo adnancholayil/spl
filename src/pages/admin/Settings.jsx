@@ -319,14 +319,7 @@ export const Settings = () => {
   };
 
   return (
-    <div style={{ 
-      padding: '24px 36px', 
-      width: '100%', 
-      boxSizing: 'border-box',
-      display: 'flex', 
-      flexDirection: 'column', 
-      gap: 18 
-    }}>
+    <div className="p-3 sm:p-6 md:p-8 w-full min-h-full overflow-y-auto box-border flex flex-col gap-5 pb-28 sm:pb-12">
 
       {/* Broadcast Confirm Modal */}
       <ConfirmModal
@@ -516,7 +509,7 @@ export const Settings = () => {
         </div>
 
         {/* Two Columns Grid: Event Name (Left) & Event Logo with Live Previews (Right) */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(320px, 1fr) minmax(400px, 1.25fr)', gap: 20, alignItems: 'stretch' }}>
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(300px,1fr)_minmax(360px,1.25fr)] gap-5 items-stretch">
           
           {/* Left Column: Event / Tournament Name */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14, background: 'rgba(255,255,255,0.02)', padding: '18px 20px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.06)' }}>
@@ -645,7 +638,7 @@ export const Settings = () => {
             </div>
 
             {/* Dual Mockup Preview: Projector Badge + Sidebar Header */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               
               {/* Preview 1: Projector Screen Home Badge Preview */}
               <div style={{
@@ -788,7 +781,7 @@ export const Settings = () => {
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14 }}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
           {[
             {
               id: '11s',
@@ -1088,7 +1081,7 @@ export const Settings = () => {
       </div>
 
       {/* ── 3. DUAL-COLUMN MANAGEMENT MATRIX (Width 100%, 50% / 50% Columns — Exact Old Layout) ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18 }}>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         
         {/* LEFT COLUMN: Studio & Display Customization + Demo Data */}
         <div style={{

@@ -35,13 +35,20 @@ export const teamService = {
       ? teamData.shortName.trim().toUpperCase()
       : (generateTeamCode(teamData.name) || 'CLUB');
 
+    const startingBudget = (typeof teamData.startingBudget === 'number' && !isNaN(teamData.startingBudget) && teamData.startingBudget > 0)
+      ? teamData.startingBudget
+      : (Number(teamData.startingBudget) || 5000);
+
+    const totalSpent = Number(teamData.totalSpent) || 0;
+    const currentBalance = startingBudget - totalSpent;
+
     const newTeam = {
       id: `team-${Date.now()}`,
-      startingBudget: teamData.startingBudget || 5000,
-      currentBalance: teamData.startingBudget || 5000,
-      totalSpent: 0,
       playersBought: 0,
       ...teamData,
+      startingBudget,
+      totalSpent,
+      currentBalance,
       shortName
     };
     teams.push(newTeam);
@@ -53,7 +60,25 @@ export const teamService = {
     const teams = storageService.getTeams();
     const index = teams.findIndex(t => t.id === id);
     if (index !== -1) {
-      teams[index] = { ...teams[index], ...updates };
+      const existing = teams[index];
+      const startingBudget = updates.startingBudget !== undefined
+        ? (Number(updates.startingBudget) || 0)
+        : (Number(existing.startingBudget) || 5000);
+
+      const totalSpent = updates.totalSpent !== undefined
+        ? (Number(updates.totalSpent) || 0)
+        : (Number(existing.totalSpent) || 0);
+
+      // Remaining balance must strictly equal startingBudget - totalSpent
+      const currentBalance = startingBudget - totalSpent;
+
+      teams[index] = {
+        ...existing,
+        ...updates,
+        startingBudget,
+        totalSpent,
+        currentBalance
+      };
       storageService.saveTeams(teams);
       return teams[index];
     }

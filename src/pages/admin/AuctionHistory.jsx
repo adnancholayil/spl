@@ -106,7 +106,7 @@ export const AuctionHistory = () => {
   });
 
   return (
-    <div style={{ padding: '32px 40px', maxWidth: 1600, margin: '0 auto' }}>
+    <div className="p-3 sm:p-6 md:p-8 max-w-[1600px] mx-auto min-h-full overflow-y-auto pb-28 sm:pb-12">
 
       {/* Floating / Top Toast Notification */}
       {toastMessage && (
@@ -132,7 +132,7 @@ export const AuctionHistory = () => {
 
       {/* Header */}
       <div style={{ marginBottom: 28, paddingBottom: 20, borderBottom: '1px solid var(--border-subtle)' }}>
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 20, flexWrap: 'wrap' }}>
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 flex-wrap">
           <div>
             <div style={{
               display: 'inline-flex', alignItems: 'center', gap: 7,
@@ -142,7 +142,7 @@ export const AuctionHistory = () => {
               <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--spl-blue-light)', boxShadow: '0 0 8px var(--spl-blue-light)' }} />
               OFFICIAL TRANSFER LEDGER
             </div>
-            <h1 style={{ fontFamily: 'var(--font-broadcast)', fontSize: 'clamp(32px, 4vw, 48px)', color: '#fff', lineHeight: 0.95, textTransform: 'uppercase', marginBottom: 14 }}>
+            <h1 style={{ fontFamily: 'var(--font-broadcast)', fontSize: 'clamp(28px, 4vw, 48px)', color: '#fff', lineHeight: 0.95, textTransform: 'uppercase', marginBottom: 14 }}>
               Auction History & Transfers
             </h1>
           </div>
@@ -372,110 +372,111 @@ export const AuctionHistory = () => {
             return (
               <div
                 key={record.id || idx}
+                className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 p-3.5 sm:p-5 rounded-r-lg"
                 style={{
-                  display: 'flex', alignItems: 'center', gap: 18,
                   background: 'var(--spl-panel)', border: '1px solid var(--border-subtle)',
                   borderLeft: `5px solid ${isSold ? '#22C55E' : '#EF4444'}`,
-                  borderRadius: '0 8px 8px 0',
-                  padding: '16px 22px',
                   transition: 'background 0.12s, border-color 0.12s',
                 }}
                 onMouseEnter={e => e.currentTarget.style.background = 'var(--spl-elevated)'}
                 onMouseLeave={e => e.currentTarget.style.background = 'var(--spl-panel)'}
               >
-                {/* Status icon */}
-                <div style={{ flexShrink: 0 }}>
-                  {isSold
-                    ? <CheckCircle2 className="w-6 h-6" style={{ color: '#22C55E' }} />
-                    : <XCircle className="w-6 h-6" style={{ color: '#EF4444' }} />
-                  }
-                </div>
-
-                {/* Player info */}
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
-                    <span style={{
-                      fontFamily: 'var(--font-display)', fontSize: 17, fontWeight: 700,
-                      color: 'var(--text-primary)', letterSpacing: '0.04em', textTransform: 'uppercase',
-                    }}>
-                      {record.playerName}
-                    </span>
-                    <span style={{
-                      fontFamily: 'var(--font-display)', fontSize: 11, fontWeight: 700,
-                      color: 'var(--spl-blue-light)',
-                      background: 'rgba(59,130,246,0.12)', border: '1px solid rgba(59,130,246,0.25)',
-                      padding: '2px 8px', borderRadius: 3, letterSpacing: '0.1em',
-                    }}>
-                      {record.playerPosition}
-                    </span>
+                <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
+                  {/* Status icon */}
+                  <div style={{ flexShrink: 0 }}>
+                    {isSold
+                      ? <CheckCircle2 className="w-6 h-6" style={{ color: '#22C55E' }} />
+                      : <XCircle className="w-6 h-6" style={{ color: '#EF4444' }} />
+                    }
                   </div>
 
-                  {isSold && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'var(--text-muted)' }}>Acquired by</span>
-                      <ArrowRight className="w-3.5 h-3.5" style={{ color: 'var(--spl-gold-light)' }} />
-                      {team && <div style={{ width: 4, height: 16, borderRadius: 2, background: team.primaryColor }} />}
+                  {/* Player info */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>
                       <span style={{
-                        fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 700,
-                        color: team ? team.primaryColor : 'var(--text-primary)', letterSpacing: '0.04em',
+                        fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 700,
+                        color: 'var(--text-primary)', letterSpacing: '0.04em', textTransform: 'uppercase',
                       }}>
-                        {record.teamName}
+                        {record.playerName}
+                      </span>
+                      <span style={{
+                        fontFamily: 'var(--font-display)', fontSize: 10, fontWeight: 700,
+                        color: 'var(--spl-blue-light)',
+                        background: 'rgba(59,130,246,0.12)', border: '1px solid rgba(59,130,246,0.25)',
+                        padding: '2px 7px', borderRadius: 3, letterSpacing: '0.1em',
+                      }}>
+                        {record.playerPosition}
                       </span>
                     </div>
-                  )}
-                </div>
 
-                {/* Price + time */}
-                <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                  <div style={{
-                    fontFamily: 'var(--font-broadcast)', fontSize: 26,
-                    color: isSold ? 'var(--spl-gold-light)' : 'rgba(239,68,68,0.5)',
-                    lineHeight: 1,
-                  }}>
-                    {isSold ? formatCurrency(record.finalPrice, tournament?.currency) : 'UNSOLD'}
-                  </div>
-                  <div style={{
-                    fontFamily: 'var(--font-body)', fontSize: 12, color: 'var(--text-muted)', marginTop: 4,
-                  }}>
-                    {new Date(record.timestamp).toLocaleTimeString()}
+                    {isSold && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                        <span style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: 'var(--text-muted)' }}>Acquired by</span>
+                        <ArrowRight className="w-3.5 h-3.5" style={{ color: 'var(--spl-gold-light)' }} />
+                        {team && <div style={{ width: 4, height: 16, borderRadius: 2, background: team.primaryColor }} />}
+                        <span style={{
+                          fontFamily: 'var(--font-display)', fontSize: 13, fontWeight: 700,
+                          color: team ? team.primaryColor : 'var(--text-primary)', letterSpacing: '0.04em',
+                        }}>
+                          {record.teamName}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
 
-                {/* Revert Single Transfer Button */}
-                <div style={{ flexShrink: 0, paddingLeft: 6 }}>
-                  <button
-                    onClick={() => handlePromptRevertSingle(record)}
-                    title={`Revert transfer for ${record.playerName}`}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 6,
-                      padding: '8px 12px',
-                      borderRadius: 6,
-                      background: 'rgba(255, 255, 255, 0.04)',
-                      border: '1px solid var(--border-subtle)',
-                      color: 'var(--text-secondary)',
-                      fontFamily: 'var(--font-display)',
-                      fontSize: 11,
-                      fontWeight: 700,
-                      letterSpacing: '0.06em',
-                      cursor: 'pointer',
-                      transition: 'all 0.15s ease',
-                    }}
-                    onMouseEnter={e => {
-                      e.currentTarget.style.background = 'rgba(239, 68, 68, 0.15)';
-                      e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.4)';
-                      e.currentTarget.style.color = '#F87171';
-                    }}
-                    onMouseLeave={e => {
-                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.04)';
-                      e.currentTarget.style.borderColor = 'var(--border-subtle)';
-                      e.currentTarget.style.color = 'var(--text-secondary)';
-                    }}
-                  >
-                    <RotateCcw className="w-3.5 h-3.5" />
-                    <span>REVERT</span>
-                  </button>
+                {/* Price + time + Revert button */}
+                <div className="flex items-center justify-between sm:justify-end gap-4 pt-2 sm:pt-0 border-t sm:border-t-0 border-[var(--border-subtle)]">
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{
+                      fontFamily: 'var(--font-broadcast)', fontSize: 24,
+                      color: isSold ? 'var(--spl-gold-light)' : 'rgba(239,68,68,0.5)',
+                      lineHeight: 1,
+                    }}>
+                      {isSold ? formatCurrency(record.finalPrice, tournament?.currency) : 'UNSOLD'}
+                    </div>
+                    <div style={{
+                      fontFamily: 'var(--font-body)', fontSize: 11, color: 'var(--text-muted)', marginTop: 3,
+                    }}>
+                      {new Date(record.timestamp).toLocaleTimeString()}
+                    </div>
+                  </div>
+
+                  <div style={{ flexShrink: 0, paddingLeft: 6 }}>
+                    <button
+                      onClick={() => handlePromptRevertSingle(record)}
+                      title={`Revert transfer for ${record.playerName}`}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        padding: '8px 12px',
+                        borderRadius: 6,
+                        background: 'rgba(255, 255, 255, 0.04)',
+                        border: '1px solid var(--border-subtle)',
+                        color: 'var(--text-secondary)',
+                        fontFamily: 'var(--font-display)',
+                        fontSize: 11,
+                        fontWeight: 700,
+                        letterSpacing: '0.06em',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease',
+                      }}
+                      onMouseEnter={e => {
+                        e.currentTarget.style.background = 'rgba(239, 68, 68, 0.15)';
+                        e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.4)';
+                        e.currentTarget.style.color = '#F87171';
+                      }}
+                      onMouseLeave={e => {
+                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.04)';
+                        e.currentTarget.style.borderColor = 'var(--border-subtle)';
+                        e.currentTarget.style.color = 'var(--text-secondary)';
+                      }}
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                      <span>REVERT</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             );

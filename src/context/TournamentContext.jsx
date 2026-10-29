@@ -114,6 +114,23 @@ export const TournamentProvider = ({ children }) => {
     return result;
   };
 
+  const setAllTeamsStartingBudget = (newBudget) => {
+    const budget = Number(newBudget) || (tournament?.defaultBudget || 5000);
+    const currentTeams = teamService.getTeams();
+    const updated = currentTeams.map(t => {
+      const spent = Number(t.totalSpent) || 0;
+      return {
+        ...t,
+        startingBudget: budget,
+        totalSpent: spent,
+        currentBalance: budget - spent
+      };
+    });
+    storageService.saveTeams(updated);
+    setTeams(updated);
+    return updated;
+  };
+
   return (
     <TournamentContext.Provider
       value={{
@@ -126,6 +143,7 @@ export const TournamentProvider = ({ children }) => {
         addTeam,
         updateTeam,
         deleteTeam,
+        setAllTeamsStartingBudget,
         addPlayer,
         updatePlayer,
         deletePlayer,

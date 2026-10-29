@@ -114,18 +114,18 @@ export const Players = () => {
   const unsoldCount   = players.filter(p => p.status === 'UNSOLD').length;
 
   return (
-    <div style={{ padding: '32px 40px', maxWidth: 1600, margin: '0 auto' }}>
+    <div className="p-3 sm:p-6 md:p-8 max-w-[1600px] mx-auto min-h-full overflow-y-auto pb-28 sm:pb-12">
 
       {/* ── HEADER ── */}
-      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 20, marginBottom: 24, paddingBottom: 20, borderBottom: '1px solid var(--border-subtle)' }}>
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6 pb-5 border-b border-[var(--border-subtle)]">
         <div>
           <div style={{ fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: 700, color: 'var(--spl-blue-light)', letterSpacing: '0.25em', marginBottom: 8, textTransform: 'uppercase' }}>
             PLAYER DATABASE & ROSTER
           </div>
-          <h1 style={{ fontFamily: 'var(--font-broadcast)', fontSize: 'clamp(32px, 4vw, 48px)', color: '#fff', lineHeight: 0.95, letterSpacing: '0.01em', textTransform: 'uppercase' }}>
+          <h1 style={{ fontFamily: 'var(--font-broadcast)', fontSize: 'clamp(28px, 4vw, 48px)', color: '#fff', lineHeight: 0.95, letterSpacing: '0.01em', textTransform: 'uppercase' }}>
             Player Pool
           </h1>
-          <div style={{ display: 'flex', gap: 24, marginTop: 12 }}>
+          <div className="flex flex-wrap gap-4 sm:gap-6 mt-3">
             {[
               { label: 'Total', value: players.length, color: 'var(--text-secondary)' },
               { label: 'Upcoming', value: upcomingCount, color: 'var(--spl-blue-light)' },
@@ -140,12 +140,12 @@ export const Players = () => {
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-          <button onClick={() => setShowCSVModal(true)} className="btn-ghost" style={{ padding: '10px 18px', fontSize: 13, gap: 8 }}>
+        <div className="flex flex-wrap gap-2.5 items-center">
+          <button onClick={() => setShowCSVModal(true)} className="btn-ghost flex-1 sm:flex-none justify-center" style={{ padding: '10px 18px', fontSize: 13, gap: 8 }}>
             <Upload className="w-4 h-4" />
             Import CSV
           </button>
-          <button onClick={() => handleOpen()} className="btn-primary" style={{ padding: '10px 20px', fontSize: 14, gap: 8 }}>
+          <button onClick={() => handleOpen()} className="btn-primary flex-1 sm:flex-none justify-center" style={{ padding: '10px 20px', fontSize: 14, gap: 8 }}>
             <Plus className="w-4 h-4" />
             Add Player
           </button>
@@ -154,12 +154,7 @@ export const Players = () => {
 
       {/* ── EMPTY BANNER (shown when player count is 0) ── */}
       {players.length === 0 && (
-        <div style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 20,
-          background: 'linear-gradient(135deg, rgba(26,86,219,0.15) 0%, rgba(34,197,94,0.10) 100%)',
-          border: '1px solid rgba(26,86,219,0.3)',
-          borderRadius: 10, padding: '20px 26px', marginBottom: 24,
-        }}>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 sm:p-6 mb-6 rounded-xl border border-blue-600/30 bg-gradient-to-r from-blue-900/20 to-emerald-950/20">
           <div>
             <div style={{ fontFamily: 'var(--font-display)', fontSize: 15, fontWeight: 700, color: '#fff', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               No players currently registered
@@ -180,15 +175,15 @@ export const Players = () => {
       )}
 
       {/* ── FILTERS ── */}
-      <div style={{ display: 'flex', gap: 16, alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap' }}>
+      <div className="flex flex-col md:flex-row gap-3 md:items-center justify-between mb-5 flex-wrap">
         {/* Status tabs */}
-        <div style={{ display: 'flex', gap: 6, background: 'var(--spl-panel)', padding: 5, borderRadius: 8, border: '1px solid var(--border-subtle)' }}>
+        <div className="flex flex-wrap gap-1.5 bg-[var(--spl-panel)] p-1.5 rounded-lg border border-[var(--border-subtle)]">
           {['ALL', 'UPCOMING', 'SOLD', 'UNSOLD'].map(f => (
             <button
               key={f}
               onClick={() => setFilter(f)}
               style={{
-                padding: '7px 18px', borderRadius: 6, border: 'none',
+                padding: '7px 16px', borderRadius: 6, border: 'none',
                 fontFamily: 'var(--font-display)', fontSize: 12, fontWeight: 700,
                 letterSpacing: '0.08em', cursor: 'pointer',
                 background: filter === f ? 'var(--spl-blue)' : 'transparent',
@@ -201,7 +196,7 @@ export const Players = () => {
           ))}
         </div>
 
-        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+        <div className="flex flex-wrap gap-2.5 items-center">
           {/* View toggle */}
           <div style={{ display: 'flex', background: 'var(--spl-panel)', borderRadius: 6, padding: 4, border: '1px solid var(--border-subtle)', gap: 4 }}>
             {[{ mode: 'table', Icon: List }, { mode: 'grid', Icon: Grid }].map(({ mode, Icon }) => (
@@ -222,7 +217,7 @@ export const Players = () => {
           </div>
 
           {/* Search */}
-          <div style={{ position: 'relative' }}>
+          <div className="relative flex-1 sm:w-[280px] sm:flex-none">
             <Search className="w-4 h-4" style={{
               position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)',
               color: 'var(--text-muted)', pointerEvents: 'none',
@@ -232,11 +227,12 @@ export const Players = () => {
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Search players..."
+              className="w-full"
               style={{
                 padding: '9px 14px 9px 38px',
                 background: 'var(--spl-panel)', border: '1px solid var(--border-default)',
                 borderRadius: 6, color: 'var(--text-primary)',
-                fontFamily: 'var(--font-body)', fontSize: 13, outline: 'none', width: 280,
+                fontFamily: 'var(--font-body)', fontSize: 13, outline: 'none',
               }}
             />
           </div>
@@ -245,7 +241,7 @@ export const Players = () => {
 
       {/* ── GRID VIEW ── */}
       {viewMode === 'grid' && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 24, justifyItems: 'center' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 250px), 1fr))', gap: 20, justifyItems: 'center' }}>
           {filtered.length > 0 ? filtered.map(player => {
             const team = teams.find(t => t.id === player.teamId);
             return (
@@ -292,8 +288,8 @@ export const Players = () => {
 
       {/* ── TABLE VIEW ── */}
       {viewMode === 'table' && (
-        <div style={{ background: 'var(--spl-panel)', border: '1px solid var(--border-subtle)', borderRadius: 10, overflow: 'hidden' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <div className="w-full overflow-x-auto bg-[var(--spl-panel)] border border-[var(--border-subtle)] rounded-xl">
+          <table style={{ width: '100%', minWidth: 680, borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid var(--border-default)', background: 'var(--spl-elevated)' }}>
                 {['Player', 'Position', 'Base Price', 'Status', 'Team', 'Actions'].map(h => (
@@ -420,21 +416,10 @@ export const Players = () => {
         </div>
       )}
 
-      {/* ── ADD / EDIT MODAL (Expanded 2-Column Studio Layout with No Scrolling) ── */}
+      {/* ── ADD / EDIT MODAL (Expanded 2-Column Studio Layout with Responsive Stacking) ── */}
       {showModal && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 50, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-          <div style={{ 
-            background: 'var(--spl-panel)', 
-            border: '1px solid var(--border-default)', 
-            borderRadius: 12, 
-            padding: '24px 28px', 
-            maxWidth: 920, 
-            width: '100%', 
-            maxHeight: '94vh',
-            boxShadow: '0 25px 60px rgba(0,0,0,0.85)',
-            display: 'flex',
-            flexDirection: 'column'
-          }}>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 50, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 12 }}>
+          <div className="bg-[var(--spl-panel)] border border-[var(--border-default)] rounded-xl p-4 sm:p-6 md:p-7 max-w-[920px] w-full max-h-[92vh] shadow-[0_25px_60px_rgba(0,0,0,0.85)] flex flex-col overflow-y-auto">
             {/* Modal Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18, paddingBottom: 14, borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -458,8 +443,8 @@ export const Players = () => {
               </button>
             </div>
 
-            {/* Modal Form with 2-Column Studio Layout */}
-            <form onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: 'minmax(420px, 440px) 1fr', gap: 24, alignItems: 'stretch' }}>
+            {/* Modal Form with Responsive 2-Column Studio Layout */}
+            <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-[minmax(0,420px)_1fr] gap-6 items-start">
               {/* Left Column: Live Card Studio & Photo Alignment */}
               <div style={{ display: 'flex', flexDirection: 'column' }}>
                 <PlayerImageUploader

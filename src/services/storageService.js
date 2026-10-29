@@ -234,7 +234,54 @@ export const storageService = {
     return this.saveTournament(tourn);
   },
 
-  getTeams()             { this.init(); return JSON.parse(localStorage.getItem(KEYS.TEAMS)) || []; },
+  getTeams() { 
+    this.init(); 
+    let teams = JSON.parse(localStorage.getItem(KEYS.TEAMS)) || []; 
+    let updated = false;
+
+    // Load players to verify actual player sales
+    let players = [];
+    try {
+      players = JSON.parse(localStorage.getItem(KEYS.PLAYERS)) || [];
+    } catch {}
+
+    teams = teams.map(t => {
+      // Calculate actual spent from assigned sold players
+      const teamPlayers = Array.isArray(players) ? players.filter(p => p.teamId === t.id && p.status === 'SOLD') : [];
+      const calculatedSpent = teamPlayers.reduce((sum, p) => sum + (Number(p.soldPrice) || 0), 0);
+
+      // Determine accurate totalSpent: use max of tracked spent and calculated spent from sold players
+      const actualSpent = (typeof t.totalSpent === 'number' && t.totalSpent >= 0)
+        ? Math.max(t.totalSpent, calculatedSpent)
+        : calculatedSpent;
+
+      const startingBudget = (typeof t.startingBudget === 'number' && t.startingBudget > 0)
+        ? t.startingBudget
+        : (DEFAULT_TOURNAMENT.defaultBudget || 5000);
+
+      // Remaining budget must strictly be startingBudget - actualSpent
+      const expectedBalance = startingBudget - actualSpent;
+
+      // Fix if currentBalance is inconsistent with startingBudget and spent (e.g. 58990 instead of 3990)
+      if (t.currentBalance !== expectedBalance || t.totalSpent !== actualSpent || t.startingBudget !== startingBudget) {
+        updated = true;
+        return {
+          ...t,
+          startingBudget,
+          totalSpent: actualSpent,
+          currentBalance: expectedBalance,
+          playersBought: teamPlayers.length > 0 ? teamPlayers.length : (t.playersBought || 0)
+        };
+      }
+      return t;
+    });
+
+    if (updated) {
+      localStorage.setItem(KEYS.TEAMS, JSON.stringify(teams));
+    }
+
+    return teams; 
+  },
   saveTeams(teams)       { 
     localStorage.setItem(KEYS.TEAMS, JSON.stringify(teams)); 
     try { window.dispatchEvent(new Event('teams-updated')); } catch (e) {}

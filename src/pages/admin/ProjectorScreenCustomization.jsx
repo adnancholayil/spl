@@ -119,7 +119,7 @@ export const ProjectorScreenCustomization = () => {
   return (
     <div className="h-full flex flex-col" style={{ background: 'var(--spl-black)' }}>
       {/* HEADER */}
-      <div className="shrink-0 flex items-center justify-between px-8 py-5" style={{ background: 'var(--spl-navy)', borderBottom: '1px solid var(--border-subtle)' }}>
+      <div className="shrink-0 flex flex-wrap items-center justify-between px-4 sm:px-8 py-4 gap-3" style={{ background: 'var(--spl-navy)', borderBottom: '1px solid var(--border-subtle)' }}>
         <div className="flex items-center gap-4">
           <button onClick={() => navigate(-1)} className="p-2 rounded hover:bg-slate-800 transition-colors" style={{ color: 'var(--text-muted)' }}>
             <ArrowLeft className="w-5 h-5" />
@@ -139,10 +139,10 @@ export const ProjectorScreenCustomization = () => {
         </div>
       </div>
 
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex flex-col lg:flex-row overflow-y-auto lg:overflow-hidden">
         {/* LEFT PANEL: CONTROLS */}
-        <div className="w-[450px] shrink-0 overflow-y-auto" style={{ borderRight: '1px solid var(--border-subtle)', background: 'var(--spl-navy)' }}>
-          <div className="p-6 flex flex-col gap-8">
+        <div className="w-full lg:w-[450px] shrink-0 overflow-y-auto border-b lg:border-b-0 lg:border-r border-[var(--border-subtle)] bg-[var(--spl-navy)]">
+          <div className="p-4 sm:p-6 flex flex-col gap-6 sm:gap-8 pb-28 lg:pb-8">
             
             {/* Background Image & Video */}
             <div style={{ background: 'var(--spl-panel)', border: '1px solid var(--border-subtle)', borderRadius: 12, padding: 20 }}>
@@ -267,7 +267,7 @@ export const ProjectorScreenCustomization = () => {
         </div>
 
         {/* RIGHT PANEL: LIVE PREVIEW */}
-        <div className="flex-1 relative overflow-hidden" style={{ background: '#000' }}>
+        <div className="flex-1 relative overflow-hidden min-h-[380px] lg:min-h-0" style={{ background: '#000' }}>
           
           {/* Background Image & Filter Preview */}
           <div 
@@ -280,20 +280,20 @@ export const ProjectorScreenCustomization = () => {
           />
 
           {/* Fake Projector Content to show Panels */}
-          <div className="absolute inset-0 flex items-center justify-center p-12">
+          <div className="absolute inset-0 flex items-center justify-center p-4 sm:p-8 md:p-12">
             
             <div 
               style={{ 
                 width: '100%', 
                 maxWidth: 900, 
-                height: 500, 
+                maxHeight: '90%',
                 background: `rgba(${hexToRgb(settings.panelBgColor)},${settings.panelBgOpacity/100})`, 
                 border: `1px solid rgba(${hexToRgb(settings.panelBorderColor)},${settings.panelBorderOpacity/100})`,
-                borderRadius: 24,
+                borderRadius: 20,
                 boxShadow: `0 20px 60px rgba(0,0,0,${settings.ambientShadowOpacity/100}), 0 0 100px rgba(14,165,233,${(settings.ambientShadowOpacity/100)*0.3})`,
                 display: 'flex',
                 flexDirection: 'column',
-                padding: 40,
+                padding: 'clamp(16px, 3vw, 40px)',
                 position: 'relative',
                 backdropFilter: 'blur(10px)'
               }}

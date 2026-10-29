@@ -22,7 +22,7 @@ export const TournamentSetup = () => {
   };
 
   return (
-    <div className="p-8 max-w-3xl mx-auto space-y-6 select-none text-slate-100">
+    <div className="p-3 sm:p-6 md:p-8 max-w-3xl mx-auto space-y-6 select-none text-slate-100 min-h-full overflow-y-auto pb-28 sm:pb-12">
       <div className="pb-4 border-b border-slate-800">
         <div className="flex items-center gap-2 mb-1">
           <Sparkles className="w-4 h-4 text-amber-400" />
@@ -39,7 +39,7 @@ export const TournamentSetup = () => {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="bg-[#0c0e1e] border border-slate-800 rounded-3xl p-8 space-y-6 shadow-xl">
+      <form onSubmit={handleSubmit} className="bg-[#0c0e1e] border border-slate-800 rounded-3xl p-4 sm:p-8 space-y-6 shadow-xl">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
           <div>
             <label className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 block mb-1">Tournament Name</label>

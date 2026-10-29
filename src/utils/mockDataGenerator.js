@@ -9,8 +9,8 @@ export const generateMockData = () => {
       managerPhotoUrl: '',
       primaryColor: '#DA291C',
       secondaryColor: '#000000',
-      startingBudget: 50000,
-      currentBalance: 50000,
+      startingBudget: 5000,
+      currentBalance: 5000,
       totalSpent: 0,
       playersBought: 0
     },
@@ -23,8 +23,8 @@ export const generateMockData = () => {
       managerPhotoUrl: '',
       primaryColor: '#FFFFFF',
       secondaryColor: '#FEBE10',
-      startingBudget: 60000,
-      currentBalance: 60000,
+      startingBudget: 5000,
+      currentBalance: 5000,
       totalSpent: 0,
       playersBought: 0
     },
@@ -37,8 +37,8 @@ export const generateMockData = () => {
       managerPhotoUrl: '',
       primaryColor: '#DC052D',
       secondaryColor: '#0066B2',
-      startingBudget: 45000,
-      currentBalance: 45000,
+      startingBudget: 5000,
+      currentBalance: 5000,
       totalSpent: 0,
       playersBought: 0
     },
@@ -51,8 +51,8 @@ export const generateMockData = () => {
       managerPhotoUrl: '',
       primaryColor: '#004170',
       secondaryColor: '#DA291C',
-      startingBudget: 70000,
-      currentBalance: 70000,
+      startingBudget: 5000,
+      currentBalance: 5000,
       totalSpent: 0,
       playersBought: 0
     }

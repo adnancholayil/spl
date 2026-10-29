@@ -472,25 +472,10 @@ export const CardCustomization = () => {
   };
 
   return (
-    <div style={{
-      width: '100%',
-      height: 'calc(100vh - 20px)',
-      boxSizing: 'border-box',
-      padding: '20px 32px',
-      display: 'flex',
-      gap: 28,
-      overflow: 'hidden'
-    }}>
+    <div className="w-full min-h-full lg:h-[calc(100vh-20px)] box-border p-3 sm:p-5 lg:p-7 pb-28 lg:pb-7 flex flex-col lg:flex-row gap-5 lg:gap-7 overflow-y-auto lg:overflow-hidden">
       
       {/* ── LEFT COLUMN: STUDIO CONTROLS & INSPECTOR ── */}
-      <div style={{
-        flex: 1,
-        maxWidth: 620,
-        display: 'flex',
-        flexDirection: 'column',
-        height: '100%',
-        minHeight: 0
-      }}>
+      <div className="w-full lg:max-w-[620px] flex flex-col lg:h-full min-h-0 shrink-0">
         
         {/* Fixed Header */}
         <div style={{ paddingBottom: 14, borderBottom: '1px solid var(--border-subtle)', flexShrink: 0 }}>
@@ -538,7 +523,7 @@ export const CardCustomization = () => {
           </div>
 
           {/* ── CARD ROLE SWITCHER: OUTFIELD VS GOALKEEPER (GK) ── */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, background: 'rgba(15, 23, 42, 0.7)', padding: 4, borderRadius: 10, border: '1px solid var(--border-subtle)' }}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 bg-slate-900/70 p-1.5 rounded-xl border border-[var(--border-subtle)]">
             <button
               onClick={() => setCardRole('OUTFIELD')}
               style={{
@@ -1256,20 +1241,7 @@ export const CardCustomization = () => {
       </div>
 
       {/* ── RIGHT COLUMN: CANVAS STUDIO & DIRECT TRANSFORM ── */}
-      <div style={{
-        flex: 1,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        background: 'var(--spl-panel)',
-        border: '1px solid var(--border-subtle)',
-        borderRadius: 14,
-        padding: '20px 24px',
-        position: 'relative',
-        height: '100%',
-        minHeight: 0
-      }}>
+      <div className="w-full flex-1 flex flex-col items-center justify-between bg-[var(--spl-panel)] border border-[var(--border-subtle)] rounded-2xl p-4 sm:p-6 relative min-h-[560px] lg:h-full min-h-0">
         
         {/* Top Header Bar */}
         <div style={{ width: '100%', maxWidth: 540, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>

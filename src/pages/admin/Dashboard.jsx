@@ -29,11 +29,11 @@ export const Dashboard = () => {
   const recentTransfers = history.filter(h => h.status === 'SOLD').slice(0, 6);
 
   return (
-    <div className="h-full flex flex-col p-3 md:p-4.5 xl:p-5 overflow-hidden select-none w-full max-w-[1740px] mx-auto gap-3">
+    <div className="min-h-full flex flex-col p-3 md:p-4.5 xl:p-5 overflow-y-auto select-none w-full max-w-[1740px] mx-auto gap-3 pb-28 lg:pb-6">
 
       {/* ── 1. ULTRA-COMPACT TOURNAMENT HERO BAR ── */}
       <div
-        className="relative rounded-xl overflow-hidden px-4 py-3 shrink-0 flex items-center justify-between gap-4 border border-white/10 shadow-lg"
+        className="relative rounded-xl overflow-hidden px-4 py-3 shrink-0 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border border-white/10 shadow-lg"
         style={{
           background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.96) 0%, rgba(8, 12, 24, 0.98) 100%)',
           backdropFilter: 'blur(20px)',
@@ -225,7 +225,7 @@ export const Dashboard = () => {
 
           {/* Club Budgets & Squad Tracker */}
           <div
-            className="flex-1 min-h-0 flex flex-col rounded-xl border border-white/10 overflow-hidden shadow-xl"
+            className="flex-1 min-h-[260px] lg:min-h-0 flex flex-col rounded-xl border border-white/10 overflow-hidden shadow-xl"
             style={{
               background: 'linear-gradient(180deg, rgba(15, 23, 42, 0.92) 0%, rgba(9, 13, 26, 0.96) 100%)',
               backdropFilter: 'blur(20px)',
