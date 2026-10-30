@@ -13,8 +13,9 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { getRandomStadiumImage } from '../../components/projector/StadiumBackground';
 import { mediaStorage } from '../../services/mediaStorage';
 import { broadcastBus } from '../../utils/broadcastChannel';
+import { ErrorBoundary } from '../../components/common/ErrorBoundary';
 
-export const ProjectorScreen = () => {
+const ProjectorScreenInner = () => {
   const { tournament, teams, players } = useTournament();
   const { auctionState } = useAuction();
   const { isFullscreen, toggleFullscreen } = useProjector();
@@ -813,5 +814,13 @@ export const ProjectorScreen = () => {
         </div>
       )}
     </div>
+  );
+};
+
+export const ProjectorScreen = () => {
+  return (
+    <ErrorBoundary>
+      <ProjectorScreenInner />
+    </ErrorBoundary>
   );
 };

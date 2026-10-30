@@ -694,6 +694,7 @@ export const ProjectorControl = () => {
                 { key: 'showBasePrice', label: 'Base Price', icon: Zap },
                 { key: 'showTeamLogos', label: 'Club Logos', icon: Shield },
                 { key: 'showSoldBadge', label: 'Sold Badges', icon: CheckCircle2 },
+                { key: 'introCardFlip', label: '3D Mystery Flip', icon: RotateCcw },
               ].map(item => {
                 const isEnabled = settings[item.key];
                 const Icon = item.icon;

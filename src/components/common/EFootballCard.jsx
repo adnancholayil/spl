@@ -27,35 +27,6 @@ export const EFootballCard = ({
   onCommitHistory = null,
   centerVisual = false,
 }) => {
-  if (!player) return null;
-
-  // Extract per-player photo alignment properties
-  const photoScale = player.photoScale !== undefined ? parseFloat(player.photoScale) : ((player.photoZoom || 100) / 100);
-  const photoOffsetX = player.photoOffsetX !== undefined ? parseInt(player.photoOffsetX, 10) : 0;
-  const photoOffsetY = player.photoOffsetY !== undefined ? parseInt(player.photoOffsetY, 10) : 0;
-
-  const heroImage = player.presentationPng || player.photoUrl || player.photo || (player.name ? createRealisticPlayerPortrait(player.name, player.position) : null);
-  const ovr = player.overallRating || player.rating || player.ovr || (player.stats ? Math.round(Object.values(player.stats).reduce((a,b)=>a+b,0)/Object.values(player.stats).length) : 98);
-  const position = (player.position || 'RW').toUpperCase();
-  const name = player.name || 'PLAYER';
-  
-  // Stats (Using fallbacks if not provided)
-  const stats = player.stats || { pac: 97, sho: 95, pas: 98, dri: 98, def: 33, phy: 81 };
-  
-  // Logos
-  const countryFlag = player.countryFlag || '/assets/flag.png';
-  const clubLogo = player.clubLogo || '/assets/logo.png';
-  const isDefaultLogo = !player.clubLogo || player.clubLogo === '/assets/logo.png';
-
-  const isGK = position === 'GK';
-  const effectiveTheme = theme;
-
-  // Scale map
-  const scaleMap = { pitch: 0.52, xs: 0.45, sm: 0.65, md: 0.85, lg: 1.1, xl: 1.35 };
-  const scale = typeof size === 'number' ? size : (scaleMap[size] || scaleMap.md);
-  const cardWidth = 320 * scale;
-  const cardHeight = 440 * scale;
-
   const [customTheme, setCustomTheme] = useState(() => storageService.getCardTheme());
   const [gkCustomTheme, setGkCustomTheme] = useState(() => storageService.getGkCardTheme());
   const svgRef = useRef(null);
@@ -68,6 +39,38 @@ export const EFootballCard = ({
     window.addEventListener('card-theme-updated', handleUpdate);
     return () => window.removeEventListener('card-theme-updated', handleUpdate);
   }, []);
+
+  const playerId = player?.id || 'p';
+  const position = (player?.position || 'RW').toUpperCase();
+  const isGK = position === 'GK';
+  const effectiveTheme = theme;
+
+  const idSuffix = useMemo(() => `${playerId}-${isGK ? 'gk' : 'out'}-${effectiveTheme}-${Math.floor(Math.random()*1000)}`, [playerId, isGK, effectiveTheme]);
+
+  if (!player) return null;
+
+  // Extract per-player photo alignment properties
+  const photoScale = player.photoScale !== undefined ? parseFloat(player.photoScale) : ((player.photoZoom || 100) / 100);
+  const photoOffsetX = player.photoOffsetX !== undefined ? parseInt(player.photoOffsetX, 10) : 0;
+  const photoOffsetY = player.photoOffsetY !== undefined ? parseInt(player.photoOffsetY, 10) : 0;
+
+  const heroImage = player.presentationPng || player.photoUrl || player.photo || (player.name ? createRealisticPlayerPortrait(player.name, player.position) : null);
+  const ovr = player.overallRating || player.rating || player.ovr || (player.stats ? Math.round(Object.values(player.stats).reduce((a,b)=>a+b,0)/Object.values(player.stats).length) : 98);
+  const name = player.name || 'PLAYER';
+  
+  // Stats (Using fallbacks if not provided)
+  const stats = player.stats || { pac: 97, sho: 95, pas: 98, dri: 98, def: 33, phy: 81 };
+  
+  // Logos
+  const countryFlag = player.countryFlag || '/assets/flag.png';
+  const clubLogo = player.clubLogo || '/assets/logo.png';
+  const isDefaultLogo = !player.clubLogo || player.clubLogo === '/assets/logo.png';
+
+  // Scale map
+  const scaleMap = { pitch: 0.52, xs: 0.45, sm: 0.65, md: 0.85, lg: 1.1, xl: 1.35 };
+  const scale = typeof size === 'number' ? size : (scaleMap[size] || scaleMap.md);
+  const cardWidth = 320 * scale;
+  const cardHeight = 440 * scale;
 
   const defaultThemeForPlayer = isGK ? gkCustomTheme : customTheme;
   const activeCustomTheme = customThemeOverride || defaultThemeForPlayer;
@@ -128,8 +131,6 @@ export const EFootballCard = ({
   const glintOpacity = (cfg.fxGlintOpacity !== undefined ? Number(cfg.fxGlintOpacity) : 90) / 100;
   const totalGlintCycle = Math.max(1.0, Number((glintSpeed + glintLag).toFixed(2)));
   const glintActivePercent = Math.min(95, Math.max(20, Math.round((glintSpeed / totalGlintCycle) * 100)));
-
-  const idSuffix = useMemo(() => `${player.id || 'p'}-${isGK ? 'gk' : 'out'}-${effectiveTheme}-${Math.floor(Math.random()*1000)}`, [player.id, isGK, effectiveTheme]);
 
   // Card Shapes
   let cardPath = "M 80 15 Q 160 5 240 15 L 305 55 L 305 345 L 160 405 L 15 345 L 15 55 Z"; // Default eafc24

@@ -7,11 +7,8 @@ import { storageService } from '../../services/storageService';
  * Renders custom tournament logo if set, or official colorful geometric starburst ring with transparent center & crisp white "SPL" text.
  */
 export const SPLLogo = ({ size = 40, className = '', style = {}, showGlow = false, customLogo }) => {
-  let contextTourn = null;
-  try {
-    const ctx = useTournament();
-    contextTourn = ctx?.tournament;
-  } catch (_) {}
+  const ctx = useTournament();
+  const contextTourn = ctx?.tournament;
 
   // Resolve logo: explicit customLogo prop -> tournament from context -> tournament from storage
   const effectiveLogo = customLogo !== undefined 

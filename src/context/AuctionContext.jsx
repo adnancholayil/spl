@@ -12,15 +12,26 @@ export const AuctionProvider = ({ children }) => {
   const [timerActive, setTimerActive] = useState(false);
 
   useEffect(() => {
+    const handleUpdate = () => {
+      setAuctionState(auctionService.getState());
+      refreshData();
+    };
+    window.addEventListener('storage', handleUpdate);
+    window.addEventListener('auction-state-updated', handleUpdate);
+
     // Listen for cross-tab broadcast state changes
     const unsubscribe = broadcastBus.subscribe((msg) => {
-      if (msg.type === 'AUCTION_STATE_UPDATED' || msg.type === 'TRANSFERS_RESET' || msg.type === 'AUCTION_HISTORY_UPDATED') {
+      if (msg?.type === 'AUCTION_STATE_UPDATED' || msg?.type === 'TRANSFERS_RESET' || msg?.type === 'AUCTION_HISTORY_UPDATED') {
         setAuctionState(auctionService.getState());
         refreshData();
       }
     });
 
-    return () => unsubscribe();
+    return () => {
+      window.removeEventListener('storage', handleUpdate);
+      window.removeEventListener('auction-state-updated', handleUpdate);
+      unsubscribe();
+    };
   }, [refreshData]);
 
   const selectPlayer = (playerId) => {

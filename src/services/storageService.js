@@ -52,6 +52,7 @@ const DEFAULT_PROJECTOR_SETTINGS = {
   showSponsors: false,
   showSponsorsOnAllScreens: false,
   sponsors: [],
+  introCardFlip: false,
 };
 
 const DEFAULT_TOURNAMENT = {

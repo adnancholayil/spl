@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatCurrency } from '../../utils/currency';
+import { useTournament } from '../../context/TournamentContext';
 import { EFootballCard } from '../common/EFootballCard';
 import { StadiumBackground } from './StadiumBackground';
 import { SPLLogo } from '../common/SPLLogo';
@@ -58,10 +59,6 @@ const IdleStage = ({ tournament, settings = {} }) => {
     return cards;
   }, [sponsors, cycleIndex]);
 
-  if (!showLogo) {
-    return null;
-  }
-
   return (
     <div className="relative z-10 w-full h-full flex flex-col items-center justify-center p-8 select-none">
       <motion.div
@@ -71,26 +68,28 @@ const IdleStage = ({ tournament, settings = {} }) => {
         className="flex flex-col items-center text-center max-w-5xl px-4"
       >
         {/* League Logo with High-Contrast Broadcast Background Badge */}
-        <div className="mb-6 md:mb-8 flex items-center justify-center">
-          {showBadge ? (
-            <div
-              className="flex items-center justify-center rounded-full p-5 sm:p-6 md:p-7 relative transition-all duration-300"
-              style={{
-                background: 'radial-gradient(circle at 50% 35%, rgba(15, 23, 42, 0.92) 0%, rgba(8, 12, 22, 0.97) 100%)',
-                backdropFilter: 'blur(20px)',
-                WebkitBackdropFilter: 'blur(20px)',
-                border: '2px solid rgba(255, 255, 255, 0.22)',
-                boxShadow: '0 24px 60px rgba(0, 0, 0, 0.85), inset 0 1px 1px rgba(255, 255, 255, 0.3), 0 0 40px rgba(0, 0, 0, 0.5)',
-                width: 'clamp(180px, 16vw, 220px)',
-                height: 'clamp(180px, 16vw, 220px)',
-              }}
-            >
-              <SPLLogo size={160} showGlow={false} customLogo={tournament?.logoUrl} />
-            </div>
-          ) : (
-            <SPLLogo size={170} showGlow={false} customLogo={tournament?.logoUrl} />
-          )}
-        </div>
+        {showLogo && (
+          <div className="mb-6 md:mb-8 flex items-center justify-center">
+            {showBadge ? (
+              <div
+                className="flex items-center justify-center rounded-full p-5 sm:p-6 md:p-7 relative transition-all duration-300"
+                style={{
+                  background: 'radial-gradient(circle at 50% 35%, rgba(15, 23, 42, 0.92) 0%, rgba(8, 12, 22, 0.97) 100%)',
+                  backdropFilter: 'blur(20px)',
+                  WebkitBackdropFilter: 'blur(20px)',
+                  border: '2px solid rgba(255, 255, 255, 0.22)',
+                  boxShadow: '0 24px 60px rgba(0, 0, 0, 0.85), inset 0 1px 1px rgba(255, 255, 255, 0.3), 0 0 40px rgba(0, 0, 0, 0.5)',
+                  width: 'clamp(180px, 16vw, 220px)',
+                  height: 'clamp(180px, 16vw, 220px)',
+                }}
+              >
+                <SPLLogo size={160} showGlow={false} customLogo={tournament?.logoUrl} />
+              </div>
+            ) : (
+              <SPLLogo size={170} showGlow={false} customLogo={tournament?.logoUrl} />
+            )}
+          </div>
+        )}
 
         {/* Clean, Flat Tournament Title */}
         <h1
@@ -157,7 +156,17 @@ const IdleStage = ({ tournament, settings = {} }) => {
 
 
 // ── MYSTERY CARD BACK COMPONENT (FOR SUSPENSE REVEAL) ────────────────────
-export const MysteryCardBack = ({ size = 'xl', customTheme = null, isStudio = false, selectedElement = null, onSelectElement = null, centerVisual = false }) => {
+export const MysteryCardBack = ({ 
+  size = 'xl', 
+  customTheme = null, 
+  isStudio = false, 
+  selectedElement = null, 
+  onSelectElement = null, 
+  centerVisual = false,
+  tournament: propTournament = null
+}) => {
+  const tournCtx = useTournament();
+  const tournament = propTournament || tournCtx?.tournament || storageService.getTournament();
   const [storedTheme, setStoredTheme] = useState(() => storageService.getCardTheme());
 
   useEffect(() => {
@@ -713,8 +722,10 @@ const IntroStage = ({ player, tournament, settings }) => {
       style={{ cursor: flipped ? 'default' : 'pointer' }}
     >
       <motion.div
-        initial={{ scale: 0.88, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
+        key={`mystery-flipper-${displayPlayer?.id || player?.id}`}
+        initial={{ scale: 0.88, opacity: 0, y: 20 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        exit={{ scale: 0.88, opacity: 0 }}
         transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
         style={{ perspective: 1200 }}
         className="flex items-center justify-center"
@@ -743,7 +754,7 @@ const IntroStage = ({ player, tournament, settings }) => {
               justifyContent: 'center',
             }}
           >
-            <MysteryCardBack size="xl" centerVisual={true} />
+            <MysteryCardBack size="xl" centerVisual={true} tournament={tournament} />
           </div>
 
           {/* ── FRONT FACE (player card) — pre-rotated 180° so it starts hidden ── */}
@@ -798,16 +809,16 @@ const BiddingStage = ({
     }
   }, [currentBid, stage]);
 
-  // Play reveal fanfare when player enters INTRO stage
+  // Play reveal fanfare when new player card enters
   useEffect(() => {
-    if (isIntro) {
+    if (player?.id) {
       try {
         soundEngine.playRevealSound();
       } catch (e) {
-        console.error(e);
+        console.error('Sound play error:', e);
       }
     }
-  }, [player?.id, isIntro]);
+  }, [player?.id]);
 
   // bidHistory has newest bids at index 0 (stored via unshift / [newBid, ...rest])
   const recentBids = (bidHistory || []).slice(0, 3);
@@ -842,29 +853,52 @@ const BiddingStage = ({
         {/* MAIN STAGE: DUAL-COLUMN BROADCAST GRID */}
         <div className="flex items-center justify-center gap-16 lg:gap-24 w-full max-w-[1300px] my-auto">
           
-          {/* LEFT COLUMN: HERO EA FC PLAYER CARD (Centered during INTRO, slides left for BIDDING) */}
-          <motion.div
-            animate={{
-              x: isIntro ? 260 : 0,
-              scale: 1,
-              opacity: 1,
-            }}
-            transition={{ type: 'spring', stiffness: 95, damping: 20 }}
-            className="flex-shrink-0 relative z-20 flex items-center justify-center"
-          >
-            {/* Dynamic team aura behind card */}
-            <div 
-              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[420px] h-[540px] blur-[120px] -z-10 rounded-full opacity-25 mix-blend-screen pointer-events-none transition-colors duration-700" 
-              style={{ backgroundColor: teamColor }}
-            />
-            <EFootballCard
-              player={player}
-              size="xl"
-              theme={cardTheme}
-              highlight={true}
-              centerVisual={true}
-            />
-          </motion.div>
+          {/* LEFT COLUMN: HERO EA FC PLAYER CARD (3D Card Flipping Transition) */}
+          <div className="flex-shrink-0 relative z-20 flex items-center justify-center">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={`hero-card-${player?.id}`}
+                initial={{
+                  rotateY: -90,
+                  scale: 0.78,
+                  opacity: 0,
+                }}
+                animate={{
+                  rotateY: 0,
+                  scale: 1,
+                  opacity: 1,
+                }}
+                exit={{
+                  rotateY: 90,
+                  scale: 0.78,
+                  opacity: 0,
+                  transition: { duration: 0.35, ease: 'easeIn' },
+                }}
+                transition={{
+                  duration: 0.8,
+                  ease: [0.22, 1, 0.36, 1],
+                }}
+                className="relative flex items-center justify-center"
+                style={{ perspective: 1200, transformStyle: 'preserve-3d' }}
+              >
+                {/* Dynamic celebratory team aura behind card with burst entrance */}
+                <motion.div 
+                  initial={{ scale: 0.45, opacity: 0 }}
+                  animate={{ scale: [0.45, 1.25, 1], opacity: [0, 0.48, 0.28] }}
+                  transition={{ duration: 1.1, ease: "easeOut" }}
+                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[440px] h-[560px] blur-[110px] -z-10 rounded-full mix-blend-screen pointer-events-none" 
+                  style={{ backgroundColor: teamColor }}
+                />
+                <EFootballCard
+                  player={player}
+                  size="xl"
+                  theme={cardTheme}
+                  highlight={true}
+                  centerVisual={true}
+                />
+              </motion.div>
+            </AnimatePresence>
+          </div>
 
           {/* RIGHT COLUMN: PRECISION ALIGNED BROADCAST DATA STACK (Fades in on BIDDING) */}
           <motion.div
@@ -1719,15 +1753,27 @@ export const PlayerCardShowcase = ({
 }) => {
   return (
     <AnimatePresence mode="wait">
-      {stage === 'IDLE' && (
+      {(stage === 'IDLE' || !player) && (
         <motion.div key="idle" className="w-full h-full" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
           <IdleStage tournament={tournament} settings={settings} />
         </motion.div>
       )}
 
-      {(stage === 'INTRO' || stage === 'BIDDING') && player && (
+      {stage === 'INTRO' && player && (
         <motion.div
-          key={`auction-${player.id}`}
+          key={`intro-${player.id}`}
+          className="w-full h-full"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0, transition: { duration: 0.25 } }}
+        >
+          <IntroStage player={player} tournament={tournament} settings={settings} />
+        </motion.div>
+      )}
+
+      {stage === 'BIDDING' && player && (
+        <motion.div
+          key={`bidding-${player.id}`}
           className="w-full h-full"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
